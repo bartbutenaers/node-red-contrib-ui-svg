@@ -1,0 +1,318 @@
+<!--
+  Copyright 2019, Bart Butenaers
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<script type="text/javascript">
+    RED.nodes.registerType('ui_svg_graphics',{
+        category: 'dashboard',
+        color: 'rgb( 63, 173, 181)',
+        defaults: {
+            group: {type: 'ui_group', required:true},
+            order: {value: 0},
+            width: {
+                value: 0,
+                validate: function(v) {
+                    var valid = true
+                    var width = v||0;
+                    var currentGroup = $('#node-input-group').val()|| this.group;
+                    var groupNode = RED.nodes.node(currentGroup);
+                    valid = !groupNode || +width <= +groupNode.width;
+                    $("#node-input-size").toggleClass("input-error",!valid);
+                    return valid;
+                }},
+            height: {value: 0},
+            svgString: {value: '<svg height="100" width="100"></svg>'},
+            clickableShapes: {value: []},
+            smilAnimations: {value: []},
+            name: {value: ''}
+        },
+        inputs:1,
+        outputs:1,
+        icon: "svg.png",
+        align: 'left',
+        paletteLabel:"SVG graphics",
+        label: function() {
+            return this.name || "SVG graphics";
+        },
+        oneditprepare: function() {
+            var that = this;
+            $("#node-input-size").elementSizer({
+                width: "#node-input-width",
+                height: "#node-input-height",
+                group: "#node-input-group"
+            });
+            if (typeof this.templateScope === 'undefined') {
+                this.templateScope = 'local';
+                $('#node-input-templateScope').val(this.templateScope);
+            }
+            $('#node-input-templateScope').on('change', function() {
+                if ($('#node-input-templateScope').val() === 'global') {
+                    $('#template-row-group, #template-row-size, #template-pass-store').hide();
+                    that._def.defaults.group.required = false;
+                }
+                else {
+                    $('#template-row-group, #template-row-size, #template-pass-store').show();
+                    that._def.defaults.group.required = true;
+                }
+                var rows = $("#dialog-form>div:not(.node-text-editor-row)");
+                var height = $("#dialog-form").height();
+                for (var i=0; i<rows.size(); i++) {
+                    height = height - $(rows[i]).outerHeight(true);
+                }
+                if ($('#node-input-templateScope').val() === "global") { height += 240; }
+                var editorRow = $("#dialog-form>div.node-text-editor-row");
+                height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
+                $(".node-text-editor").css("height",height+"px");
+                if (this.editor) { this.editor.resize(); }
+            })
+            
+            // Show tabsheets
+            var tabs = RED.tabs.create({
+                id: "node-svg-tabs",
+                onchange: function(tab) {
+                    // Show only the content (i.e. the children) of the selected tabsheet, and hide the others
+                    $("#node-svg-tabs-content").children().hide();
+                    $("#" + tab.id).show();
+                }
+            });
+            tabs.addTab({
+                id: "node-svg-tab-editor",
+                label: "SVG editor"
+            });
+            tabs.addTab({
+                id: "node-svg-tab-animations",
+                label: "Animations (SMIL)"
+            });
+            tabs.addTab({
+                id: "node-svg-tab-clickable",
+                label: "Clickable shapes"
+            });            
+            
+            this.editor = RED.editor.createEditor({
+                id: 'node-input-svg-editor',
+                mode: 'ace/mode/html',
+                value: $("#node-input-svgString").val()
+            });
+            RED.library.create({
+                url:"uitemplates", // where to get the data from
+                type:"ui_template", // the type of object the library is for
+                editor:this.editor, // the field name the main text body goes to
+                mode:"ace/mode/svg",
+                fields:['name']
+            });
+            this.editor.focus();
+
+            // Create a table of (SMIL) animations
+            // Columns: element id - attributeName - from - to - duration - repeatCount - freeze
+            var smilAnimationsList = $("#node-input-animations-container").css('height','450px').css('min-height','350px').css('min-width','450px').editableList({
+                header: $("<div>").append($.parseHTML("<div style='width:11%; margin-left:5px; display: inline-grid'><b>Id</b></div><div style='width:11%; display: inline-grid'><b>Target</b></div><div style='width:10%; display: inline-grid'><b>Attribute</b></div><div style='width:10%; display: inline-grid'><b>From</b></div><div style='width:10%; display: inline-grid'><b>To</b></div><div style='width:12%; display: inline-grid'><b>Trigger</b></div><div style='width:10%; display: inline-grid'><b>Duration</b></div><div style='width:10%; display: inline-grid'><b>Repeat</b></div><div style='width:6%; display: inline-grid'><b>Freeze</b></div>")),
+                addItem: function(container, i, smilAnimation) {
+                    // Add a new row to the editableList
+                    var row = $('<div/>').appendTo(container);
+      
+                    // Column 1 : Add an input field (type string) to the new row, that represents the animation ID
+                    var idField = $('<input/>',{class:"node-input-animation-id",type:"text",placeholder:"ID"}).css({"width":"11%","margin-left":"5px"}).appendTo(row);
+                    idField.val(smilAnimation.id);
+                    
+                    // Column 2 : Add an input field (type string) to the new row, that represents the target SVG element ID
+                    var targetIdField = $('<input/>',{class:"node-input-animation-targetId",type:"text",placeholder:"ID"}).css({"width":"11%","margin-left":"5px"}).appendTo(row);
+                    targetIdField.val(smilAnimation.targetId);
+                    
+                    // Column 3 : Add an input field (type string) to the new row, that represents the attribute name 
+                    var attributeNameField = $('<input/>',{class:"node-input-animation-attributeName",type:"text",placeholder:"Name"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
+                    attributeNameField.val(smilAnimation.attributeName);
+
+                    // Column 4 : Add an input field (type string) to the new row, that represents the source value 
+                    var fromValueField = $('<input/>',{class:"node-input-animation-fromValue",type:"text",placeholder:"Value"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
+                    fromValueField.val(smilAnimation.fromValue);
+                    
+                    // Column 5 : Add an input field (type string) to the new row, that represents the destination value 
+                    var toValueField = $('<input/>',{class:"node-input-animation-toValue",type:"text",placeholder:"Value"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
+                    toValueField.val(smilAnimation.toValue);
+                    
+                    // Column 6 : Add a dropdown field to the new row, that represents the trigger (i.e. start of the animation) 
+                    var triggerField = $('<select/>',{class:"node-input-animation-trigger",type:"number"}).css({"width":"12%","margin-left":"5px"}).appendTo(row);
+                    triggerField.append($("<option></option>").val('msg').text("Msg"));
+                    triggerField.append($("<option></option>").val('0s').text("0 sec"));
+                    triggerField.append($("<option></option>").val('1s').text("1 sec"));
+                    triggerField.append($("<option></option>").val('2s').text("2 sec"));
+                    triggerField.append($("<option></option>").val('3s').text("3 sec"));
+                    triggerField.append($("<option></option>").val('4s').text("4 sec"));
+                    triggerField.append($("<option></option>").val('5s').text("5 sec"));
+                    triggerField.append($("<option></option>").val('6s').text("6 sec"));
+                    triggerField.append($("<option></option>").val('7s').text("7 sec"));
+                    triggerField.append($("<option></option>").val('8s').text("8 sec"));
+                    triggerField.append($("<option></option>").val('9s').text("9 sec"));
+                    triggerField.val(smilAnimation.trigger);
+                    
+                    // Column 7 : Add an input field (type number) to the new row, that represents the duration 
+                    var durationField = $('<input/>',{class:"node-input-animation-duration",type:"number"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
+                    durationField.val(smilAnimation.duration);
+                    
+                    // Column 8 : Add an input field (type checkbox) to the new row, that represents the repeat count 
+                    var repeatCountField = $('<input/>',{class:"node-input-animation-repeatCount",type:"number"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
+                    repeatCountField.val(smilAnimation.repeatCount);
+                    
+                    // Column 9 : Add an input field (type checkbox) to the new row, that represents the freezing (SMIL animation 'fill')
+                    var freezeField = $('<input/>',{class:"node-input-animation-freeze",type:"checkbox"}).css({"width":"6%","margin-left":"5px"}).appendTo(row);
+                    freezeField.prop('checked', smilAnimation.freeze);
+                },
+                removable: true
+            });
+            
+            // Show all the animations (stored in this node) into the editableList
+            if (this.smilAnimations) {
+                this.smilAnimations.forEach(function (smilAnimation, index) {
+                    smilAnimationsList.editableList('addItem', {id:smilAnimation.id, targetId:smilAnimation.targetId, attributeName:smilAnimation.attributeName, fromValue:smilAnimation.fromValue, toValue:smilAnimation.toValue, trigger:smilAnimation.trigger, duration:smilAnimation.duration, repeatCount:smilAnimation.repeatCount, freeze:smilAnimation.freeze});
+                });
+            }
+
+            // Create a table of clickable shapes
+            var clickableShapesList = $("#node-input-clickable-container").css('height','450px').css('min-height','350px').css('min-width','450px').editableList({
+                header: $("<div>").append($.parseHTML("<div style='width:40%; margin-left:5px; display: inline-grid'><b>Element</b></div>")),
+                addItem: function(container, i, clickableShape) {
+                    // Add a new row to the editableList
+                    var row = $('<div/>').appendTo(container);
+                    
+                    // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
+                    var targetId = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"40%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    targetId.val(clickableShape.targetId);
+                },
+                removable: true
+            });
+            
+            // Show all the clickable shapes (stored in this node) into the editableList
+            if (this.clickableShapes) {
+                this.clickableShapes.forEach(function (clickableShape, index) {
+                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId});
+                });
+            }
+        },
+        oneditsave: function() {
+            var node = this;
+            debugger;
+            
+            var annot = this.editor.getSession().getAnnotations();
+            this.noerr = 0;
+            $("#node-input-noerr").val(0);
+            for (var k=0; k < annot.length; k++) {
+                if (annot[k].type === "error") {
+                    $("#node-input-noerr").val(annot.length);
+                    this.noerr = annot.length;
+                }
+            }
+            
+            var svgString = this.editor.getValue();
+            $("#node-input-svgString").val(svgString);
+            this.editor.destroy();
+            delete this.editor;
+            
+            // Allow manipulation of the SVG string, by loading it temporarily in the DOM
+            // See https://stackoverflow.com/questions/24107288/create-an-svg-dom-element-from-a-string
+            var svgDom = document.createElement("div");
+            svgDom.innerHTML = svgString;
+            
+            // Copy all the animations from the editableList to this node
+            node.smilAnimations = [];
+            var smilAnimationsList = $("#node-input-animations-container").editableList('items');
+            smilAnimationsList.each(function(i) {
+                var smilAnimation = $(this);
+                var id            = smilAnimation.find(".node-input-animation-id").val();
+                var targetId      = smilAnimation.find(".node-input-animation-targetId").val();
+                var attributeName = smilAnimation.find(".node-input-animation-attributeName").val();
+                var fromValue     = smilAnimation.find(".node-input-animation-fromValue").val();
+                var toValue       = smilAnimation.find(".node-input-animation-toValue").val();
+                var trigger       = smilAnimation.find(".node-input-animation-trigger").val();
+                var duration      = smilAnimation.find(".node-input-animation-duration").val();
+                var repeatCount   = smilAnimation.find(".node-input-animation-repeatCount").val();
+                var freeze        = smilAnimation.find(".node-input-animation-freeze").is(":checked");
+                
+                node.smilAnimations.push({id:id, targetId:targetId, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, repeatCount:repeatCount, freeze:freeze});
+            });
+            
+            // Copy all the clickable shapes from the editableList to this node
+            node.clickableShapes = [];
+            var clickableShapesList = $("#node-input-clickable-container").editableList('items');
+            clickableShapesList.each(function(i) {
+                var clickableShape = $(this);
+                var targetId = clickableShape.find(".node-input-clickable-targetId").val();
+                
+                node.clickableShapes.push({targetId:targetId});
+            });
+        },
+        oneditcancel: function() {
+            this.editor.destroy();
+            delete this.editor;
+        },
+        oneditresize: function(size) {
+            var rows = $("#dialog-form>div:not(.node-text-editor-row)");
+            var height = $("#dialog-form").height();
+            for (var i=0; i<rows.size(); i++) {
+                height = height - $(rows[i]).outerHeight(true);
+            }
+            if ($('#node-input-templateScope').val() === "global") { height += 232; }
+            var editorRow = $("#dialog-form>div.node-text-editor-row");
+            height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
+            $(".node-text-editor").css("height",height+"px");
+            this.editor.resize();
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="ui_svg_graphics">
+    <div class="form-row" id="template-row-group">
+        <label for="node-input-group"><i class="fa fa-table"></i> Group</span></label>
+        <input type="text" id="node-input-group">
+    </div>    
+    <div class="form-row" id="template-row-size">
+        <label><i class="fa fa-object-group"></i> Size</span></label>
+        <input type="hidden" id="node-input-width">
+        <input type="hidden" id="node-input-height">
+        <button class="editor-button" id="node-input-size"></button>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <!-- Tabsheets -->
+        <ul style="background: #fff; min-width: 600px; margin-bottom: 20px;" id="node-svg-tabs"></ul>
+    </div>
+    <div id="node-svg-tabs-content" style="min-height: 350px">
+        <!-- Content of all tabsheets -->
+        <div id="node-svg-tab-editor">
+            <!-- Ace SVG editor -->
+            <div class="form-row" style="margin-bottom:0px;">
+                <label for="node-input-svgString"><i class="fa fa-copy"></i> <span data-i18n="ui_template.label.template"></span></label>
+                <input type="hidden" id="node-input-svgString" style="width: 100%; height: 450px; min-height:350px;">
+            </div>
+            <div class="form-row node-text-editor-row">
+                <div id="node-input-svg-editor" class="node-text-editor" style="width: 100%; height: 450px; min-height:350px;"></div>
+            </div>
+        </div>
+        <div id="node-svg-tab-animations">
+            <div class="form-row">
+                <!-- Table with SMIL animations -->
+                <ol id="node-input-animations-container"></ol>
+            </div>
+        </div>
+        <div id="node-svg-tab-clickable">
+            <div class="form-row">
+                <!-- Table with clickable shapes -->
+                <ol id="node-input-clickable-container"></ol>
+            </div>
+        </div>
+    </div>
+</script>
+<script type="text/x-red" data-help-name="ui_svg_graphics">
+    <p>A Node Red node to show a vector graphics (SVG) drawing inside the dashboard.</p>
+</script>
