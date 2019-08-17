@@ -8,9 +8,13 @@ npm install bartbutenaers/node-red-contrib-ui-svg
 ```
 
 ***!!!!! USE THE ABOVE COMMAND TO INSTALL IT DIRECTLY FROM GITHUB (NOT AVAILABLE ON NPM YET) !!!!***
+
 ***!!!!! ONLY USE IT FOR TESTING PURPOSES !!!!***
+
 ***!!!!! PROBABLY THE API WILL BE CHANGED SOON, WHICH MEANS SVG DATA WILL BE LOST !!!!***
+
 ***!!!!! FOLLOW OUR [DISCUSSION](https://discourse.nodered.org/t/announce-node-red-contrib-ui-svg-feedback-request/14431) ON THE NODE-RED FORUM !!!!***
+
 ***!!!!! HAVE A LOOK AT THE ISSUES LIST (ABOVE), BEFORE REGISTERING A NEW ISSUE !!!!***
 
 ## Introduction to SVG
