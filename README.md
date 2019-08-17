@@ -7,6 +7,12 @@ Run the following npm command in your Node-RED user directory (typically ~/.node
 npm install bartbutenaers/node-red-contrib-ui-svg
 ```
 
+***!!!!! USE THE ABOVE COMMAND TO INSTALL IT DIRECTLY FROM GITHUB (NOT AVAILABLE ON NPM YET) !!!!***
+***!!!!! ONLY USE IT FOR TESTING PURPOSES !!!!***
+***!!!!! PROBABLY THE API WILL BE CHANGED SOON, WHICH MEANS SVG DATA WILL BE LOST !!!!***
+***!!!!! FOLLOW OUR [DISCUSSION](https://discourse.nodered.org/t/announce-node-red-contrib-ui-svg-feedback-request/14431) ON THE NODE-RED FORUM !!!!***
+***!!!!! HAVE A LOOK AT THE ISSUES LIST (ABOVE), BEFORE REGISTERING A NEW ISSUE !!!!***
+
 ## Introduction to SVG
 Scalable Vector Graphics (SVG) is an XML-based vector image format for two-dimensional graphics with support for interactivity and animation. I'm not going to explain here how it works, because the internet is full of information about it.  If you are not familiar with SVG, I advise you to start reading some tutorials before starting with this node!
 
