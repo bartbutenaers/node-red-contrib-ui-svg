@@ -184,14 +184,33 @@
 
             // Create a table of clickable shapes
             var clickableShapesList = $("#node-input-clickable-container").css('height','450px').css('min-height','350px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:40%; margin-left:5px; display: inline-grid'><b>Element</b></div>")),
+                header: $("<div>").append($.parseHTML("<div style='width:30%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:30%; display: inline-grid'><b>Payload</b></div><div style='width:30%; display: inline-grid'><b>Topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
                     // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
-                    var targetId = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"40%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    targetId.val(clickableShape.targetId);
+                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    targetIdField.val(clickableShape.targetId);
+                    
+                    // Column 2 : Add a input field (type string) to the new row, that represents the msg.payload content 
+                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    payloadField.val(clickableShape.payload);
+                    
+                    // Column 3 : Add an input field (type string) to the new row, that represents the msg.topic content
+                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    topicField.val(clickableShape.topic);
+                    
+                    // When there is not yet a topic or payload, the target Id should be cloned (when complete) to the topic and payload (as a default value).
+                    targetIdField.on("change", function(){
+                        if (!payloadField.val() || payloadField.val() === "") {
+                            payloadField.val($(this).val());
+                        }
+                        
+                        if (!topicField.val() || topicField.val() === "") {
+                            topicField.val($(this).val());
+                        }
+                    });
                 },
                 removable: true
             });
@@ -251,8 +270,10 @@
             clickableShapesList.each(function(i) {
                 var clickableShape = $(this);
                 var targetId = clickableShape.find(".node-input-clickable-targetId").val();
+                var payload  = clickableShape.find(".node-input-clickable-payload").val();
+                var topic    = clickableShape.find(".node-input-clickable-topic").val();
                 
-                node.clickableShapes.push({targetId:targetId});
+                node.clickableShapes.push({targetId:targetId, payload:payload, topic:topic});
             });
         },
         oneditcancel: function() {
