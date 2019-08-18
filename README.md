@@ -138,6 +138,16 @@ The control message looks like this (with status is 'start' or 'stop'):
 }
 "topic": "trigger_animation"
 ```
+## Settings
+
+### Show coordinates
+When this option is selected, a ***tooltip*** will be displayed to show the current mouse location (i.e. X and Y coordinate):
+
+![svg_tooltip_coordinates](https://user-images.githubusercontent.com/14224149/63231067-79cc1e00-c216-11e9-83de-f93931f6d489.gif)
+
+This option has been introduced to simplify layouting during manual editing of the SVG string (without external SVG drawing tool).  Without this option determining the location of your shapes would require a lot of calculations or guessing ...
+
+Remark: The location is measured in the SVG coordinate system, which means the origin (X=Y=0) is in the top left of your drawing.
 
 ## Various stuff
 
