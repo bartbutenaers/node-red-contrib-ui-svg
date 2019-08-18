@@ -218,7 +218,7 @@
             // Show all the clickable shapes (stored in this node) into the editableList
             if (this.clickableShapes) {
                 this.clickableShapes.forEach(function (clickableShape, index) {
-                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId});
+                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, payload:clickableShape.payload, topic:clickableShape.topic});
                 });
             }
         },
