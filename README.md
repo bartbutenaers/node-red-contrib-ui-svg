@@ -82,15 +82,22 @@ Adding animations to your SVG graphics can be done in two ways:
 
 ### Clickable shapes
 
-![clickables](https://user-images.githubusercontent.com/14224149/63216642-942fca00-c138-11e9-94e2-34fd25eda935.png)
+![clickables](https://user-images.githubusercontent.com/14224149/63231586-691fa600-c21e-11e9-95a4-19ab7ad4dfce.png)
 
-The id of an SVG element can be added here, to make that element clickable.  This means that the mouse ***cursor*** will change when hoovering above the element, and an ***output message*** will be send as soon as the element is clicked:
+An SVG element can be added here, to make that element clickable.  This means that the mouse ***cursor*** will change when hoovering above the element, and an ***output message*** will be send as soon as the element is clicked:
 
 ![svg_click_cam](https://user-images.githubusercontent.com/14224149/63216845-b4ad5380-c13b-11e9-8aaf-c63b29a194ca.gif)
 
 ```
 [{"id":"f3883602.216b58","type":"debug","z":"60ad596.8120ba8","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":920,"y":220,"wires":[]},{"id":"1fb8c46e.6bfb5c","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"ba24f321.07795","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\"/>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\"/>\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"blue\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg>","clickableShapes":[{"targetId":"camera_living"}],"smilAnimations":[],"name":"","x":720,"y":220,"wires":[["f3883602.216b58"]]},{"id":"ba24f321.07795","type":"ui_group","z":"","name":"Floorplan test","tab":"fb3be807.e7ef18","disp":true,"width":"14","collapse":false},{"id":"fb3be807.e7ef18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
+
+A number of properties need to be entered:
++ ***Element***: the ID of the SVG element that needs to become clickable.
++ ***Payload***: the ```msg.payload``` content of the output message.
++ ***Topic***: the ```msg.topic``` content of the output message.
+
+Remark: when the 'Element' column is entered, that ID will automatically be copied to both other columns (as default value).
 
 ## Control via messages
 Most of the SVG information can be controlled by sending input messages to this node.
