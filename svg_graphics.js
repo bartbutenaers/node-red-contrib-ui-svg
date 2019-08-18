@@ -24,18 +24,19 @@ module.exports = function(RED) {
     // - Working with layers : see svg-edit who uses groups/titles
     // - Integration with svg-edit
     // - Best way to add fontAwesome icons?
-    // - RepeatCount default op 1 zetten
-    // - Create custom icon
     // - Animations start automatically, which is not what we want
     // - Scrollbars appear when area too small
     // - Show mouse coordinates if requested
     // - Waar preserve aspect ratio zetten (op config screen of in de svg tag)
+    // - Remove expand button because it doesn't work
+    
 
     function HTML(config) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config);
         
         var html = String.raw`
+            <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
             <div id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + config.svgString + `</div>
         `;
                         
@@ -93,6 +94,9 @@ module.exports = function(RED) {
                             $scope.config = config;
 
                             $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
+                            $scope.svg = $scope.rootDiv.querySelector("svg");
+                            
+                            $scope.svg.style.cursor = "crosshair";
                             
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
                             config.clickableShapes.forEach(function(clickableShape) {
@@ -103,7 +107,13 @@ module.exports = function(RED) {
                                 var element = $scope.rootDiv.querySelector("#" + clickableShape.targetId);
                                 
                                 if (element) {
-                                    element.style.cursor = "pointer";
+                                    // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
+                                    // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
+                                    // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
+                                    //if (!config.showMouseLines) {
+                                        element.style.cursor = "pointer";
+                                    //}
+                                    
                                     element.onclick = function() {
                                         // TODO send coordinates
                                         $scope.send({payload: clickableShape.targetId, topic: "clicked"}); 
@@ -159,6 +169,100 @@ module.exports = function(RED) {
                                     element.appendChild(animationElement);
                                 }
                             });
+                            
+                            if (config.showCoordinates) {
+                                $scope.tooltip = document.getElementById("tooltip_" + config.id);
+
+                                $scope.svg.addEventListener("mousemove", function(evt) {
+                                    // Make sure the tooltip becomes visible, when inside the SVG drawing
+                                    $scope.tooltip.style.display = "block";
+
+                                    // Get the mouse coordinates (with origin at left top of the SVG drawing)
+                                    var pt = $scope.svg.createSVGPoint();
+                                    pt.x = evt.pageX;
+                                    pt.y = evt.pageY;
+                                    pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                    pt.x = Math.round(pt.x);
+                                    pt.y = Math.round(pt.y);
+                                    
+                                    // Show the coordinates in the tooltip
+                                    $scope.tooltip.innerHTML = `${pt.x},${pt.y}`;
+                                    
+                                    // Make sure the tooltip follows the mouse cursor (very near)
+                                    // Strangely enough ClientX/ClientY result in a tooltip on the wrong location ...
+                                    $scope.tooltip.style.left = (evt.offsetX + 10) + 'px';
+                                    $scope.tooltip.style.top  = (evt.offsetY + 10) + 'px';
+                                }, false);
+
+                                $scope.svg.addEventListener("mouseout", function(evt) {
+                                    // The tooltip should be invisible, when leaving the SVG drawing
+                                    $scope.tooltip.style.display = "none";
+                                }, false);
+                            }
+                            
+                            /* TODO When drawing the lines, they (and also the tooltip) becomes invisible quite frequently.
+                               Seems that the 'mouseout' event is triggered, even when we are INSIDE the svg ...
+                               Perhaps it has to do with this:  https://stackoverflow.com/questions/24636602/mouseout-mouseleave-gets-fired-when-mouse-moves-inside-the-svg-path-element
+                            
+                            if (config.showMouseLines) {                                
+                                if (!$scope.horizontalMouseLine) {
+                                    // Create a horizontal mouse line only once
+                                    $scope.horizontalMouseLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                                    $scope.horizontalMouseLine.setAttribute('id', 'horizontalMouseLine');
+                                    $scope.horizontalMouseLine.setAttribute('x1', -Number.MAX_SAFE_INTEGER);
+                                    $scope.horizontalMouseLine.setAttribute('y1', '0');
+                                    $scope.horizontalMouseLine.setAttribute('x2', Number.MAX_SAFE_INTEGER);
+                                    $scope.horizontalMouseLine.setAttribute('y2', '0');
+                                    $scope.horizontalMouseLine.setAttribute("stroke", "black");
+                                    $scope.horizontalMouseLine.setAttribute("stroke-width", "2");
+                                    $scope.horizontalMouseLine.setAttribute("display", "none");
+                                    
+                                    // Insert this line as last shape in the SVG, to make sure it is drawn on top of all other shapes
+                                    $scope.svg.appendChild($scope.horizontalMouseLine); 
+                                }
+                                
+                                if (!$scope.verticalMouseLine) {
+                                    // Create a horizontal mouse line only once
+                                    $scope.verticalMouseLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                                    $scope.verticalMouseLine.setAttribute('id', 'verticalMouseLine');
+                                    $scope.verticalMouseLine.setAttribute('x1', '0');
+                                    $scope.verticalMouseLine.setAttribute('y1', -Number.MAX_SAFE_INTEGER);
+                                    $scope.verticalMouseLine.setAttribute('x2', '0');
+                                    $scope.verticalMouseLine.setAttribute('y2', Number.MAX_SAFE_INTEGER);
+                                    $scope.verticalMouseLine.setAttribute("stroke", "black");
+                                    $scope.verticalMouseLine.setAttribute("stroke-width", "2");
+                                    $scope.verticalMouseLine.setAttribute("display", "none");
+                                    
+                                    // Insert this line as last shape in the SVG, to make sure it is drawn on top of all other shapes
+                                    $scope.svg.appendChild($scope.verticalMouseLine); 
+                                }
+                                
+                                $scope.svg.addEventListener("mousemove", function(evt) {
+                                    // Make both lines becomes visible, when inside the SVG drawing
+                                    $scope.horizontalMouseLine.style.display = "block";
+                                    $scope.verticalMouseLine.style.display = "block";
+                                    
+                                    // Get the mouse coordinates (with origin at left top of the SVG drawing)
+                                    var pt = $scope.svg.createSVGPoint();
+                                    pt.x = evt.pageX;
+                                    pt.y = evt.pageY;
+                                    pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                    
+                                    // Draw the horizontal mouse line through the current mouse location
+                                    $scope.horizontalMouseLine.setAttribute('y1', pt.y);
+                                    $scope.horizontalMouseLine.setAttribute('y2', pt.y);
+                                    
+                                    // Draw the vertical mouse line through the current mouse location
+                                    $scope.verticalMouseLine.setAttribute('x1', pt.x);
+                                    $scope.verticalMouseLine.setAttribute('x2', pt.x);
+                                }, false);
+
+                                $scope.svg.addEventListener("mouseout", function(evt) {
+                                    // Both mouse lines should be invisible, when leaving the SVG drawing
+                                    $scope.horizontalMouseLine.style.display = "none";
+                                    $scope.verticalMouseLine.style.display = "none";
+                                }, false);
+                            }*/
                         }
 
                         $scope.$watch('msg', function(msg) {
