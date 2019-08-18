@@ -116,7 +116,7 @@ module.exports = function(RED) {
                                     
                                     element.onclick = function() {
                                         // TODO send coordinates
-                                        $scope.send({payload: clickableShape.targetId, topic: "clicked"}); 
+                                        $scope.send({payload: clickableShape.payload, topic: clickableShape.topic}); 
                                     }
                                 }
                             });
