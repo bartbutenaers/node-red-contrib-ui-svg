@@ -7,6 +7,12 @@
     "author": {
         "name": "Bart Butenaers"
     },
+    "contributors": [
+        {
+            "name": "Stephen McLaughlin",
+            "url": "https://github.com/Steve-Mcl"
+        }
+    ],
     "license": "Apache-2.0",
     "keywords": [
         "node-red",
