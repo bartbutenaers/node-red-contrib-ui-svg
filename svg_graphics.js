@@ -52,6 +52,14 @@ module.exports = function(RED) {
         return true;
     }
     
+    function setResult(msg, field, value) {
+        field = field ? field : "payload";
+        const keys = field.split('.');
+        const lastKey = keys.pop();
+        const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, msg); 
+        lastObj[lastKey] = value;
+    };
+
     var ui = undefined;
     
     function SvgGraphicsNode(config) {
@@ -61,7 +69,8 @@ module.exports = function(RED) {
                 ui = RED.require("node-red-dashboard")(RED);
             }
             RED.nodes.createNode(this, config);
-
+            node.outputField = config.outputField;
+            
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
                 var done = ui.addWidget({
@@ -82,10 +91,24 @@ module.exports = function(RED) {
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
-                        debugger;
-                        if (orig) {
-                            return orig.msg;
+                        //debugger;
+                        if (!orig || !orig.msg) {
+                           return;//TODO: what to do if empty? Currently, halt flow by returning nothing
                         }
+                        let newMsg = {
+                            topic: orig.msg.topic,
+                            elementId: orig.msg.elementId,
+                            event: orig.msg.event,
+                            coordinates: orig.msg.coordinates,
+                        };
+                        RED.util.evaluateNodeProperty(orig.msg.payload,orig.msg.payloadType,node,orig.msg,(err,value) => {
+                            if (err) {
+                                return;//TODO: what to do on error? Currently, halt flow by returning nothing
+                            } else {
+                                setResult(newMsg, node.outputField, value); 
+                            }
+                        }); 
+                        return newMsg;
                     },
                     initController: function($scope, events) {
                         $scope.flag = true;
@@ -114,9 +137,25 @@ module.exports = function(RED) {
                                         element.style.cursor = "pointer";
                                     //}
                                     
-                                    element.onclick = function() {
-                                        // TODO send coordinates
-                                        $scope.send({payload: clickableShape.payload, topic: clickableShape.topic}); 
+                                    element.onclick = function(evt) {
+                                        // Get the mouse coordinates (with origin at left top of the SVG drawing)
+                                        debugger
+                                        var pt = $scope.svg.createSVGPoint();
+                                        pt.x = evt.pageX;
+                                        pt.y = evt.pageY;
+                                        pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+
+                                        $scope.send({
+                                            event: "clicked",
+                                            elementId: clickableShape.targetId,
+                                            coordinates:{
+                                                x: pt.x,
+                                                y: pt.y
+                                            },
+                                            payload: clickableShape.payload, 
+                                            payloadType: clickableShape.payloadType, 
+                                            topic: clickableShape.topic
+                                        }); 
                                     }
                                 }
                             });

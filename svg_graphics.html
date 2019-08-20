@@ -34,6 +34,7 @@
             clickableShapes: {value: []},
             smilAnimations: {value: []},
             showCoordinates: {value: false},
+            outputField: {value: "payload"},
             //showMouseLines: {value: false},
             name: {value: ''}
         },
@@ -183,28 +184,43 @@
             }
 
             // Create a table of clickable shapes
+            const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
+            const defaultPayloadType = "str";
             var clickableShapesList = $("#node-input-clickable-container").css('height','450px').css('min-height','350px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:30%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:30%; display: inline-grid'><b>Payload</b></div><div style='width:30%; display: inline-grid'><b>Topic</b></div>")),
+                header: $("<div>").append($.parseHTML("<div style='width:24%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:44%; display: inline-grid'><b>Payload</b></div><div style='width:24%; display: inline-grid'><b>Topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
                     // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
-                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
                     
                     // Column 2 : Add a input field (type string) to the new row, that represents the msg.payload content 
-                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    payloadField.val(clickableShape.payload);
+                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"44%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     
+                    //Column 2 hidden item (payloadType)
+                    var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
+                    var payloadType = supportedPayloadTypes.includes(clickableShape.payloadType) ? clickableShape.payloadType : defaultPayloadType;
+                    payloadField.typedInput({
+                        default: defaultPayloadType,
+                        typeField: payloadTypeField,
+                        types: supportedPayloadTypes
+                    });
+                    payloadField.typedInput("type", payloadType);              
+                    payloadField.typedInput("value", clickableShape.payload);   
+                    payloadField.typedInput('width',payloadField.typedInput('width'));//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
+
                     // Column 3 : Add an input field (type string) to the new row, that represents the msg.topic content
-                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(clickableShape.topic);
+                    
                     
                     // When there is not yet a topic or payload, the target Id should be cloned (when complete) to the topic and payload (as a default value).
                     targetIdField.on("change", function(){
-                        if (!payloadField.val() || payloadField.val() === "") {
-                            payloadField.val($(this).val());
+                        
+                        if (payloadType === "str" && !payloadField.typedInput("value")) {
+                            payloadField.typedInput('value',$(this).val());
                         }
                         
                         if (!topicField.val() || topicField.val() === "") {
@@ -218,7 +234,7 @@
             // Show all the clickable shapes (stored in this node) into the editableList
             if (this.clickableShapes) {
                 this.clickableShapes.forEach(function (clickableShape, index) {
-                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, payload:clickableShape.payload, topic:clickableShape.topic});
+                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
                 });
             }
         },
@@ -271,9 +287,10 @@
                 var clickableShape = $(this);
                 var targetId = clickableShape.find(".node-input-clickable-targetId").val();
                 var payload  = clickableShape.find(".node-input-clickable-payload").val();
+                var payloadType  = clickableShape.find(".node-input-clickable-payloadType").val();
                 var topic    = clickableShape.find(".node-input-clickable-topic").val();
                 
-                node.clickableShapes.push({targetId:targetId, payload:payload, topic:topic});
+                node.clickableShapes.push({targetId:targetId, payload:payload, payloadType:payloadType, topic:topic});
             });
         },
         oneditcancel: function() {
@@ -333,6 +350,16 @@
             </div>
         </div>
         <div id="node-svg-tab-clickable">
+            <div class="form-row" style="padding-left: 2px;">
+                <label for="node-input-outputField"><i class="fa fa-envelope"></i> Output to</label>
+                <div class="red-ui-typedInput-container" style="width: 70%; margin-right: 5px; margin-left: 3px;">    
+                    <button class="red-ui-typedInput-type-label">msg.</button>
+                    <div class="red-ui-typedInput-input" style="left: 36px; right: 2px;">
+                        <input type="text" id="node-input-outputField" placeholder="Payload" 
+                            style="width: 100%; margin-right: 0px; margin-left: 0px; border-top-right-radius: 0px; border-bottom-right-radius: 0px;" >
+                    </div>
+                </div>
+            </div>
             <div class="form-row">
                 <!-- Table with clickable shapes -->
                 <ol id="node-input-clickable-container"></ol>
