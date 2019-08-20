@@ -12,6 +12,33 @@
 -->
 
 <script type="text/javascript">
+
+    function updateEditorHeight(node, editor) {
+        debugger
+        if ( editor ) {
+            var  height = 450;
+            // If the editor is in full-screen ...
+            node.fullscreen = document.fullscreenElement ? true : false;
+            if (node.fullscreen) {
+                height = parseInt($('#node-svg-tab-editor').css('height'));
+                height -= 25;
+                height -= parseInt($('#node-svg-tab-editor > div:nth-child(1)').css('height'));
+                height -= parseInt($('#node-expand-svg-editor').css('height'));
+                // Replace the expand icon with a compress icon
+                $('#node-expand-svg-editor').html('<i class="fa fa-compress"></i>')
+            } else {               
+                // Replace the compress icon with a expand icon
+                $('#node-expand-svg-editor').html('<i class="fa fa-expand"></i>')
+            }
+            
+            // Set the height of the edit box
+            $('#node-input-svg-editor').css('height',height+'px')
+            // Get the content to match the edit box size
+            editor.resize()
+        }
+    } 
+
+
     RED.nodes.registerType('ui_svg_graphics',{
         category: 'dashboard',
         color: 'rgb( 63, 173, 181)',
@@ -103,7 +130,7 @@
                 id: "node-svg-tab-settings",
                 label: "Settings"
             });              
-            
+            this.fullscreen = false;
             this.editor = RED.editor.createEditor({
                 id: 'node-input-svg-editor',
                 mode: 'ace/mode/html',
@@ -117,6 +144,24 @@
                 fields:['name']
             });
             this.editor.focus();
+
+            var fullScrElement = $('#node-svg-tab-editor')[0];
+            var fsr = fullScrElement.requestFullscreen || fullScrElement.mozRequestFullScreen || fullScrElement.webkitRequestFullscreen || fullScrElement.msRequestFullScreen;
+            if(fsr){
+                $('#node-expand-svg-editor').click(function(e) {
+                    e.preventDefault()
+                    if (that.fullscreen === false) {
+                        if (fsr) {
+                            fsr.call(fullScrElement);//triggers oneditresize()
+                        }
+                    } else {
+                        document.exitFullscreen();//triggers oneditresize()
+                    }
+                })
+            } else {
+                $('#node-expand-svg-editor').hide();
+            }
+            
 
             // Create a table of (SMIL) animations
             // Columns: element id - attributeName - from - to - duration - repeatCount - freeze
@@ -307,7 +352,7 @@
             var editorRow = $("#dialog-form>div.node-text-editor-row");
             height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
             $(".node-text-editor").css("height",height+"px");
-            this.editor.resize();
+            updateEditorHeight(this, this.editor)
         }
     });
 </script>
@@ -342,6 +387,7 @@
             <div class="form-row node-text-editor-row">
                 <div id="node-input-svg-editor" class="node-text-editor" style="width: 100%; height: 450px; min-height:350px;"></div>
             </div>
+            <button id="node-expand-svg-editor" class="editor-button editor-button-small"><i class="fa fa-expand"></i></button>
         </div>
         <div id="node-svg-tab-animations">
             <div class="form-row">
