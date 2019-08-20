@@ -14,27 +14,58 @@
 <script type="text/javascript">
 
     function updateEditorHeight(node, editor) {
-        debugger
+        console.log("updateEditorHeight");
+        //resize the tab content divs to available height
+        var formRows = $("#dialog-form>div:not(#node-svg-tabs-content)");
+        var height = $("#dialog-form").height() - 5;
+        for (let i=0; i < formRows.length; i++) {
+            height -= $(formRows[i]).outerHeight(true);
+        }
+        //if ($('#node-input-templateScope').val() === "global") { h += 232; }
+        $("#node-svg-tabs-content").css("height",height+"px");//set size of tabs area
+
+        //now resize the item with class form-row-auto-height
+        var tabs = $('.node-svg-tab-content');
+        for (let index = 0; index < tabs.length; index++) {
+            let tab = $(tabs[index]);
+            tab.css("height",height+"px");
+            let expandRow = $(tab.find('.form-row-auto-height'));
+            if(expandRow && expandRow.length){
+                let tabHeight = height;
+                let childRows = tab.find('.form-row:not(.form-row-auto-height)');
+                for (let i=0; i<childRows.size(); i++) {
+                    tabHeight -= $(childRows[i]).outerHeight(true);
+                }
+                let ol = $(expandRow.find(".red-ui-editableList-list"));
+                if(ol && ol.length){
+                    ol.editableList("height",tabHeight);
+                } else {
+                    expandRow.css("height",tabHeight+"px");
+                }
+            } 
+        }
+
         if ( editor ) {
-            var  height = 450;
-            // If the editor is in full-screen ...
+            // Is the editor is in full-screen? ...
             node.fullscreen = document.fullscreenElement ? true : false;
+
+            var rows = $("#node-svg-tab-editor>div:not(.node-text-editor-row)");
+            var height = $("#node-svg-tab-editor").height() - 25;
+            for (var i=0; i<rows.size(); i++) {
+                height = height - $(rows[i]).outerHeight(true);
+            }
+            if ($('#node-input-templateScope').val() === "global") { height += 232; }
+           
             if (node.fullscreen) {
-                height = parseInt($('#node-svg-tab-editor').css('height'));
-                height -= 25;
-                height -= parseInt($('#node-svg-tab-editor > div:nth-child(1)').css('height'));
-                height -= parseInt($('#node-expand-svg-editor').css('height'));
-                // Replace the expand icon with a compress icon
-                $('#node-expand-svg-editor').html('<i class="fa fa-compress"></i>')
+                $('#node-expand-svg-editor').html('<i class="fa fa-compress"></i>')//compress icon
             } else {               
-                // Replace the compress icon with a expand icon
-                $('#node-expand-svg-editor').html('<i class="fa fa-expand"></i>')
+                $('#node-expand-svg-editor').html('<i class="fa fa-expand"></i>')//expand icon
             }
             
             // Set the height of the edit box
-            $('#node-input-svg-editor').css('height',height+'px')
+            $('#node-input-svg-editor').css('height',height+'px');
             // Get the content to match the edit box size
-            editor.resize()
+            if(editor) editor.resize();
         }
     } 
 
@@ -112,6 +143,7 @@
                     // Show only the content (i.e. the children) of the selected tabsheet, and hide the others
                     $("#node-svg-tabs-content").children().hide();
                     $("#" + tab.id).show();
+                    updateEditorHeight(that,that.editor);
                 }
             });
             tabs.addTab({
@@ -165,7 +197,7 @@
 
             // Create a table of (SMIL) animations
             // Columns: element id - attributeName - from - to - duration - repeatCount - freeze
-            var smilAnimationsList = $("#node-input-animations-container").css('height','450px').css('min-height','350px').css('min-width','450px').editableList({
+            var smilAnimationsList = $("#node-input-animations-container").css('min-height','150px').css('min-width','450px').editableList({
                 header: $("<div>").append($.parseHTML("<div style='width:11%; margin-left:5px; display: inline-grid'><b>Id</b></div><div style='width:11%; display: inline-grid'><b>Target</b></div><div style='width:10%; display: inline-grid'><b>Attribute</b></div><div style='width:10%; display: inline-grid'><b>From</b></div><div style='width:10%; display: inline-grid'><b>To</b></div><div style='width:12%; display: inline-grid'><b>Trigger</b></div><div style='width:10%; display: inline-grid'><b>Duration</b></div><div style='width:10%; display: inline-grid'><b>Repeat</b></div><div style='width:6%; display: inline-grid'><b>Freeze</b></div>")),
                 addItem: function(container, i, smilAnimation) {
                     // Add a new row to the editableList
@@ -231,7 +263,7 @@
             // Create a table of clickable shapes
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
-            var clickableShapesList = $("#node-input-clickable-container").css('height','450px').css('min-height','350px').css('min-width','450px').editableList({
+            var clickableShapesList = $("#node-input-clickable-container").css('min-height','150px').css('min-width','450px').editableList({
                 header: $("<div>").append($.parseHTML("<div style='width:24%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:44%; display: inline-grid'><b>Payload</b></div><div style='width:24%; display: inline-grid'><b>Topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
@@ -285,8 +317,6 @@
         },
         oneditsave: function() {
             var node = this;
-            debugger;
-            
             var annot = this.editor.getSession().getAnnotations();
             this.noerr = 0;
             $("#node-input-noerr").val(0);
@@ -343,16 +373,7 @@
             delete this.editor;
         },
         oneditresize: function(size) {
-            var rows = $("#dialog-form>div:not(.node-text-editor-row)");
-            var height = $("#dialog-form").height();
-            for (var i=0; i<rows.size(); i++) {
-                height = height - $(rows[i]).outerHeight(true);
-            }
-            if ($('#node-input-templateScope').val() === "global") { height += 232; }
-            var editorRow = $("#dialog-form>div.node-text-editor-row");
-            height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
-            $(".node-text-editor").css("height",height+"px");
-            updateEditorHeight(this, this.editor)
+            updateEditorHeight(this,this.editor);
         }
     });
 </script>
@@ -376,26 +397,26 @@
         <!-- Tabsheets -->
         <ul style="background: #fff; min-width: 600px; margin-bottom: 20px;" id="node-svg-tabs"></ul>
     </div>
-    <div id="node-svg-tabs-content" style="min-height: 350px">
+    <div id="node-svg-tabs-content" style="min-height: 150px">
         <!-- Content of all tabsheets -->
-        <div id="node-svg-tab-editor">
+        <div id="node-svg-tab-editor" class="node-svg-tab-content">
             <!-- Ace SVG editor -->
             <div class="form-row" style="margin-bottom:0px;">
                 <label for="node-input-svgString"><i class="fa fa-copy"></i> <span data-i18n="ui_template.label.template"></span></label>
-                <input type="hidden" id="node-input-svgString" style="width: 100%; height: 450px; min-height:350px;">
+                <input type="hidden" id="node-input-svgString" style="width: 100%; height: 100%; ">
             </div>
-            <div class="form-row node-text-editor-row">
-                <div id="node-input-svg-editor" class="node-text-editor" style="width: 100%; height: 450px; min-height:350px;"></div>
+            <div class="form-row node-text-editor-row form-row-auto-height">
+                <div id="node-input-svg-editor" class="node-text-editor" style="width: 100%; height: 100%; min-height:150px;"></div>
+                <button id="node-expand-svg-editor" class="editor-button editor-button-small" style="margin-top: 4px;"><i class="fa fa-expand"></i></button>
             </div>
-            <button id="node-expand-svg-editor" class="editor-button editor-button-small"><i class="fa fa-expand"></i></button>
         </div>
-        <div id="node-svg-tab-animations">
-            <div class="form-row">
+        <div id="node-svg-tab-animations" class="node-svg-tab-content">
+            <div class="form-row form-row-auto-height">
                 <!-- Table with SMIL animations -->
                 <ol id="node-input-animations-container"></ol>
             </div>
         </div>
-        <div id="node-svg-tab-clickable">
+        <div id="node-svg-tab-clickable" class="node-svg-tab-content">
             <div class="form-row" style="padding-left: 2px;">
                 <label for="node-input-outputField"><i class="fa fa-envelope"></i> Output to</label>
                 <div class="red-ui-typedInput-container" style="width: 70%; margin-right: 5px; margin-left: 3px;">    
@@ -406,12 +427,12 @@
                     </div>
                 </div>
             </div>
-            <div class="form-row">
+            <div class="form-row form-row-auto-height">
                 <!-- Table with clickable shapes -->
                 <ol id="node-input-clickable-container"></ol>
             </div>
         </div>
-        <div id="node-svg-tab-settings">
+        <div id="node-svg-tab-settings" class="node-svg-tab-content">
             <div class="form-row">
                 <input type="checkbox" id="node-input-showCoordinates" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-showCoordinates" style="width:50%;"> Show mouse coordinates (as tooltip)</label>
