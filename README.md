@@ -1,6 +1,8 @@
 # node-red-contrib-ui-svg
 A Node-RED widget node to show interactive SVG (vector graphics) in the dashboard
 
+Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner in crime for this node!
+
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
 ```
