@@ -12,6 +12,64 @@
 -->
 
 <script type="text/javascript">
+
+    function updateEditorHeight(node, editor) {
+        console.log("updateEditorHeight");
+        //resize the tab content divs to available height
+        var formRows = $("#dialog-form>div:not(#node-svg-tabs-content)");
+        var height = $("#dialog-form").height() - 5;
+        for (let i=0; i < formRows.length; i++) {
+            height -= $(formRows[i]).outerHeight(true);
+        }
+        //if ($('#node-input-templateScope').val() === "global") { h += 232; }
+        $("#node-svg-tabs-content").css("height",height+"px");//set size of tabs area
+
+        //now resize the item with class form-row-auto-height
+        var tabs = $('.node-svg-tab-content');
+        for (let index = 0; index < tabs.length; index++) {
+            let tab = $(tabs[index]);
+            tab.css("height",height+"px");
+            let expandRow = $(tab.find('.form-row-auto-height'));
+            if(expandRow && expandRow.length){
+                let tabHeight = height;
+                let childRows = tab.find('.form-row:not(.form-row-auto-height)');
+                for (let i=0; i<childRows.size(); i++) {
+                    tabHeight -= $(childRows[i]).outerHeight(true);
+                }
+                let ol = $(expandRow.find(".red-ui-editableList-list"));
+                if(ol && ol.length){
+                    ol.editableList("height",tabHeight);
+                } else {
+                    expandRow.css("height",tabHeight+"px");
+                }
+            } 
+        }
+
+        if ( editor ) {
+            // Is the editor is in full-screen? ...
+            node.fullscreen = document.fullscreenElement ? true : false;
+
+            var rows = $("#node-svg-tab-editor>div:not(.node-text-editor-row)");
+            var height = $("#node-svg-tab-editor").height() - 25;
+            for (var i=0; i<rows.size(); i++) {
+                height = height - $(rows[i]).outerHeight(true);
+            }
+            if ($('#node-input-templateScope').val() === "global") { height += 232; }
+           
+            if (node.fullscreen) {
+                $('#node-expand-svg-editor').html('<i class="fa fa-compress"></i>')//compress icon
+            } else {               
+                $('#node-expand-svg-editor').html('<i class="fa fa-expand"></i>')//expand icon
+            }
+            
+            // Set the height of the edit box
+            $('#node-input-svg-editor').css('height',height+'px');
+            // Get the content to match the edit box size
+            if(editor) editor.resize();
+        }
+    } 
+
+
     RED.nodes.registerType('ui_svg_graphics',{
         category: 'dashboard',
         color: 'rgb( 63, 173, 181)',
@@ -34,6 +92,7 @@
             clickableShapes: {value: []},
             smilAnimations: {value: []},
             showCoordinates: {value: false},
+            outputField: {value: "payload"},
             //showMouseLines: {value: false},
             name: {value: ''}
         },
@@ -84,6 +143,7 @@
                     // Show only the content (i.e. the children) of the selected tabsheet, and hide the others
                     $("#node-svg-tabs-content").children().hide();
                     $("#" + tab.id).show();
+                    updateEditorHeight(that,that.editor);
                 }
             });
             tabs.addTab({
@@ -96,13 +156,13 @@
             });
             tabs.addTab({
                 id: "node-svg-tab-clickable",
-                label: "Clickable shapes"
+                label: "Events"
             });
             tabs.addTab({
                 id: "node-svg-tab-settings",
                 label: "Settings"
             });              
-            
+            this.fullscreen = false;
             this.editor = RED.editor.createEditor({
                 id: 'node-input-svg-editor',
                 mode: 'ace/mode/html',
@@ -117,9 +177,27 @@
             });
             this.editor.focus();
 
+            var fullScrElement = $('#node-svg-tab-editor')[0];
+            var fsr = fullScrElement.requestFullscreen || fullScrElement.mozRequestFullScreen || fullScrElement.webkitRequestFullscreen || fullScrElement.msRequestFullScreen;
+            if(fsr){
+                $('#node-expand-svg-editor').click(function(e) {
+                    e.preventDefault()
+                    if (that.fullscreen === false) {
+                        if (fsr) {
+                            fsr.call(fullScrElement);//triggers oneditresize()
+                        }
+                    } else {
+                        document.exitFullscreen();//triggers oneditresize()
+                    }
+                })
+            } else {
+                $('#node-expand-svg-editor').hide();
+            }
+            
+
             // Create a table of (SMIL) animations
             // Columns: element id - attributeName - from - to - duration - repeatCount - freeze
-            var smilAnimationsList = $("#node-input-animations-container").css('height','450px').css('min-height','350px').css('min-width','450px').editableList({
+            var smilAnimationsList = $("#node-input-animations-container").css('min-height','150px').css('min-width','450px').editableList({
                 header: $("<div>").append($.parseHTML("<div style='width:11%; margin-left:5px; display: inline-grid'><b>Id</b></div><div style='width:11%; display: inline-grid'><b>Target</b></div><div style='width:10%; display: inline-grid'><b>Attribute</b></div><div style='width:10%; display: inline-grid'><b>From</b></div><div style='width:10%; display: inline-grid'><b>To</b></div><div style='width:12%; display: inline-grid'><b>Trigger</b></div><div style='width:10%; display: inline-grid'><b>Duration</b></div><div style='width:10%; display: inline-grid'><b>Repeat</b></div><div style='width:6%; display: inline-grid'><b>Freeze</b></div>")),
                 addItem: function(container, i, smilAnimation) {
                     // Add a new row to the editableList
@@ -183,28 +261,70 @@
             }
 
             // Create a table of clickable shapes
-            var clickableShapesList = $("#node-input-clickable-container").css('height','450px').css('min-height','350px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:30%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:30%; display: inline-grid'><b>Payload</b></div><div style='width:30%; display: inline-grid'><b>Topic</b></div>")),
+            const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
+            const defaultPayloadType = "str";
+            var clickableShapesList = $("#node-input-clickable-container").css('min-height','150px').css('min-width','450px').editableList({
+                header: $("<div>").append($.parseHTML("<div style='width:18%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:18%; display: inline-grid'><b>Action</b></div><div style='width:38%; display: inline-grid'><b>Payload</b></div><div style='width:18%; display: inline-grid'><b>Topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
                     // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
-                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
                     
-                    // Column 2 : Add a input field (type string) to the new row, that represents the msg.payload content 
-                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    payloadField.val(clickableShape.payload);
+                    // Column 2 : Add an input field (type string) to the new row, that represents the SVG element ID 
+                    var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var actionOptions = {
+                        //https://www.w3.org/TR/2015/WD-SVG2-20150407/interact.html#SVGEvents
+                        'click':'click',//A click is defined as a mousedown and mouseup over the same screen location. Works on tablet too.
+                        'mousedown':'mousedown',//Occurs when the pointing device button is pressed over an element.
+                        'mouseup':'mouseup',//Occurs when the pointing device button is released over an element.
+                        'mouseover':'mouseover',//Occurs when the pointing device is moved onto an element.
+                        'mouseout':'mouseout', //Occurs when the pointing device is moved away from an element
+                        //'mousemove':'mousemove', //Occurs when the pointing device is moved while it is over an element.
+                        'focus':'focus',//Occurs when an element receives focus.
+                        'focusin':'focusin',//Occurs when an element is about to receive focus
+                        'focusout':'focusout',//Occurs when an element is about to lose focus.
+                        'blur':'blur',//Occurs when an element loses focus.
+                        'keydown':'keydown',//Occurs when a key is pressed down
+                        'keyup':'keyup',
+                        //https://www.w3.org/TR/touch-events/#list-of-touchevent-types
+                        'touchstart':'touchstart', //mobile/tablet only
+                        'touchend':'touchend', //mobile/tablet only
+                        // 'touchmove':'touchmove',
+                        // 'touchcancel':'touchcancel',
+                    }
+                    for(var val in actionOptions) {
+                        $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
+                    }
+                    actionField.val(clickableShape.action || "click");
+
+                    // Column 3 : Add a input field (type string) to the new row, that represents the msg.payload content 
+                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     
-                    // Column 3 : Add an input field (type string) to the new row, that represents the msg.topic content
-                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    //Column 3 hidden item (payloadType)
+                    var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
+                    var payloadType = supportedPayloadTypes.includes(clickableShape.payloadType) ? clickableShape.payloadType : defaultPayloadType;
+                    payloadField.typedInput({
+                        default: defaultPayloadType,
+                        typeField: payloadTypeField,
+                        types: supportedPayloadTypes
+                    });
+                    payloadField.typedInput("type", payloadType);              
+                    payloadField.typedInput("value", clickableShape.payload);   
+                    payloadField.typedInput('width',payloadField.typedInput('width'));//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
+
+                    // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
+                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(clickableShape.topic);
+                    
                     
                     // When there is not yet a topic or payload, the target Id should be cloned (when complete) to the topic and payload (as a default value).
                     targetIdField.on("change", function(){
-                        if (!payloadField.val() || payloadField.val() === "") {
-                            payloadField.val($(this).val());
+                        
+                        if (payloadType === "str" && !payloadField.typedInput("value")) {
+                            payloadField.typedInput('value',$(this).val());
                         }
                         
                         if (!topicField.val() || topicField.val() === "") {
@@ -218,14 +338,12 @@
             // Show all the clickable shapes (stored in this node) into the editableList
             if (this.clickableShapes) {
                 this.clickableShapes.forEach(function (clickableShape, index) {
-                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, payload:clickableShape.payload, topic:clickableShape.topic});
+                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
                 });
             }
         },
         oneditsave: function() {
             var node = this;
-            debugger;
-            
             var annot = this.editor.getSession().getAnnotations();
             this.noerr = 0;
             $("#node-input-noerr").val(0);
@@ -270,10 +388,12 @@
             clickableShapesList.each(function(i) {
                 var clickableShape = $(this);
                 var targetId = clickableShape.find(".node-input-clickable-targetId").val();
+                var action = clickableShape.find(".node-input-clickable-action").val();
                 var payload  = clickableShape.find(".node-input-clickable-payload").val();
+                var payloadType  = clickableShape.find(".node-input-clickable-payloadType").val();
                 var topic    = clickableShape.find(".node-input-clickable-topic").val();
                 
-                node.clickableShapes.push({targetId:targetId, payload:payload, topic:topic});
+                node.clickableShapes.push({targetId:targetId, action:action, payload:payload, payloadType:payloadType, topic:topic});
             });
         },
         oneditcancel: function() {
@@ -281,16 +401,7 @@
             delete this.editor;
         },
         oneditresize: function(size) {
-            var rows = $("#dialog-form>div:not(.node-text-editor-row)");
-            var height = $("#dialog-form").height();
-            for (var i=0; i<rows.size(); i++) {
-                height = height - $(rows[i]).outerHeight(true);
-            }
-            if ($('#node-input-templateScope').val() === "global") { height += 232; }
-            var editorRow = $("#dialog-form>div.node-text-editor-row");
-            height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
-            $(".node-text-editor").css("height",height+"px");
-            this.editor.resize();
+            updateEditorHeight(this,this.editor);
         }
     });
 </script>
@@ -314,31 +425,42 @@
         <!-- Tabsheets -->
         <ul style="background: #fff; min-width: 600px; margin-bottom: 20px;" id="node-svg-tabs"></ul>
     </div>
-    <div id="node-svg-tabs-content" style="min-height: 350px">
+    <div id="node-svg-tabs-content" style="min-height: 150px">
         <!-- Content of all tabsheets -->
-        <div id="node-svg-tab-editor">
+        <div id="node-svg-tab-editor" class="node-svg-tab-content">
             <!-- Ace SVG editor -->
             <div class="form-row" style="margin-bottom:0px;">
                 <label for="node-input-svgString"><i class="fa fa-copy"></i> <span data-i18n="ui_template.label.template"></span></label>
-                <input type="hidden" id="node-input-svgString" style="width: 100%; height: 450px; min-height:350px;">
+                <input type="hidden" id="node-input-svgString" style="width: 100%; height: 100%; ">
             </div>
-            <div class="form-row node-text-editor-row">
-                <div id="node-input-svg-editor" class="node-text-editor" style="width: 100%; height: 450px; min-height:350px;"></div>
+            <div class="form-row node-text-editor-row form-row-auto-height">
+                <div id="node-input-svg-editor" class="node-text-editor" style="width: 100%; height: 100%; min-height:150px;"></div>
+                <button id="node-expand-svg-editor" class="editor-button editor-button-small" style="margin-top: 4px;"><i class="fa fa-expand"></i></button>
             </div>
         </div>
-        <div id="node-svg-tab-animations">
-            <div class="form-row">
+        <div id="node-svg-tab-animations" class="node-svg-tab-content">
+            <div class="form-row form-row-auto-height">
                 <!-- Table with SMIL animations -->
                 <ol id="node-input-animations-container"></ol>
             </div>
         </div>
-        <div id="node-svg-tab-clickable">
-            <div class="form-row">
+        <div id="node-svg-tab-clickable" class="node-svg-tab-content">
+            <div class="form-row" style="padding-left: 2px;">
+                <label for="node-input-outputField"><i class="fa fa-envelope"></i> Output to</label>
+                <div class="red-ui-typedInput-container" style="width: 70%; margin-right: 5px; margin-left: 3px;">    
+                    <button class="red-ui-typedInput-type-label">msg.</button>
+                    <div class="red-ui-typedInput-input" style="left: 36px; right: 2px;">
+                        <input type="text" id="node-input-outputField" placeholder="Payload" 
+                            style="width: 100%; margin-right: 0px; margin-left: 0px; border-top-right-radius: 0px; border-bottom-right-radius: 0px;" >
+                    </div>
+                </div>
+            </div>
+            <div class="form-row form-row-auto-height">
                 <!-- Table with clickable shapes -->
                 <ol id="node-input-clickable-container"></ol>
             </div>
         </div>
-        <div id="node-svg-tab-settings">
+        <div id="node-svg-tab-settings" class="node-svg-tab-content">
             <div class="form-row">
                 <input type="checkbox" id="node-input-showCoordinates" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-showCoordinates" style="width:50%;"> Show mouse coordinates (as tooltip)</label>
