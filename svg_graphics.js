@@ -203,10 +203,26 @@ module.exports = function(RED) {
                                         animationElement.setAttribute("fill"     , "remove");
                                     }
                                     
+                                    switch (smilAnimation.trigger) {
+                                        case 'msg':
+                                            // A message will trigger the animation
+                                            // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin
+                                            animationElement.setAttribute("begin", "indefinite");
+                                            break;
+                                        case 'time':
+                                            // Set the number of seconds (e.g. 2s) after which the animation needs to be started
+                                            animationElement.setAttribute("begin", smilAnimation.delay + "s");                                   
+                                            break;
+                                        case 'anim':
+                                            // TODO
+                                            break;
+                                        case 'cust':
+                                            // TODO
+                                            break;
+                                    }
+                                    
                                     if (smilAnimation.trigger === "msg") {
-                                        // A message will trigger the animation
-                                        // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin
-                                        animationElement.setAttribute("begin"    , "indefinite");
+                                        
                                     }
                                     else {
                                         // Set the number of seconds (e.g. 2s) after which the animation needs to be started
@@ -305,7 +321,6 @@ module.exports = function(RED) {
                                     $scope.verticalMouseLine.setAttribute('x1', pt.x);
                                     $scope.verticalMouseLine.setAttribute('x2', pt.x);
                                 }, false);
-
                                 $scope.svg.addEventListener("mouseout", function(evt) {
                                     // Both mouse lines should be invisible, when leaving the SVG drawing
                                     $scope.horizontalMouseLine.style.display = "none";
