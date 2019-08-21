@@ -99,7 +99,8 @@
             return this.name || "SVG graphics";
         },
         oneditprepare: function() {
-            var that = this;
+            var node = this;
+            
             $("#node-input-size").elementSizer({
                 width: "#node-input-width",
                 height: "#node-input-height",
@@ -112,11 +113,11 @@
             $('#node-input-templateScope').on('change', function() {
                 if ($('#node-input-templateScope').val() === 'global') {
                     $('#template-row-group, #template-row-size, #template-pass-store').hide();
-                    that._def.defaults.group.required = false;
+                    node._def.defaults.group.required = false;
                 }
                 else {
                     $('#template-row-group, #template-row-size, #template-pass-store').show();
-                    that._def.defaults.group.required = true;
+                    node._def.defaults.group.required = true;
                 }
                 var rows = $("#dialog-form>div:not(.node-text-editor-row)");
                 var height = $("#dialog-form").height();
@@ -137,7 +138,7 @@
                     // Show only the content (i.e. the children) of the selected tabsheet, and hide the others
                     $("#node-svg-tabs-content").children().hide();
                     $("#" + tab.id).show();
-                    updateEditorHeight(that,that.editor);
+                    updateEditorHeight(node,node.editor);
                 }
             });
             tabs.addTab({
@@ -175,7 +176,7 @@
             if(fsr){
                 $('#node-expand-svg-editor').click(function(e) {
                     e.preventDefault()
-                    if (that.fullscreen === false) {
+                    if (node.fullscreen === false) {
                         if (fsr) {
                             fsr.call(fullScrElement);//triggers oneditresize()
                         }
@@ -214,10 +215,8 @@
                     
                     // When animation === {} then we have a new list item (i.e. user pressed the addItem button)
                     if (Object.keys(animation).length === 0) {
-                    node.smilAnimations.push({attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, repeatCount:repeatCount, freeze:freeze});
-                    
                         // Initialize new items in the list.
-                        widgetInfo = {
+                        animation = {
                             id            : "", 
                             targetId      : "",
                             attributeName : "",
