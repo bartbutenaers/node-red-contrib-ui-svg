@@ -12,7 +12,6 @@
 -->
 
 <script type="text/javascript">
-
     function updateEditorHeight(node, editor) {
         console.log("updateEditorHeight");
         //resize the tab content divs to available height
@@ -23,7 +22,6 @@
         }
         //if ($('#node-input-templateScope').val() === "global") { h += 232; }
         $("#node-svg-tabs-content").css("height",height+"px");//set size of tabs area
-
         //now resize the item with class form-row-auto-height
         var tabs = $('.node-svg-tab-content');
         for (let index = 0; index < tabs.length; index++) {
@@ -44,11 +42,9 @@
                 }
             } 
         }
-
         if ( editor ) {
             // Is the editor is in full-screen? ...
             node.fullscreen = document.fullscreenElement ? true : false;
-
             var rows = $("#node-svg-tab-editor>div:not(.node-text-editor-row)");
             var height = $("#node-svg-tab-editor").height() - 25;
             for (var i=0; i<rows.size(); i++) {
@@ -68,8 +64,6 @@
             if(editor) editor.resize();
         }
     } 
-
-
     RED.nodes.registerType('ui_svg_graphics',{
         category: 'dashboard',
         color: 'rgb( 63, 173, 181)',
@@ -152,7 +146,7 @@
             });
             tabs.addTab({
                 id: "node-svg-tab-animations",
-                label: "Animations (SMIL)"
+                label: "Animations"
             });
             tabs.addTab({
                 id: "node-svg-tab-clickable",
@@ -176,7 +170,6 @@
                 fields:['name']
             });
             this.editor.focus();
-
             var fullScrElement = $('#node-svg-tab-editor')[0];
             var fsr = fullScrElement.requestFullscreen || fullScrElement.mozRequestFullScreen || fullScrElement.webkitRequestFullscreen || fullScrElement.msRequestFullScreen;
             if(fsr){
@@ -194,72 +187,245 @@
                 $('#node-expand-svg-editor').hide();
             }
             
-
+            function addPropertyRow(container, propertyName) {
+                var propertyRow = $('<div/>',{style:"margin-top:8px;"}).appendTo(container);
+                $('<div/>', {style:"display:inline-block;text-align:right; width:120px; padding-right:10px; box-sizing:border-box;"})
+                .text(propertyName)
+                .appendTo(propertyRow);
+                
+                return propertyRow;
+            }
+            
+            function getTitle(animationId) {
+                if (animationId && animationId != "") {
+                    return "Animation ( " + animationId + " )";
+                }
+                else {
+                    return "Animation ( unknown id )";
+                }
+            }
+            
             // Create a table of (SMIL) animations
             // Columns: element id - attributeName - from - to - duration - repeatCount - freeze
-            var smilAnimationsList = $("#node-input-animations-container").css('min-height','150px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:11%; margin-left:5px; display: inline-grid'><b>Id</b></div><div style='width:11%; display: inline-grid'><b>Target</b></div><div style='width:10%; display: inline-grid'><b>Attribute</b></div><div style='width:10%; display: inline-grid'><b>From</b></div><div style='width:10%; display: inline-grid'><b>To</b></div><div style='width:12%; display: inline-grid'><b>Trigger</b></div><div style='width:10%; display: inline-grid'><b>Duration</b></div><div style='width:10%; display: inline-grid'><b>Repeat</b></div><div style='width:6%; display: inline-grid'><b>Freeze</b></div>")),
-                addItem: function(container, i, smilAnimation) {
-                    // Add a new row to the editableList
-                    var row = $('<div/>').appendTo(container);
-      
-                    // Column 1 : Add an input field (type string) to the new row, that represents the animation ID
-                    var idField = $('<input/>',{class:"node-input-animation-id",type:"text",placeholder:"ID"}).css({"width":"11%","margin-left":"5px"}).appendTo(row);
-                    idField.val(smilAnimation.id);
+            var smilAnimationsList = $("#node-input-animations-container").css('min-height','150px').css('min-width','400px').editableList({
+                addItem: function(container, i, animation) {
+                    // By default the list items will be compressed, so show the expand icon
+                    var expandIcon = "fa fa-angle-right";
                     
-                    // Column 2 : Add an input field (type string) to the new row, that represents the target SVG element ID
-                    var targetIdField = $('<input/>',{class:"node-input-animation-targetId",type:"text",placeholder:"ID"}).css({"width":"11%","margin-left":"5px"}).appendTo(row);
-                    targetIdField.val(smilAnimation.targetId);
+                    // When animation === {} then we have a new list item (i.e. user pressed the addItem button)
+                    if (Object.keys(animation).length === 0) {
+                    node.smilAnimations.push({attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, repeatCount:repeatCount, freeze:freeze});
                     
-                    // Column 3 : Add an input field (type string) to the new row, that represents the attribute name 
-                    var attributeNameField = $('<input/>',{class:"node-input-animation-attributeName",type:"text",placeholder:"Name"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
-                    attributeNameField.val(smilAnimation.attributeName);
+                        // Initialize new items in the list.
+                        widgetInfo = {
+                            id            : "", 
+                            targetId      : "",
+                            attributeName : "",
+                            fromValue     : "",
+                            duration      : 1,
+                            repeatCount   : 0,
+                            freeze        : false,
+                            trigger       : "msg",
+                            delay         : 0,
+                            otherId       : "",
+                            custom        : ""
+                        };
+                        
+                        // New list items should be expanded by default, so show a compress icon.
+                        // This way the user becomes aware which properties the new widget offers...
+                        expandIcon = "fa fa-angle-down";
+                    }
+                    
+                    container.css({
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap'
+                    });
+                    
+                    var headerRow = $('<div/>').appendTo(container);
+                    
+                    // Show a click-able expand/compress icon before each header row.
+                    var expandButton = $('<span/>', {style: "margin-left:5px; margin-right:10px;"}).html('<i class="' + expandIcon + '"></i>').appendTo(headerRow);
+                    
+                    // The header line title depends on the animation id
+                    var title = getTitle(animation.id);
+                    
+                    var titleField = $('<span/>', {style: "margin-left:10px; margin-right:10px; font-weight:Bold"}).text(title).appendTo(headerRow);
 
-                    // Column 4 : Add an input field (type string) to the new row, that represents the source value 
-                    var fromValueField = $('<input/>',{class:"node-input-animation-fromValue",type:"text",placeholder:"Value"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
-                    fromValueField.val(smilAnimation.fromValue);
+                    // The COMMON ROWS contain the common animation properties:
+                    // - Animation id
+                    // - Target id
+                    // - Attribute name
+                    // - From value
+                    // - To value
+                    // - Duration
+                    // - Repeat count
+                    // - Freeze
+                    // - Trigger type
                     
-                    // Column 5 : Add an input field (type string) to the new row, that represents the destination value 
-                    var toValueField = $('<input/>',{class:"node-input-animation-toValue",type:"text",placeholder:"Value"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
-                    toValueField.val(smilAnimation.toValue);
+                    // Add an 'animation id' property row
+                    var animationIdRow = addPropertyRow(container, "Animation id");
+                    var animationIdField = $('<input/>', {class: "node-input-animation-id", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(animationIdRow);
+                    animationIdField.val(animation.id);
+                    $('<span/>').text('%').appendTo(animationIdField);
                     
-                    // Column 6 : Add a dropdown field to the new row, that represents the trigger (i.e. start of the animation) 
-                    var triggerField = $('<select/>',{class:"node-input-animation-trigger",type:"number"}).css({"width":"12%","margin-left":"5px"}).appendTo(row);
-                    triggerField.append($("<option></option>").val('msg').text("Msg"));
-                    triggerField.append($("<option></option>").val('0s').text("0 sec"));
-                    triggerField.append($("<option></option>").val('1s').text("1 sec"));
-                    triggerField.append($("<option></option>").val('2s').text("2 sec"));
-                    triggerField.append($("<option></option>").val('3s').text("3 sec"));
-                    triggerField.append($("<option></option>").val('4s').text("4 sec"));
-                    triggerField.append($("<option></option>").val('5s').text("5 sec"));
-                    triggerField.append($("<option></option>").val('6s').text("6 sec"));
-                    triggerField.append($("<option></option>").val('7s').text("7 sec"));
-                    triggerField.append($("<option></option>").val('8s').text("8 sec"));
-                    triggerField.append($("<option></option>").val('9s').text("9 sec"));
-                    triggerField.val(smilAnimation.trigger);
+                    // When the animation id changes, the header line title should also be changed
+                    animationIdField.on("change", function(){
+                        var newTitle = getTitle($(this).val());
+                        titleField.text(newTitle);
+                    });
+
+                    // Add a 'target id' property row
+                    var targetIdRow = addPropertyRow(container, "Target id");
+                    var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
+                    targetIdField.val(animation.targetId);
+                    $('<span/>').text('%').appendTo(targetIdField);
+
+                    // Add an 'attribute name' property row
+                    var attributeNameRow = addPropertyRow(container, "Attribute name");
+                    var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
+                    attributeNameField.val(animation.attributeName);
+                    $('<span/>').text('%').appendTo(attributeNameField);
+
+                    // Add a 'from value' property row
+                    var fromValueRow = addPropertyRow(container, "From value");
+                    var fromValueField = $('<input/>', {class: "node-input-animation-fromValue", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(fromValueRow);
+                    fromValueField.val(animation.fromValue);
+                    $('<span/>').text('%').appendTo(fromValueField);
+
+                    // Add a 'to value' property row
+                    var toValueRow = addPropertyRow(container, "To value");
+                    var toValueField = $('<input/>', {class: "node-input-animation-toValue", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(toValueRow);
+                    toValueField.val(animation.toValue);
+                    $('<span/>').text('%').appendTo(toValueField);
+
+                    // Add a 'duration' property row
+                    var durationRow = addPropertyRow(container, "Duration");
+                    var durationField = $('<input/>', {class: "node-input-animation-duration", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(durationRow);
+                    durationField.val(animation.duration);
+                    $('<span/>').text('%').appendTo(durationField);
                     
-                    // Column 7 : Add an input field (type number) to the new row, that represents the duration 
-                    var durationField = $('<input/>',{class:"node-input-animation-duration",type:"number"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
-                    durationField.val(smilAnimation.duration);
+                    // Add a 'repeat count' property row
+                    var repeatCountRow = addPropertyRow(container, "Repeat count");
+                    var repeatCountField = $('<input/>', {class: "node-input-animation-repeatCount", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(repeatCountRow);
+                    repeatCountField.val(animation.repeatCount);
+                    $('<span/>').text('%').appendTo(repeatCountField);                    
+
+                    // Add a 'freeze' property row
+                    var freezeRow = addPropertyRow(container, "Freeze");
+                    var freezeField = $('<input/>', {class: "node-input-animation-freeze", style: "width:160px; margin-right:10px;", type: "checkbox"}).appendTo(freezeRow);
+                    freezeField.prop('checked', animation.freeze);
+                    $('<span/>').text('%').appendTo(freezeField);   
                     
-                    // Column 8 : Add an input field (type checkbox) to the new row, that represents the repeat count 
-                    var repeatCountField = $('<input/>',{class:"node-input-animation-repeatCount",type:"number"}).css({"width":"10%","margin-left":"5px"}).appendTo(row);
-                    repeatCountField.val(smilAnimation.repeatCount);
+                    // Add a 'trigger' property row
+                    var triggerRow = addPropertyRow(container, "Trigger");
+                    var triggerField = $('<select/>',{class:"node-input-animation-trigger", style:"width:160px; margin-right:10px;"}).appendTo(triggerRow);
+                    triggerField.append($("<option></option>").val('msg').text("Input message"));
+                    triggerField.append($("<option></option>").val('time').text("Time delay"));
+                    triggerField.append($("<option></option>").val('anim').text("Other animation"));
+                    triggerField.append($("<option></option>").val('cust').text("Custom"));
+                    triggerField.val(animation.trigger);
+    
+                    expandButton.click(function(e) {
+                        e.preventDefault();
+                        
+                        // Switch the icon between expand and compress
+                        if (this.firstElementChild.className === "fa fa-angle-right") {
+                            this.firstElementChild.className = "fa fa-angle-down";
+                        }
+                        else {
+                            this.firstElementChild.className = "fa fa-angle-right";
+                        }
                     
-                    // Column 9 : Add an input field (type checkbox) to the new row, that represents the freezing (SMIL animation 'fill')
-                    var freezeField = $('<input/>',{class:"node-input-animation-freeze",type:"checkbox"}).css({"width":"6%","margin-left":"5px"}).appendTo(row);
-                    freezeField.prop('checked', smilAnimation.freeze);
-                },
-                removable: true
+                        // Only show the relevant widget type properties
+                        triggerField.change();
+                    });
+                    
+                    // The (common) row ends here ...
+                    // The OTHER rows will only be visible depending on the animation trigger type:
+                    // - Delay
+                    // - Other id
+                    // - Custom
+            
+                    // Add a 'delay' property row
+                    var delayRow = addPropertyRow(container, "Delay");
+                    var delayField = $('<input/>', {class: "node-input-animation-delay", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(delayRow);
+                    delayField.val(animation.delay);
+                    $('<span/>').text('%').appendTo(delayField);
+                    
+                    // Add an 'other animation id' property row
+                    var otherIdRow = addPropertyRow(container, "Other animation id");
+                    var otherIdField = $('<input/>', {class: "node-input-animation-otherId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(otherIdRow);
+                    otherIdField.val(animation.otherId);
+                    $('<span/>').text('%').appendTo(otherIdField);
+                    
+                    // Add a 'custom' property row
+                    var customRow = addPropertyRow(container, "Custom");
+                    var customField = $('<input/>', {class: "node-input-animation-custom", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(customRow);
+                    customField.val(animation.custom);
+                    $('<span/>').text('%').appendTo(customField);
+                    
+                    // When the trigger type changes, only the relevant property rows should be visible
+                    triggerField.change(function() {
+                        var triggerType = $(this).val();
+                        
+                        animationIdRow.hide();
+                        targetIdRow.hide();
+                        attributeNameRow.hide();
+                        fromValueRow.hide();
+                        toValueRow.hide();
+                        durationRow.hide();
+                        repeatCountRow.hide();
+                        freezeRow.hide();
+                        triggerRow.hide();
+                        delayRow.hide();
+                        otherIdRow.hide();
+                        customRow.hide();
+                        
+                        // When the button shows a 'compress' icon, this means that the list item is currently expanded
+                        // (i.e. that all relevant property rows should be visible)
+                        if (expandButton.children()[0].className === "fa fa-angle-down") {
+                            // The (common) header rows should be visible for all widget types
+                            animationIdRow.show();
+                            targetIdRow.show();
+                            attributeNameRow.show();
+                            fromValueRow.show();
+                            toValueRow.show();
+                            durationRow.show();
+                            repeatCountRow.show();
+                            freezeRow.show();
+                            triggerRow.show();
+                        
+                            // Some other property rows should only be visible for specific trigger types
+                            switch (triggerType) {
+                                case 'msg':
+                                    // No extra property rows to show
+                                    break;
+                                case 'time':
+                                    delayRow.show();                                   
+                                    break;
+                                case 'anim':
+                                    otherIdRow.show();
+                                    break;
+                                case 'cust':
+                                    customRow.show();
+                                    break;
+                            }
+                        }
+                    });
+                    
+                    // Only show the relevant widget type properties
+                    triggerField.change();
+                },                    
+                removable: true,
+                sortable: false
             });
             
             // Show all the animations (stored in this node) into the editableList
             if (this.smilAnimations) {
                 this.smilAnimations.forEach(function (smilAnimation, index) {
-                    smilAnimationsList.editableList('addItem', {id:smilAnimation.id, targetId:smilAnimation.targetId, attributeName:smilAnimation.attributeName, fromValue:smilAnimation.fromValue, toValue:smilAnimation.toValue, trigger:smilAnimation.trigger, duration:smilAnimation.duration, repeatCount:smilAnimation.repeatCount, freeze:smilAnimation.freeze});
+                    smilAnimationsList.editableList('addItem', smilAnimation);
                 });
             }
-
             // Create a table of clickable shapes
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
@@ -299,7 +465,6 @@
                         $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
                     }
                     actionField.val(clickableShape.action || "click");
-
                     // Column 3 : Add a input field (type string) to the new row, that represents the msg.payload content 
                     var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     
@@ -314,7 +479,6 @@
                     payloadField.typedInput("type", payloadType);              
                     payloadField.typedInput("value", clickableShape.payload);   
                     payloadField.typedInput('width',payloadField.typedInput('width'));//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
-
                     // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
                     var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(clickableShape.topic);
@@ -378,8 +542,11 @@
                 var duration      = smilAnimation.find(".node-input-animation-duration").val();
                 var repeatCount   = smilAnimation.find(".node-input-animation-repeatCount").val();
                 var freeze        = smilAnimation.find(".node-input-animation-freeze").is(":checked");
+                var delay         = smilAnimation.find(".node-input-animation-delay").val();
+                var otherId       = smilAnimation.find(".node-input-animation-otherId").val();
+                var custom        = smilAnimation.find(".node-input-animation-custom").val();
                 
-                node.smilAnimations.push({id:id, targetId:targetId, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, repeatCount:repeatCount, freeze:freeze});
+                node.smilAnimations.push({id:id, targetId:targetId, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, custom:custom});
             });
             
             // Copy all the clickable shapes from the editableList to this node
