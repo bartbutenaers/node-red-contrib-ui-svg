@@ -87,7 +87,7 @@ module.exports = function(RED) {
                         return value;
                     },
                     beforeEmit: function(msg, value) {   
-                        debugger;
+                        //debugger;
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
@@ -111,56 +111,66 @@ module.exports = function(RED) {
                         return newMsg;
                     },
                     initController: function($scope, events) {
+                        //debugger;
                         $scope.flag = true;
-                
+                        //console.log("initController")
                         $scope.init = function (config) {
                             $scope.config = config;
-
+                            //console.log("initController.init")
                             $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
                             $scope.svg = $scope.rootDiv.querySelector("svg");
-                            
                             $scope.svg.style.cursor = "crosshair";
                             
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
                             config.clickableShapes.forEach(function(clickableShape) {
+                                //debugger
+                                //console.log("initController.init > config.clickableShapes.forEach > element ok, adding action " + action + " to target " + clickableShape.targetId)
                                 if (!clickableShape.targetId) {
                                     return;
                                 }
-                                
                                 var element = $scope.rootDiv.querySelector("#" + clickableShape.targetId);
-                                
+                                var action = clickableShape.action || "click" ;
+
+                                                                
                                 if (element) {
+                                    console.log("initController.init > config.clickableShapes.forEach > element ok, adding action ")
                                     // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
                                     // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
                                     // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
                                     //if (!config.showMouseLines) {
-                                        element.style.cursor = "pointer";
+                                        //element.style.cursor = "pointer";
                                     //}
                                     
-                                    element.onclick = function(evt) {
+                                    //if the cursor is NOT set and the action is click, set cursor
+                                    if(/*!config.showMouseLines && */ action == "click" && !element.style.cursor) {
+                                        element.style.cursor = "pointer";
+                                    }
+                                    
+                                    $(element).on(action, function(evt) {
                                         // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                                        debugger
-                                        var pt = $scope.svg.createSVGPoint();
-                                        pt.x = evt.pageX;
-                                        pt.y = evt.pageY;
-                                        pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
-
-                                        $scope.send({
-                                            event: "clicked",
+                                        //console.log(action, clickableShape.targetId )
+                                        var msg = {
+                                            event: action,
                                             elementId: clickableShape.targetId,
-                                            coordinates:{
-                                                x: pt.x,
-                                                y: pt.y
-                                            },
                                             payload: clickableShape.payload, 
                                             payloadType: clickableShape.payloadType, 
                                             topic: clickableShape.topic
-                                        }); 
-                                    }
+                                        }
+                                        if(evt.pageX !== undefined && evt.pageY !== undefined){
+                                            var pt = $scope.svg.createSVGPoint();
+                                            pt.x = evt.pageX;
+                                            pt.y = evt.pageY;
+                                            pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                            msg.coordinates = {
+                                                x: pt.x,
+                                                y: pt.y
+                                            }
+                                        }
+                                        $scope.send(msg); 
+                                    });
                                 }
                             });
                             
-                            debugger;
                             
                             // Apply the animations to the SVG elements (i.e. in the DIV subtree), by adding <animation> elements
                             config.smilAnimations.forEach(function(smilAnimation) {
@@ -309,9 +319,7 @@ module.exports = function(RED) {
                             if (!msg) {
                                 return;
                             }
-                            
-                            debugger;
-                            
+                                                       
                             // The SVG element attribute values can be changed via the input messages
                             // TODO msg check naar server verschuiven
                             if (msg.payload && typeof msg.payload === 'object') {

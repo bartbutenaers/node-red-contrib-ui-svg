@@ -156,7 +156,7 @@
             });
             tabs.addTab({
                 id: "node-svg-tab-clickable",
-                label: "Clickable shapes"
+                label: "Events"
             });
             tabs.addTab({
                 id: "node-svg-tab-settings",
@@ -264,19 +264,46 @@
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
             var clickableShapesList = $("#node-input-clickable-container").css('min-height','150px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:24%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:44%; display: inline-grid'><b>Payload</b></div><div style='width:24%; display: inline-grid'><b>Topic</b></div>")),
+                header: $("<div>").append($.parseHTML("<div style='width:18%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:18%; display: inline-grid'><b>Action</b></div><div style='width:38%; display: inline-grid'><b>Payload</b></div><div style='width:18%; display: inline-grid'><b>Topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
                     // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
-                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
                     
-                    // Column 2 : Add a input field (type string) to the new row, that represents the msg.payload content 
-                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"44%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    // Column 2 : Add an input field (type string) to the new row, that represents the SVG element ID 
+                    var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var actionOptions = {
+                        //https://www.w3.org/TR/2015/WD-SVG2-20150407/interact.html#SVGEvents
+                        'click':'click',//A click is defined as a mousedown and mouseup over the same screen location. Works on tablet too.
+                        'mousedown':'mousedown',//Occurs when the pointing device button is pressed over an element.
+                        'mouseup':'mouseup',//Occurs when the pointing device button is released over an element.
+                        'mouseover':'mouseover',//Occurs when the pointing device is moved onto an element.
+                        'mouseout':'mouseout', //Occurs when the pointing device is moved away from an element
+                        //'mousemove':'mousemove', //Occurs when the pointing device is moved while it is over an element.
+                        'focus':'focus',//Occurs when an element receives focus.
+                        'focusin':'focusin',//Occurs when an element is about to receive focus
+                        'focusout':'focusout',//Occurs when an element is about to lose focus.
+                        'blur':'blur',//Occurs when an element loses focus.
+                        'keydown':'keydown',//Occurs when a key is pressed down
+                        'keyup':'keyup',
+                        //https://www.w3.org/TR/touch-events/#list-of-touchevent-types
+                        'touchstart':'touchstart', //mobile/tablet only
+                        'touchend':'touchend', //mobile/tablet only
+                        // 'touchmove':'touchmove',
+                        // 'touchcancel':'touchcancel',
+                    }
+                    for(var val in actionOptions) {
+                        $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
+                    }
+                    actionField.val(clickableShape.action || "click");
+
+                    // Column 3 : Add a input field (type string) to the new row, that represents the msg.payload content 
+                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     
-                    //Column 2 hidden item (payloadType)
+                    //Column 3 hidden item (payloadType)
                     var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
                     var payloadType = supportedPayloadTypes.includes(clickableShape.payloadType) ? clickableShape.payloadType : defaultPayloadType;
                     payloadField.typedInput({
@@ -288,8 +315,8 @@
                     payloadField.typedInput("value", clickableShape.payload);   
                     payloadField.typedInput('width',payloadField.typedInput('width'));//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
 
-                    // Column 3 : Add an input field (type string) to the new row, that represents the msg.topic content
-                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
+                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(clickableShape.topic);
                     
                     
@@ -311,7 +338,7 @@
             // Show all the clickable shapes (stored in this node) into the editableList
             if (this.clickableShapes) {
                 this.clickableShapes.forEach(function (clickableShape, index) {
-                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
+                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
                 });
             }
         },
@@ -361,11 +388,12 @@
             clickableShapesList.each(function(i) {
                 var clickableShape = $(this);
                 var targetId = clickableShape.find(".node-input-clickable-targetId").val();
+                var action = clickableShape.find(".node-input-clickable-action").val();
                 var payload  = clickableShape.find(".node-input-clickable-payload").val();
                 var payloadType  = clickableShape.find(".node-input-clickable-payloadType").val();
                 var topic    = clickableShape.find(".node-input-clickable-topic").val();
                 
-                node.clickableShapes.push({targetId:targetId, payload:payload, payloadType:payloadType, topic:topic});
+                node.clickableShapes.push({targetId:targetId, action:action, payload:payload, payloadType:payloadType, topic:topic});
             });
         },
         oneditcancel: function() {
