@@ -222,10 +222,12 @@
                             attributeName : "",
                             fromValue     : "",
                             duration      : 1,
+                            durationUnit   : "s",
                             repeatCount   : 0,
                             freeze        : false,
                             trigger       : "msg",
-                            delay         : 0,
+                            delay         : 1,
+                            delayUnit     : "s",
                             otherId       : "",
                             custom        : ""
                         };
@@ -256,7 +258,7 @@
                     // - Attribute name
                     // - From value
                     // - To value
-                    // - Duration
+                    // - Duration + DurationUnit
                     // - Repeat count
                     // - Freeze
                     // - Trigger type
@@ -302,6 +304,11 @@
                     var durationField = $('<input/>', {class: "node-input-animation-duration", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(durationRow);
                     durationField.val(animation.duration);
                     $('<span/>').text('%').appendTo(durationField);
+                    var delayUnitField = $('<select/>', {class: "node-input-animation-durationUnit", style: "width:120px; margin-right:10px;", type: "text"}).appendTo(durationRow);
+                    delayUnitField.append($('<option>', {value: "ms", text: 'milliseconds'}));
+                    delayUnitField.append($('<option>', {value: "s", text: 'seconds'}));
+                    delayUnitField.append($('<option>', {value: "min", text: 'minutes'}));
+                    delayUnitField.val(animation.durationUnit || "s");
                     
                     // Add a 'repeat count' property row
                     var repeatCountRow = addPropertyRow(container, "Repeat count");
@@ -320,7 +327,7 @@
                     var triggerField = $('<select/>',{class:"node-input-animation-trigger", style:"width:160px; margin-right:10px;"}).appendTo(triggerRow);
                     triggerField.append($("<option></option>").val('msg').text("Input message"));
                     triggerField.append($("<option></option>").val('time').text("Time delay"));
-                    triggerField.append($("<option></option>").val('anim').text("Other animation"));
+                    //triggerField.append($("<option></option>").val('anim').text("Other animation"));
                     triggerField.append($("<option></option>").val('cust').text("Custom"));
                     triggerField.val(animation.trigger);
     
@@ -350,16 +357,21 @@
                     var delayField = $('<input/>', {class: "node-input-animation-delay", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(delayRow);
                     delayField.val(animation.delay);
                     $('<span/>').text('%').appendTo(delayField);
+                    var delayUnitField = $('<select/>', {class: "node-input-animation-delayUnit", style: "width:120px; margin-right:10px;", type: "text"}).appendTo(delayRow);
+                    delayUnitField.append($('<option>', {value: "ms", text: 'milliseconds'}));
+                    delayUnitField.append($('<option>', {value: "s", text: 'seconds'}));
+                    delayUnitField.append($('<option>', {value: "min", text: 'minutes'}));
+                    delayUnitField.val(animation.delayUnit || "s");
                     
-                    // Add an 'other animation id' property row
-                    var otherIdRow = addPropertyRow(container, "Other animation id");
-                    var otherIdField = $('<input/>', {class: "node-input-animation-otherId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(otherIdRow);
-                    otherIdField.val(animation.otherId);
-                    $('<span/>').text('%').appendTo(otherIdField);
+                    // // Add an 'other animation id' property row
+                    // var otherIdRow = addPropertyRow(container, "Other animation id");
+                    // var otherIdField = $('<input/>', {class: "node-input-animation-otherId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(otherIdRow);
+                    // otherIdField.val(animation.otherId);
+                    // $('<span/>').text('%').appendTo(otherIdField);
                     
                     // Add a 'custom' property row
                     var customRow = addPropertyRow(container, "Custom");
-                    var customField = $('<input/>', {class: "node-input-animation-custom", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(customRow);
+                    var customField = $('<input/>', {class: "node-input-animation-custom", style: "width:70%; margin-right:10px;", type: "text"}).appendTo(customRow);
                     customField.val(animation.custom);
                     $('<span/>').text('%').appendTo(customField);
                     
@@ -377,7 +389,7 @@
                         freezeRow.hide();
                         triggerRow.hide();
                         delayRow.hide();
-                        otherIdRow.hide();
+                        //otherIdRow.hide();
                         customRow.hide();
                         
                         // When the button shows a 'compress' icon, this means that the list item is currently expanded
@@ -403,7 +415,7 @@
                                     delayRow.show();                                   
                                     break;
                                 case 'anim':
-                                    otherIdRow.show();
+                                    //otherIdRow.show();
                                     break;
                                 case 'cust':
                                     customRow.show();
@@ -539,13 +551,15 @@
                 var toValue       = smilAnimation.find(".node-input-animation-toValue").val();
                 var trigger       = smilAnimation.find(".node-input-animation-trigger").val();
                 var duration      = smilAnimation.find(".node-input-animation-duration").val();
+                var durationUnit  = smilAnimation.find(".node-input-animation-durationUnit").val();
                 var repeatCount   = smilAnimation.find(".node-input-animation-repeatCount").val();
                 var freeze        = smilAnimation.find(".node-input-animation-freeze").is(":checked");
                 var delay         = smilAnimation.find(".node-input-animation-delay").val();
+                var delayUnit     = smilAnimation.find(".node-input-animation-delayUnit").val();
                 var otherId       = smilAnimation.find(".node-input-animation-otherId").val();
                 var custom        = smilAnimation.find(".node-input-animation-custom").val();
                 
-                node.smilAnimations.push({id:id, targetId:targetId, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, custom:custom});
+                node.smilAnimations.push({id:id, targetId:targetId, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom});
             });
             
             // Copy all the clickable shapes from the editableList to this node
