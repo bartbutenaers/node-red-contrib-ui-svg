@@ -185,9 +185,10 @@ module.exports = function(RED) {
                                     animationElement.setAttribute("id"           , smilAnimation.id); 
                                     animationElement.setAttribute("attributeType", "XML");  // TODO what is this used for ???
                                     animationElement.setAttribute("attributeName", smilAnimation.attributeName); 
-                                    animationElement.setAttribute("from"         , smilAnimation.fromValue); 
+                                    if(smilAnimation.fromValue != "")
+                                        animationElement.setAttribute("from"         , smilAnimation.fromValue); //permit transition from current value if not specified
                                     animationElement.setAttribute("to"           , smilAnimation.toValue); 
-                                    animationElement.setAttribute("dur"          , smilAnimation.duration + "s"); // Seconds e.g. "2s"
+                                    animationElement.setAttribute("dur"          , smilAnimation.duration + (smilAnimation.durationUnit || "s")); // Seconds e.g. "2s"
                                     
                                     if (smilAnimation.repeatCount === "0") {
                                         animationElement.setAttribute("repeatCount"  , "indefinite");
@@ -203,16 +204,22 @@ module.exports = function(RED) {
                                         animationElement.setAttribute("fill"     , "remove");
                                     }
                                     
-                                    if (smilAnimation.trigger === "msg") {
-                                        // A message will trigger the animation
-                                        // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin
-                                        animationElement.setAttribute("begin"    , "indefinite");
-                                    }
-                                    else {
-                                        // Set the number of seconds (e.g. 2s) after which the animation needs to be started
-                                        animationElement.setAttribute("begin"    , smilAnimation.trigger);
-                                    }
-
+                                    switch (smilAnimation.trigger) {
+                                        case 'time':
+                                            // Set the number of seconds (e.g. 2s) after which the animation needs to be started
+                                            animationElement.setAttribute("begin", smilAnimation.delay + (smilAnimation.delayUnit || "s"));                                   
+                                            break;
+                                        // case 'anim':
+                                        //     // TODO
+                                        //     break;
+                                        case 'cust':
+                                            animationElement.setAttribute("begin", smilAnimation.custom);
+                                            break;
+                                        default:
+                                            // A message will trigger the animation
+                                            // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin
+                                            animationElement.setAttribute("begin", "indefinite");
+                                    }                                
                                     // By appending the animation as a child of the SVG element, that parent SVG element will be animated.
                                     // So there is no need to specify explicit the xlink:href attribute on the animation element.
                                     element.appendChild(animationElement);
@@ -305,7 +312,6 @@ module.exports = function(RED) {
                                     $scope.verticalMouseLine.setAttribute('x1', pt.x);
                                     $scope.verticalMouseLine.setAttribute('x2', pt.x);
                                 }, false);
-
                                 $scope.svg.addEventListener("mouseout", function(evt) {
                                     // Both mouse lines should be invisible, when leaving the SVG drawing
                                     $scope.horizontalMouseLine.style.display = "none";
