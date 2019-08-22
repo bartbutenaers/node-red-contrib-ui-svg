@@ -67,6 +67,8 @@
             // Get the content to match the edit box size
             if(editor) editor.resize();
         }
+        $(".node-input-clickable-payload").typedInput('width');//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
+
     } 
 
 
@@ -313,7 +315,6 @@
                     });
                     payloadField.typedInput("type", payloadType);              
                     payloadField.typedInput("value", clickableShape.payload);   
-                    payloadField.typedInput('width',payloadField.typedInput('width'));//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
 
                     // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
                     var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
