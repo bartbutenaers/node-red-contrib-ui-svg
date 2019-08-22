@@ -266,17 +266,17 @@
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
             var clickableShapesList = $("#node-input-clickable-container").css('min-height','150px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:18%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:18%; display: inline-grid'><b>Action</b></div><div style='width:38%; display: inline-grid'><b>Payload</b></div><div style='width:18%; display: inline-grid'><b>Topic</b></div>")),
+                header: $("<div>").append($.parseHTML("<div style='width:17%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:20%; margin-left:5px; display: inline-grid'><b>Action</b></div><div style='width:38%; margin-left:4px; display: inline-grid'><b>Payload</b></div><div style='width:17%; margin-left:-3px; display: inline-grid'><b>Topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
                     // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
-                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
                     
-                    // Column 2 : Add an input field (type string) to the new row, that represents the SVG element ID 
-                    var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    // Column 2 : Add an input field (type option) to the new row, that represents the action type 
+                    var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var actionOptions = {
                         //https://www.w3.org/TR/2015/WD-SVG2-20150407/interact.html#SVGEvents
                         'click':'click',//A click is defined as a mousedown and mouseup over the same screen location. Works on tablet too.
@@ -317,7 +317,7 @@
                     payloadField.typedInput("value", clickableShape.payload);   
 
                     // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
-                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"18%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(clickableShape.topic);
                     
                     
