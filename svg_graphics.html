@@ -11,7 +11,122 @@
   limitations under the License.
 -->
 
+<style>
+    .ui-autocomplete {
+        max-height: 100px;
+        overflow-y: auto;
+        overflow-x: hidden; /* prevent horizontal scrollbar */
+        /*padding-right: 20px;/* add padding to account for vertical scrollbar */
+    } 
+</style>
+
 <script type="text/javascript">
+
+    function updateSvgIdHelpers(svg) {
+
+        //var regex = /<.*?(\S+).+?id="(.+?)"/gm; //SM - NG
+        //var regex = /<[^\s]+.*?id *= *"([^"]*?)".*?>/g;//BB - NG
+        var regex = /<\W*?(\w+)[^>]*?id\s*?=\s*?"([^"]*?)".*?>/gms;//Works with new line & whitespace after < 
+        var str = svg//$("#fullthing").html();
+        var match;
+        var optionList = [];
+        var animationElements = [];
+        var nonAnimationElements = [];
+
+        while ((match = regex.exec(str)) !== null) {
+            // This is necessary to avoid infinite loops with zero-width matches
+            if (match.index === regex.lastIndex) {
+                regex.lastIndex++;
+            }
+
+            if (match.length > 2) {
+                let full = match[0];
+                let ele = match[1];
+                let id = match[2];
+                if (ele == "set" || ele == "animation" || ele == "animationmotion") {
+                    animationElements.push(match[2]);
+                    optionList.push(match[2] + ".begin");
+                    optionList.push(match[2] + ".end");
+                } else {
+                    nonAnimationElements.push(match[2]);
+                    optionList.push(match[2] + ".click");
+                    optionList.push(match[2] + ".mouseover");
+                    optionList.push(match[2] + ".mouseout");
+                    optionList.push(match[2] + ".mouseup");
+                    optionList.push(match[2] + ".mousedown");
+                    optionList.push(match[2] + ".focus");
+                    optionList.push(match[2] + ".focusin");
+                    optionList.push(match[2] + ".focusout");
+                    optionList.push(match[2] + ".blur");
+                    optionList.push(match[2] + ".keyup");
+                    optionList.push(match[2] + ".keydown");
+                    optionList.push(match[2] + ".touchstart");
+                    optionList.push(match[2] + ".touchend");
+                }
+            }
+        }
+
+
+        $(".node-input-animation-targetId").autocomplete({
+            source: nonAnimationElements
+        });
+        $(".node-input-clickable-targetId").autocomplete({
+            source: nonAnimationElements
+        });
+        // $("#select2").autocomplete({
+        //     source: animationElements
+        // });
+
+        function tagSplit(val) {
+            return val.split(/;\s*/);
+        }
+        function extractLastTag(term) {
+            return tagSplit(term).pop();
+        }
+
+        // $("#button").on("click", function (event) {
+        //     $("#tags").autocomplete("search", "")
+        // })
+
+        $(".node-input-animation-custom")
+            .on("keydown", function (event) {
+                // don't navigate away from the field on tab when selecting an item
+                if (event.keyCode === $.ui.keyCode.TAB &&
+                    $(this).autocomplete("instance").menu.active) {
+                    event.preventDefault();
+                }
+            })
+            .on("click", function (event) {
+                //show dropdown on click (disabled/annoying/problematic)
+                //$( this ).autocomplete( "search", "" )
+            })
+            .autocomplete({
+                minLength: 0,
+                source: function (request, response) {
+                    // delegate back to autocomplete, but extract the last term
+                    response($.ui.autocomplete.filter(
+                        optionList, extractLastTag(request.term)));
+                },
+                focus: function () {
+                    // prevent value inserted on focus
+                    return false;
+                },
+                select: function (event, ui) {
+                    var terms = tagSplit(this.value);
+
+                    terms.pop();// remove the current input 
+                    terms.push(ui.item.value); // add the selected item
+                    // add placeholder to get the comma-and-space at the end
+                    terms.push("");
+                    this.value = terms.join("; ");
+                    return false;
+                }
+            });
+
+
+    }
+
+
     function updateEditorHeight(node, editor) {
         console.log("updateEditorHeight");
         //resize the tab content divs to available height
@@ -141,6 +256,8 @@
                     $("#node-svg-tabs-content").children().hide();
                     $("#" + tab.id).show();
                     updateEditorHeight(node,node.editor);
+                    let svgStr = node.editor ? node.editor.getValue() : ""; 
+                    updateSvgIdHelpers(svgStr);
                 }
             });
             tabs.addTab({
@@ -587,7 +704,7 @@
     });
 </script>
 
-<script type="text/x-red" data-template-name="ui_svg_graphics">
+<script type="text/html"  data-template-name="ui_svg_graphics">
     <div class="form-row" id="template-row-group">
         <label for="node-input-group"><i class="fa fa-table"></i> Group</span></label>
         <input type="text" id="node-input-group">
@@ -652,6 +769,6 @@
         </div>
     </div>
 </script>
-<script type="text/x-red" data-help-name="ui_svg_graphics">
+<script type="text/html" data-help-name="ui_svg_graphics">
     <p>A Node Red node to show a vector graphics (SVG) drawing inside the dashboard.</p>
 </script>
