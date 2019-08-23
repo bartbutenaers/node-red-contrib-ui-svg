@@ -16,6 +16,7 @@
 
 module.exports = function(RED) {
     var settings = RED.settings;
+    const svgUtils = require('./svg_utils');
     
     // TODOs:
     // - Error 404 loading ACE SVG layout file
@@ -29,15 +30,35 @@ module.exports = function(RED) {
     // - Show mouse coordinates if requested
     // - Waar preserve aspect ratio zetten (op config screen of in de svg tag)
     // - Remove expand button because it doesn't work
-    
 
     function HTML(config) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config);
         
+        // When a text element contains the CSS classname of a FontAwesome icon, we will replace it by its unicode value.
+        var svgString = config.svgString.replace(/(<text.*>)(.*)(<\/text>)/g, function(match, $1, $2, $3, offset, input_string) {
+            var iconCssClass = $2.trim();
+            
+            if (!iconCssClass.startsWith("fa-")) {
+                // Nothing to replace when not a FontAwesome icon, so return the original text
+                return match;
+            }
+            
+            var uniCode = svgUtils.getUnicode(iconCssClass);
+            
+            if (!uniCode) {
+                // Failed to get the unicode value of the specified icon, so return the original text
+                console.log("FontAwesome icon " + iconCssClass + " is not supported by this node");
+                return match;
+            }
+            
+            // Replace the CSS class name ($2) by its unicode value
+            return $1 + "&#x" + uniCode + ";" + $3;
+        })
+        
         var html = String.raw`
             <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
-            <div id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + config.svgString + `</div>
+            <div id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
         `;
                         
         return html;
