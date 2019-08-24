@@ -1367,5 +1367,7 @@ exports.getUnicode = function(iconCssClass) {
             return "f2de";
         case "fa-meetup":
             return "f2e0";
+        default:
+            return null;
     }
 };
