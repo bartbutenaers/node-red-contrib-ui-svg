@@ -29,10 +29,11 @@
         var regex = /<\W*?(\w+)[^>]*?id\s*?=\s*?"([^"]*?)".*?>/gms;//Works with new line & whitespace after < 
         var str = svg//$("#fullthing").html();
         var match;
-        var optionList = [];
+        var elementsIdsOnly = [];
+        var elementIdsAndActions = [];
         var animationElements = [];
         var nonAnimationElements = [];
-
+        
         while ((match = regex.exec(str)) !== null) {
             // This is necessary to avoid infinite loops with zero-width matches
             if (match.index === regex.lastIndex) {
@@ -44,26 +45,29 @@
                 let ele = match[1] || "";
                 let id = match[2] || "";
                 ele = ele.trim().toLowerCase();
+                elementsIdsOnly.push(match[2]);
                 if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
                     animationElements.push(match[2]);
-                    optionList.push(match[2] + ".begin");
-                    optionList.push(match[2] + ".end");
-                    optionList.push(match[2] + ".repeat(1)");
+                    elementIdsAndActions.push(match[2] + ".begin");
+                    elementIdsAndActions.push(match[2] + ".end");
+                    elementIdsAndActions.push(match[2] + ".repeat(1)");
                 } else {
                     nonAnimationElements.push(match[2]);
-                    optionList.push(match[2] + ".click");
-                    optionList.push(match[2] + ".mouseover");
-                    optionList.push(match[2] + ".mouseout");
-                    optionList.push(match[2] + ".mouseup");
-                    optionList.push(match[2] + ".mousedown");
-                    optionList.push(match[2] + ".focus");
-                    optionList.push(match[2] + ".focusin");
-                    optionList.push(match[2] + ".focusout");
-                    optionList.push(match[2] + ".blur");
-                    optionList.push(match[2] + ".keyup");
-                    optionList.push(match[2] + ".keydown");
-                    optionList.push(match[2] + ".touchstart");
-                    optionList.push(match[2] + ".touchend");
+                    elementIdsAndActions.push(match[2] + ".click");
+                    elementIdsAndActions.push(match[2] + ".dblclick");
+                    elementIdsAndActions.push(match[2] + ".contextmenu");
+                    elementIdsAndActions.push(match[2] + ".mouseover");
+                    elementIdsAndActions.push(match[2] + ".mouseout");
+                    elementIdsAndActions.push(match[2] + ".mouseup");
+                    elementIdsAndActions.push(match[2] + ".mousedown");
+                    elementIdsAndActions.push(match[2] + ".focus");
+                    elementIdsAndActions.push(match[2] + ".focusin");
+                    elementIdsAndActions.push(match[2] + ".focusout");
+                    elementIdsAndActions.push(match[2] + ".blur");
+                    elementIdsAndActions.push(match[2] + ".keyup");
+                    elementIdsAndActions.push(match[2] + ".keydown");
+                    elementIdsAndActions.push(match[2] + ".touchstart");
+                    elementIdsAndActions.push(match[2] + ".touchend");
                 }
             }
         }
@@ -98,10 +102,34 @@
 
         $(".node-input-animation-custom")
             .on("keydown", function (event) {
-                // don't navigate away from the field on tab when selecting an item
-                if (event.keyCode === $.ui.keyCode.TAB &&
-                    $(this).autocomplete("instance").menu.active) {
-                    event.preventDefault();
+                
+                if($(this).autocomplete("instance").menu.active){
+                    var appendChar = "; ";
+                    var takeInput = true;
+                    switch (event.keyCode) {
+                        case $.ui.keyCode.RIGHT:
+                        appendChar = "";
+                        break;
+                        case 186:
+                        appendChar = "; ";
+                        break;
+                        case $.ui.keyCode.PERIOD:
+                        appendChar = ".";
+                        break;
+                        default:
+                        takeInput = false;
+                    }
+                    
+                    if (event.keyCode === $.ui.keyCode.TAB) {
+                        event.preventDefault();// don't navigate away from the field on tab when selecting an item
+                    } else if (takeInput) {
+                        let terms =  tagSplit(this.value);
+                        let selected = $(this).autocomplete("instance").menu.active.text()
+                        terms.pop();// remove the current input 
+                        terms.push(selected + appendChar); // add the selected item
+                        this.value = terms.join("; ");
+                        event.preventDefault();// don't navigate away from the field
+                    }
                 }
             })
             .on("click", function (event) {
@@ -111,9 +139,17 @@
             .autocomplete({
                 minLength: 0,
                 source: function (request, response) {
+                    //TODO: Consider how to handle editing in middle of string
+                    //currently, the last tag (after last ;) is used.
+                    let list;
+                    let lastTag = extractLastTag(request.term);
+                    if(lastTag.includes(".")){
+                        list = elementIdsAndActions; 
+                    } else {
+                        list = elementsIdsOnly; 
+                    }
                     // delegate back to autocomplete, but extract the last term
-                    response($.ui.autocomplete.filter(
-                        optionList, extractLastTag(request.term)));
+                    response($.ui.autocomplete.filter(list, lastTag));
                 },
                 focus: function () {
                     // prevent value inserted on focus
@@ -508,7 +544,8 @@
                     var customField = $('<input/>', {class: "node-input-animation-custom", style: "width:70%; margin-right:10px;", type: "text"}).appendTo(customRow);
                     customField.val(animation.custom);
                     $('<span/>').text('%').appendTo(customField);
-                    
+                    customRow.append($("<i />", {class:"fa fa-question", title:"Press down to select, right to accept, dot to access properties, semicolon/enter/tab to complete the entry."}));
+
                     // When the trigger type changes, only the relevant property rows should be visible
                     triggerField.change(function() {
                         var triggerType = $(this).val();
