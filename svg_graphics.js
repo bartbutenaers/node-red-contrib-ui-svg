@@ -348,12 +348,13 @@ module.exports = function(RED) {
                                             console.log("The SVG element (id = " + msg.payload.elementId + ") has no attribute with name = " + attributeName);
                                             return;                                    
                                         }
-                                        
                                         element.setAttribute(msg.payload.attributeName, msg.payload.attributeValue);
                                         break;
                                     case "trigger_animation":
-                                        if (element.tagName !== "animate") {
-                                            console.log("SVG element with id = " + msg.payload.elementId + " is no 'animate' tag");
+                                        let ele = (element.tagName + "").trim().toLowerCase();
+                                        let animations = ["set","animate","animatemotion","animatecolor","animatetransform"]
+                                        if (!animations.includes(ele)) {
+                                            console.log("SVG element with id = " + msg.payload.elementId + " is not one of '" + animations.join(",") + "'");
                                             return;
                                         }
                                         

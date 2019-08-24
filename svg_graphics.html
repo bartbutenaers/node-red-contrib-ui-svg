@@ -41,12 +41,14 @@
 
             if (match.length > 2) {
                 let full = match[0];
-                let ele = match[1];
-                let id = match[2];
-                if (ele == "set" || ele == "animation" || ele == "animationmotion") {
+                let ele = match[1] || "";
+                let id = match[2] || "";
+                ele = ele.trim().toLowerCase();
+                if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
                     animationElements.push(match[2]);
                     optionList.push(match[2] + ".begin");
                     optionList.push(match[2] + ".end");
+                    optionList.push(match[2] + ".repeat(1)");
                 } else {
                     nonAnimationElements.push(match[2]);
                     optionList.push(match[2] + ".click");
@@ -66,6 +68,12 @@
             }
         }
 
+        //Get all animation ids specified by the SMIL animations editable list...
+        var smilAnimationsList = $("#node-input-animations-container").editableList('items');
+        smilAnimationsList.each(function(i) {
+            var id = $(this).find(".node-input-animation-id").val();                
+            animationElements.push(id);
+        });
 
         $(".node-input-animation-targetId").autocomplete({
             source: nonAnimationElements
@@ -252,12 +260,19 @@
             var tabs = RED.tabs.create({
                 id: "node-svg-tabs",
                 onchange: function(tab) {
+                    //console.log("tabs.onchange",tab);
                     // Show only the content (i.e. the children) of the selected tabsheet, and hide the others
                     $("#node-svg-tabs-content").children().hide();
                     $("#" + tab.id).show();
                     updateEditorHeight(node,node.editor);
-                    let svgStr = node.editor ? node.editor.getValue() : ""; 
-                    updateSvgIdHelpers(svgStr);
+                    if(tab.id == "node-svg-tab-animations" || tab.id == "node-svg-tab-clickable"){
+                        let svgStr = node.editor ? node.editor.getValue() : ""; 
+                        try {
+                            updateSvgIdHelpers(svgStr);    
+                        } catch (error) {
+                            console.error(error)
+                        }
+                    }
                 }
             });
             tabs.addTab({
