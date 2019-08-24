@@ -325,59 +325,81 @@ module.exports = function(RED) {
                             if (!msg) {
                                 return;
                             }
-                                                       
+                                                    
                             // The SVG element attribute values can be changed via the input messages
                             // TODO msg check naar server verschuiven
                             if (msg.payload && typeof msg.payload === 'object') {
-                                if (!msg.payload.elementId) {
-                                    console.log("There is no msg.payload.elementId available");
-                                    return;
-                                }          
+                                //console.log("on msg ($scope.$watch('msg', function(msg))")
                                 
-                                var element = $scope.rootDiv.querySelector("#" + msg.payload.elementId);
+                                function processCommand(cmd){
+                                    try {
+                                    
+                                        if (!cmd.elementId) {
+                                            console.log("Invalid command. elementId not specified");
+                                            return;
+                                        }          
+                                        
+                                        var element = $scope.rootDiv.querySelector("#" + cmd.elementId);
 
-                                if (!element) {
-                                    console.log("There is no SVG element with id = " + msg.payload.elementId);
-                                    return;
-                                }
-                                        
-                                switch (msg.topic) {
-                                    case "update_attribute":
-                                        // TODO is this correct?  can an element not have an attribute as long as no non-default value has been set?
-                                        if (!element.hasAttribute(msg.payload.attributeName)) {
-                                            console.log("The SVG element (id = " + msg.payload.elementId + ") has no attribute with name = " + attributeName);
-                                            return;                                    
-                                        }
-                                        element.setAttribute(msg.payload.attributeName, msg.payload.attributeValue);
-                                        break;
-                                    case "trigger_animation":
-                                        let ele = (element.tagName + "").trim().toLowerCase();
-                                        let animations = ["set","animate","animatemotion","animatecolor","animatetransform"]
-                                        if (!animations.includes(ele)) {
-                                            console.log("SVG element with id = " + msg.payload.elementId + " is not one of '" + animations.join(",") + "'");
+                                        if (!element) {
+                                            console.log("Invalid command. There is no SVG element with id = " + cmd.elementId);
                                             return;
                                         }
-                                        
-                                        // TODO deze test naar de server verschuiven
-                                        if (!msg.payload.status) {
-                                            console.log("When triggering an animation, there should be a msg.payload.status field");
-                                            return;
+                                                
+                                        switch (cmd.command) {
+                                            case "update_attribute":
+                                                // TODO is this correct?  can an element not have an attribute as long as no non-default value has been set?
+                                                if (!element.hasAttribute(cmd.attributeName)) {
+                                                    console.log("SVG element with id = " + cmd.elementId + " has no attribute with name = " + attributeName);
+                                                    return;                                    
+                                                }
+                                                element.setAttribute(cmd.attributeName, cmd.attributeValue);
+                                                break;
+                                            case "trigger_animation":
+                                                let ele = (element.tagName + "").trim().toLowerCase();
+                                                let animations = ["set","animate","animatemotion","animatecolor","animatetransform"]
+                                                if (!animations.includes(ele)) {
+                                                    console.log("SVG element with id = " + cmd.elementId + " is not one of '" + animations.join(",") + "'");
+                                                    return;
+                                                }
+                                                
+                                                if (!cmd.action) {
+                                                    console.log("When triggering an animation, there should be a .action field");
+                                                    return;
+                                                }
+                                                
+                                                switch (cmd.action) {
+                                                    case "start":
+                                                        element.beginElement();
+                                                        break;
+                                                    case "stop":
+                                                        element.endElement();
+                                                        break;
+                                                    default:
+                                                        try {
+                                                            element[cmd.action]();
+                                                        } catch (error) {
+                                                            throw new Error(`Error calling ${cmd.elementId}.${cmd.action}()`);
+                                                        }
+                                                        break;
+                                                }
                                         }
                                         
-                                        switch (msg.payload.status) {
-                                            case "start":
-                                                element.beginElement();
-                                                break;
-                                            case "stop":
-                                                element.endElement();
-                                                break;
-                                            default:
-                                                console.log("When triggering an animation, the msg.payload.status field should contain 'start' or 'stop'");
-                                                break;
-                                        }
+                                    } catch (error) {
+                                        console.error(error);
+                                    }
                                 }
+
+                                var payload = msg.payload;
+                                if(!Array.isArray(payload)){
+                                    payload = [payload];
+                                }
+                                payload.forEach(function(val,idx){
+                                    if(typeof val == "object" && val.command)
+                                        processCommand(val);
+                                });
                             }
-                        });
+                        }, true);
                     }
                 });
             }
