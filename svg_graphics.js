@@ -121,6 +121,7 @@ module.exports = function(RED) {
                             elementId: orig.msg.elementId,
                             event: orig.msg.event,
                             coordinates: orig.msg.coordinates,
+                            position: orig.msg.position,
                         };
                         RED.util.evaluateNodeProperty(orig.msg.payload,orig.msg.payloadType,node,orig.msg,(err,value) => {
                             if (err) {
@@ -182,9 +183,15 @@ module.exports = function(RED) {
                                             pt.x = evt.pageX;
                                             pt.y = evt.pageY;
                                             pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                            //relative position on svg
                                             msg.coordinates = {
                                                 x: pt.x,
                                                 y: pt.y
+                                            }
+                                            //absolute position on page - usefull for sending to popup menu
+                                            msg.position = {
+                                                x: evt.pageX,
+                                                y: evt.pageY
                                             }
                                         }
                                         $scope.send(msg); 
