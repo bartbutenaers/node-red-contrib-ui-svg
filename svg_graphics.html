@@ -23,7 +23,7 @@
 <script type="text/javascript">
 
     function updateSvgIdHelpers(svg) {
-
+        console.log("updateSvgIdHelpers");
         //var regex = /<.*?(\S+).+?id="(.+?)"/gm; //SM - NG
         //var regex = /<[^\s]+.*?id *= *"([^"]*?)".*?>/g;//BB - NG
         var regex = /<\W*?(\w+)[^>]*?id\s*?=\s*?"([^"]*?)".*?>/gms;//Works with new line & whitespace after < 
@@ -261,7 +261,7 @@
         },
         oneditprepare: function() {
             var node = this;
-            
+            node.initialised = true;
             $("#node-input-size").elementSizer({
                 width: "#node-input-width",
                 height: "#node-input-height",
@@ -597,6 +597,14 @@
                     
                     // Only show the relevant widget type properties
                     triggerField.change();
+                    if(node.initialised){
+                        let svgStr = node.editor ? node.editor.getValue() : ""; 
+                        try {
+                            updateSvgIdHelpers(svgStr);    
+                        } catch (error) {
+                            console.error(error)
+                        }
+                    }
                 },                    
                 removable: true,
                 sortable: false
@@ -676,6 +684,14 @@
                             topicField.val($(this).val());
                         }
                     });
+                    if(node.initialised){
+                        let svgStr = node.editor ? node.editor.getValue() : ""; 
+                        try {
+                            updateSvgIdHelpers(svgStr);    
+                        } catch (error) {
+                            console.error(error)
+                        }
+                    }
                 },
                 removable: true
             });
@@ -686,6 +702,7 @@
                     clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
                 });
             }
+            node.initialised = true;
         },
         oneditsave: function() {
             var node = this;
