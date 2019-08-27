@@ -354,71 +354,103 @@ module.exports = function(RED) {
                                 return;
                             }
                                                     
-                            // The SVG element attribute values can be changed via the input messages
-                            // TODO msg check naar server verschuiven
-                            if (msg.payload && typeof msg.payload === 'object') {
-                                //console.log("on msg ($scope.$watch('msg', function(msg))")
-                                
-                                function processCommand(cmd){
-                                    try {
-                                    
-                                        if (!cmd.elementId) {
-                                            console.log("Invalid command. elementId not specified");
-                                            return;
-                                        }          
-                                        
-                                        var element = $scope.rootDiv.querySelector("#" + cmd.elementId);
-
-                                        if (!element) {
-                                            console.log("Invalid command. There is no SVG element with id = " + cmd.elementId);
-                                            return;
-                                        }
-                                                
-                                        switch (cmd.command) {
-                                            case "update_attribute":
-                                                // TODO is this correct?  can an element not have an attribute as long as no non-default value has been set?
-                                                if (!element.hasAttribute(cmd.attributeName)) {
-                                                    console.log("SVG element with id = " + cmd.elementId + " has no attribute with name = " + attributeName);
-                                                    return;                                    
-                                                }
-                                                element.setAttribute(cmd.attributeName, cmd.attributeValue);
-                                                break;
-                                            case "trigger_animation":
-                                                let ele = (element.tagName + "").trim().toLowerCase();
-                                                let animations = ["set","animate","animatemotion","animatecolor","animatetransform"]
-                                                if (!animations.includes(ele)) {
-                                                    console.log("SVG element with id = " + cmd.elementId + " is not one of '" + animations.join(",") + "'");
+                        
+                            
+                            function processCommand(payload, topic){
+                                var selector, elements, element;
+                                try {
+                                    if(topic){       
+                                        //additional method of updating a text update_text|selector
+                                        //e.g. @update_text|.graphtitle  or  update_text|#myText
+                                        var topicParts = msg.topic.split("|");
+                                        if(topicParts.length > 1){
+                                            if(topicParts[0] == "update_text" ){
+                                                selector = topicParts[1];
+                                                elements = $scope.rootDiv.querySelectorAll(selector);
+                                                if (!elements || !elements.length) {
+                                                    console.log("Invalid selector. No SVG elements found for selector " + selector);
                                                     return;
                                                 }
-                                                
-                                                if (!cmd.action) {
-                                                    console.log("When triggering an animation, there should be a .action field");
-                                                    return;
-                                                }
-                                                
-                                                switch (cmd.action) {
-                                                    case "start":
-                                                        element.beginElement();
-                                                        break;
-                                                    case "stop":
-                                                        element.endElement();
-                                                        break;
-                                                    default:
-                                                        try {
-                                                            element[cmd.action]();
-                                                        } catch (error) {
-                                                            throw new Error(`Error calling ${cmd.elementId}.${cmd.action}()`);
-                                                        }
-                                                        break;
-                                                }
-                                        }
-                                        
-                                    } catch (error) {
-                                        console.error(error);
+                                                elements.forEach(function(element){
+                                                    element.textContent = payload;
+                                                });
+                                            }
+                                        } 
+                                        return;
                                     }
-                                }
 
-                                var payload = msg.payload;
+                                    if (!payload.elementId && !payload.selector) {
+                                        console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                        return;
+                                    }          
+                                    selector = payload.selector || "#" + payload.elementId;
+                                    elements = $scope.rootDiv.querySelectorAll(selector);
+                                    if (!elements || !elements.length) {
+                                        console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                        return;
+                                    }
+                                    elements.forEach(function(element){
+                                        element.textContent = payload;
+                                    });
+                                    
+                                    //the payload.command or topic are both valid (backwards compatibility) 
+                                    switch (payload.command || payload.topic) {
+                                        case "update_text":
+                                            elements.forEach(function(element){
+                                                element.textContent = payload.attributeValue;
+                                            });                                                
+                                            break;
+                                        case "update_attribute":
+                                            // TODO is this correct?  can an element not have an attribute as long as no non-default value has been set?
+                                            if (!element.hasAttribute(payload.attributeName)) {
+                                                console.log("SVG element with id = " + payload.elementId + " has no attribute with name = " + attributeName);
+                                                return;                                    
+                                            }
+                                        case "set_attribute": //fall through (dont check hasAttribute if set_ is called)
+                                            elements.forEach(function(element){
+                                                element.setAttribute(payload.attributeName, payload.attributeValue);
+                                            });
+                                            break;
+                                        case "trigger_animation":
+                                            if (!payload.action) {
+                                                console.log("When triggering an animation, there should be a .action field");
+                                                return;
+                                            }
+                                            let animations = ["set","animate","animatemotion","animatecolor","animatetransform"]
+                                            elements.forEach(function(element){
+                                                let ele = (element.tagName + "").trim().toLowerCase();
+                                                if (animations.includes(ele)) {
+                                                    
+                                                    switch (payload.action) {
+                                                        case "start":
+                                                            element.beginElement();
+                                                            break;
+                                                        case "stop":
+                                                            element.endElement();
+                                                            break;
+                                                        default:
+                                                            try {
+                                                                element[payload.action]();
+                                                            } catch (error) {
+                                                                throw new Error(`Error calling ${payload.elementId}.${payload.action}()`);
+                                                            }
+                                                            break;
+                                                    }
+                                                }
+
+                                            });                                                
+                                    }
+                                    
+                                } catch (error) {
+                                    console.error(error);
+                                }
+                            }
+
+                            var payload = msg.payload;
+                            var topic = msg.topic;
+                            if((typeof payload == "string" || typeof payload == "number") && topic){
+                                processCommand(payload, topic);
+                            } else {
                                 if(!Array.isArray(payload)){
                                     payload = [payload];
                                 }
@@ -426,7 +458,8 @@ module.exports = function(RED) {
                                     if(typeof val == "object" && val.command)
                                         processCommand(val);
                                 });
-                            }
+                            }   
+                                                        
                         }, true);
                     }
                 });
