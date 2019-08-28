@@ -721,11 +721,6 @@
             this.editor.destroy();
             delete this.editor;
             
-            // Allow manipulation of the SVG string, by loading it temporarily in the DOM
-            // See https://stackoverflow.com/questions/24107288/create-an-svg-dom-element-from-a-string
-            var svgDom = document.createElement("div");
-            svgDom.innerHTML = svgString;
-            
             // Copy all the animations from the editableList to this node
             node.smilAnimations = [];
             var smilAnimationsList = $("#node-input-animations-container").editableList('items');
