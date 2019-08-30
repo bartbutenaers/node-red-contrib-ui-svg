@@ -836,4 +836,151 @@
 </script>
 <script type="text/html" data-help-name="ui_svg_graphics">
     <p>A Node Red node to show a vector graphics (SVG) drawing inside the dashboard.</p>
+    <h3>General Properties...</h3>
+    <dl class="message-properties">
+        <h4>Group</h4>
+        <div style="padding-left: 15px">
+            Where you want the SVG to be displayed on your dashboard.
+        </div>
+        <h4>Size</h4>
+        <div style="padding-left: 15px">
+            The size 
+        </div>    
+        <h4>Name</h4>
+        <div style="padding-left: 15px">
+            The name of this node 
+        </div>
+        <h3><b>Tabs...</b></h3>
+        <h4>SVG editor</h4>
+        <div style="padding-left: 15px">
+            The raw SVG to be displayed.
+        </div>
+        <h4>Animations</h4>
+        <div style="padding-left: 15px">
+            A customisable list of animations. Each animation targets an element where you can specify an attribute to animate. 
+            <p>Notes...</p>
+            <ul>
+                <li>The <code>from</code> and <code>to</code> values specify what changes. </li>
+                <li><code>Freeze</code> = Keep the state of the last animation frame </li>
+                <li><code>Trigger</code> 
+                    <ul>
+                        <li>Input Message: Dont start the animation, instead, wait for a <code>msg</code> (See Triggering an animation command below) </li>
+                        <li>Time Delay: Start animation after a specified time</li>
+                        <li>Custom: Use standard <code>begin</code> options e.g. <code>2s; myRect.click; myAnim.end-400ms</code> <i target="blank" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin">See here</i>.  </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>        
+        <h4>Events</h4>
+        <div style="padding-left: 15px">
+            A customisable list of events. Each event targets an element where you can specify what action (e.g. click, mouseover, focus, etc) and a payload/topic to send upon the specified action.
+            Additionally, <code>Output to</code> permits you to specify what part of the <code>msg</code> to send the payload to.
+        </div>
+
+    </dl>
+    <h3>Output</h3>
+    <dl class="message-properties">
+        <dt><i>payload (see 'Output to')</i> <span class="property-type">number|string|boolean|object|buffer</span></dt>
+        <dd>msg.[Output to] will contain whatever is configured in 'payload'</dd>
+        <dd>e.g. if 'Output to' is set to <b>data.value</b> then <code>msg.data.value</code> will contain the value of the <i>payload</i></dd>
+        <dd>Additional properties are also added to the msg object. Check the debug output (use show complete msg)</dd>
+    </dl>
+
+    <h3>Inputs - Commands <i>(Advanced Usage)</i></h3>
+    <dl class="message-properties">
+        <dt><i>payload</i> <span class="property-type">string|object|Array</span></dt>
+        <dd>It is possible to dynamically trigger animations, update and set element attributes, update text elements via a <code>msg</code>
+        <dd>
+            <p><b>Triggering an animation command - payload object</b><br>Example...<br>
+                <pre style="white-space: nowrap">[
+ {
+    "command": "trigger_animation",
+    "selector": "#myAnimation",
+    "action": "start"
+ }
+]</pre>
+                
+                <p><i>Details...</i><br>
+                    <ul>
+                        <li>command: (string|required) The operation to perform</li>
+                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>action: (string|required) This must be <code>start</code>or <code>stop</code></li>
+                    </ul>
+                </p>
+            </p>
+
+
+            <p><b>Setting an attribute value command - payload object</b><br>Example...<br>
+                <pre style="white-space: nowrap">[
+ {
+    "command": "update_attribute",
+    "selector": "#myRect > .statusBar",
+    "attributeName": "fill",
+    "attributevalue": "red"
+ },
+ {
+    "command": "update_attribute",
+    "selector": "#myRect > .faultMessage",
+    "attributeName": "display",
+    "attributevalue": "inline"
+ }
+]</pre>
+                
+                <p><i>Details...</i><br>
+                    <ul>
+                        <li>command: (string|required) The operation to perform</li>
+                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>attributeName: (string|required) This attribute be updated</li>
+                        <li>attributevalue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
+                    </ul>
+                </p>
+            </p>
+
+
+            <p><b>Setting text content command</b><br>Example...<br>
+                <P>Topic Method</P>
+                <pre style="white-space: nowrap">
+ //send a msg with topic formatted as...   
+ //  update_text|selector  
+ //... and the payload with the text to display
+ var msg = {
+    "topic": "update_text|#myRect > .faultMessage",
+    "payload": "hello"
+ }
+ return msg;</pre>
+
+                <P>Command Method - payload object</P>
+                <pre style="white-space: nowrap">[
+ {
+    "command": "update_text",
+    "selector": "#myRect > .faultMessage",
+    "textConent": "Hello from a command message"
+ }
+]</pre>
+                
+                <p><i>Topic Method Details...</i><br>
+                    <ul>
+                        <li>topic: (string|required) The format must adhere to "update_topic|selector"</li>
+                        <li>payload: (string|required) The text to set</li>
+                    </ul>
+                </p>
+                
+                <p><i>Command Method Details...</i><br>
+                    <ul>
+                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>textConent: (string|required) This attribute be updated</li>
+                    </ul>
+                </p>
+            </p>
+
+                            
+        </dd>
+
+        <dd>GENERAL NOTES...<br>
+        <ul>
+            <li>Multiple commands objects can be executed if the payload is an array of objects</li>
+            <li>Multiple elements can be addressed by the selector (e.g. ".status" would operate on all elements with class "status")</li>
+        </ul>
+        </dd>
+    </dl>
 </script>
