@@ -844,7 +844,7 @@
         </div>
         <h4>Size</h4>
         <div style="padding-left: 15px">
-            The size 
+            The size of the widget on the dashboard
         </div>    
         <h4>Name</h4>
         <div style="padding-left: 15px">
@@ -892,7 +892,7 @@
         <dd>It is possible to dynamically trigger animations, update and set element attributes, update text elements via a <code>msg</code>
         <dd>
             <p><b>Triggering an animation command - payload object</b><br>Example...<br>
-                <pre style="white-space: nowrap">[
+                <pre style="white-space: pre">[
  {
     "command": "trigger_animation",
     "selector": "#myAnimation",
@@ -911,7 +911,7 @@
 
 
             <p><b>Setting an attribute value command - payload object</b><br>Example...<br>
-                <pre style="white-space: nowrap">[
+                <pre style="white-space: pre">[
  {
     "command": "update_attribute",
     "selector": "#myRect > .statusBar",
@@ -939,7 +939,7 @@
 
             <p><b>Setting text content command</b><br>Example...<br>
                 <P>Topic Method</P>
-                <pre style="white-space: nowrap">
+                <pre style="white-space: pre">
  //send a msg with topic formatted as...   
  //  update_text|selector  
  //... and the payload with the text to display
@@ -950,7 +950,7 @@
  return msg;</pre>
 
                 <P>Command Method - payload object</P>
-                <pre style="white-space: nowrap">[
+                <pre style="white-space: pre">[
  {
     "command": "update_text",
     "selector": "#myRect > .faultMessage",
