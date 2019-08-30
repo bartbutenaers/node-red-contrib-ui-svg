@@ -416,24 +416,26 @@ module.exports = function(RED) {
                                         console.log("Invalid selector. No SVG elements found for selector " + selector);
                                         return;
                                     }
-                                    elements.forEach(function(element){
-                                        element.textContent = payload;
-                                    });
                                     
                                     //the payload.command or topic are both valid (backwards compatibility) 
-                                    switch (payload.command || payload.topic) {
+                                    var op = payload.command || payload.topic
+                                    switch (op) {
                                         case "update_text":
                                             elements.forEach(function(element){
-                                                element.textContent = payload.attributeValue;
+                                                element.textContent = payload.textContent;
                                             });                                                
                                             break;
                                         case "update_attribute":
-                                            // TODO is this correct?  can an element not have an attribute as long as no non-default value has been set?
-                                            if (!element.hasAttribute(payload.attributeName)) {
-                                                console.log("SVG element with id = " + payload.elementId + " has no attribute with name = " + attributeName);
-                                                return;                                    
-                                            }
-                                        case "set_attribute": //fall through (dont check hasAttribute if set_ is called)
+                                        case "set_attribute": //fall through 
+                                            elements.forEach(function(element){
+                                                if (op == "update_attribute") {
+                                                    if(!element.hasAttribute(payload.attributeName)) {
+                                                        console.log("SVG element with id = " + payload.elementId + " has no attribute with name = " + attributeName);
+                                                        return
+                                                    }
+                                                }
+                                                element.setAttribute(payload.attributeName, payload.attributeValue);
+                                            });
                                             elements.forEach(function(element){
                                                 element.setAttribute(payload.attributeName, payload.attributeValue);
                                             });
