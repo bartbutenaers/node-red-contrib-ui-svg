@@ -225,6 +225,26 @@
         $(".node-input-clickable-payload").typedInput('width');//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
 
     } 
+
+    function getAnimationObjectFromFormRow(ele){
+        var row = $(ele);
+        var id            = row.find(".node-input-animation-id").val();
+        var targetId      = row.find(".node-input-animation-targetId").val();
+        var attributeName = row.find(".node-input-animation-attributeName").val();
+        var fromValue     = row.find(".node-input-animation-fromValue").val();
+        var toValue       = row.find(".node-input-animation-toValue").val();
+        var trigger       = row.find(".node-input-animation-trigger").val();
+        var duration      = row.find(".node-input-animation-duration").val();
+        var durationUnit  = row.find(".node-input-animation-durationUnit").val();
+        var repeatCount   = row.find(".node-input-animation-repeatCount").val();
+        var freeze        = row.find(".node-input-animation-freeze").is(":checked");
+        var delay         = row.find(".node-input-animation-delay").val();
+        var delayUnit     = row.find(".node-input-animation-delayUnit").val();
+        var otherId       = row.find(".node-input-animation-otherId").val();
+        var custom        = row.find(".node-input-animation-custom").val();        
+        return {id:id, targetId:targetId, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
+    }
+
     RED.nodes.registerType('ui_svg_graphics',{
         category: 'dashboard',
         color: 'rgb( 63, 173, 181)',
@@ -367,9 +387,9 @@
                 return propertyRow;
             }
             
-            function getTitle(animationId) {
-                if (animationId && animationId != "") {
-                    return "Animation ( " + animationId + " )";
+            function getTitle(animation) {
+                if (animation && animation.id != "") {
+                    return "Animation ( " + animation.id + " : #" + animation.targetId + "." + animation.attributeName + ")";
                 }
                 else {
                     return "Animation ( unknown id )";
@@ -407,6 +427,11 @@
                         expandIcon = "fa fa-angle-down";
                     }
                     
+                    if(animation.expand){
+                        delete animation.expand
+                        expandIcon = "fa fa-angle-down";
+                    }
+
                     container.css({
                         overflow: 'hidden',
                         whiteSpace: 'nowrap'
@@ -418,10 +443,12 @@
                     var expandButton = $('<span/>', {style: "margin-left:5px; margin-right:10px;"}).html('<i class="' + expandIcon + '"></i>').appendTo(headerRow);
                     
                     // The header line title depends on the animation id
-                    var title = getTitle(animation.id);
+                    var title = getTitle(animation);
                     
                     var titleField = $('<span/>', {style: "margin-left:10px; margin-right:10px; font-weight:Bold"}).text(title).appendTo(headerRow);
-
+                    titleField.click(function(evt){
+                        expandButton.trigger( "click" )
+                    })
                     // The COMMON ROWS contain the common animation properties:
                     // - Animation id
                     // - Target id
@@ -438,12 +465,14 @@
                     var animationIdField = $('<input/>', {class: "node-input-animation-id", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(animationIdRow);
                     animationIdField.val(animation.id);
                     $('<span/>').text('%').appendTo(animationIdField);
-                    
-                    // When the animation id changes, the header line title should also be changed
-                    animationIdField.on("change", function(){
-                        var newTitle = getTitle($(this).val());
+        
+
+                    function updateTitle(ele){
+                        var par = $(ele).parent().parent();
+                        var anim = getAnimationObjectFromFormRow(par);
+                        var newTitle = getTitle(anim);
                         titleField.text(newTitle);
-                    });
+                    }
 
                     // Add a 'target id' property row
                     var targetIdRow = addPropertyRow(container, "Target id");
@@ -456,6 +485,18 @@
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
                     attributeNameField.val(animation.attributeName);
                     $('<span/>').text('%').appendTo(attributeNameField);
+
+                    // When the animation id changes, the header line title should also be changed
+                    animationIdField.on("change", function(){
+                        updateTitle(this)
+                    });
+                    targetIdField.on("change", function(){
+                        updateTitle(this)
+                    });
+                    attributeNameField.on("change", function(){
+                        updateTitle(this)
+                    });
+
 
                     // Add a 'from value' property row
                     var fromValueRow = addPropertyRow(container, "From value");
@@ -546,6 +587,19 @@
                     $('<span/>').text('%').appendTo(customField);
                     customRow.append($("<i />", {class:"fa fa-question", title:"Press down to select, right to accept, dot to access properties, semicolon/enter/tab to complete the entry."}));
 
+                    //add duplicate button
+                    var duplicateButton = $('<a/>', {class: "red-ui-editableList-item-remove red-ui-button red-ui-button-small", style: "margin-right: 28px"}).appendTo(container);
+                    duplicateButton.html('<i class="fa fa-clone"></i>')
+                    var anim = animation;
+                    var animList = smilAnimationsList;
+                    duplicateButton.click(function(evt){
+                        debugger
+                        var anew = $.extend({}, animation);//shallow clone
+                        anew.id += "_copy";
+                        anew.expand = true;
+                        animList.editableList('addItem', anew);
+                    })
+                    
                     // When the trigger type changes, only the relevant property rows should be visible
                     triggerField.change(function() {
                         var triggerType = $(this).val();
@@ -725,23 +779,8 @@
             node.smilAnimations = [];
             var smilAnimationsList = $("#node-input-animations-container").editableList('items');
             smilAnimationsList.each(function(i) {
-                var smilAnimation = $(this);
-                var id            = smilAnimation.find(".node-input-animation-id").val();
-                var targetId      = smilAnimation.find(".node-input-animation-targetId").val();
-                var attributeName = smilAnimation.find(".node-input-animation-attributeName").val();
-                var fromValue     = smilAnimation.find(".node-input-animation-fromValue").val();
-                var toValue       = smilAnimation.find(".node-input-animation-toValue").val();
-                var trigger       = smilAnimation.find(".node-input-animation-trigger").val();
-                var duration      = smilAnimation.find(".node-input-animation-duration").val();
-                var durationUnit  = smilAnimation.find(".node-input-animation-durationUnit").val();
-                var repeatCount   = smilAnimation.find(".node-input-animation-repeatCount").val();
-                var freeze        = smilAnimation.find(".node-input-animation-freeze").is(":checked");
-                var delay         = smilAnimation.find(".node-input-animation-delay").val();
-                var delayUnit     = smilAnimation.find(".node-input-animation-delayUnit").val();
-                var otherId       = smilAnimation.find(".node-input-animation-otherId").val();
-                var custom        = smilAnimation.find(".node-input-animation-custom").val();
-                
-                node.smilAnimations.push({id:id, targetId:targetId, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom});
+                var amin = getAnimationObjectFromFormRow(this);
+                node.smilAnimations.push(amin);
             });
             
             // Copy all the clickable shapes from the editableList to this node
