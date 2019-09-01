@@ -22,72 +22,155 @@
 
 <script type="text/javascript">
 
-    function updateSvgIdHelpers(svg) {
+    function updateSvgIdHelpers(svgStr) {
         console.log("updateSvgIdHelpers");
-        //var regex = /<.*?(\S+).+?id="(.+?)"/gm; //SM - NG
-        //var regex = /<[^\s]+.*?id *= *"([^"]*?)".*?>/g;//BB - NG
-        var regex = /<\W*?(\w+)[^>]*?id\s*?=\s*?"([^"]*?)".*?>/gms;//Works with new line & whitespace after < 
-        var str = svg//$("#fullthing").html();
-        var match;
-        var elementsIdsOnly = [];
-        var elementIdsAndActions = [];
-        var animationElements = [];
-        var nonAnimationElements = [];
-        
-        while ((match = regex.exec(str)) !== null) {
-            // This is necessary to avoid infinite loops with zero-width matches
-            if (match.index === regex.lastIndex) {
-                regex.lastIndex++;
-            }
 
-            if (match.length > 2) {
-                let full = match[0];
-                let ele = match[1] || "";
-                let id = match[2] || "";
+
+        var nonAnimationClasses = [];
+        var animationClasses = [];
+
+        var animationIds = [];
+        var animationIdSelectors = [];
+        
+        var nonAnimationIds = [];
+        var nonAnimationIdSelectors = [];
+        var nonAnimationIdsAndActions = [];
+        var animationIdsAndActions = [];
+        var svgElement = $(svgStr)[0];
+
+        svgElement.querySelectorAll('[class]').forEach(function (node) {
+            node.classList.forEach(function (className) {
+                if(!className) return;
+                var _class = "." + className;
+                var ele = node.tagName;
                 ele = ele.trim().toLowerCase();
-                elementsIdsOnly.push(match[2]);
                 if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
-                    animationElements.push(match[2]);
-                    elementIdsAndActions.push(match[2] + ".begin");
-                    elementIdsAndActions.push(match[2] + ".end");
-                    elementIdsAndActions.push(match[2] + ".repeat(1)");
+                    if (animationClasses.indexOf(_class) < 0) {
+                        animationClasses.push(_class)
+                    }
                 } else {
-                    nonAnimationElements.push(match[2]);
-                    elementIdsAndActions.push(match[2] + ".click");
-                    elementIdsAndActions.push(match[2] + ".dblclick");
-                    elementIdsAndActions.push(match[2] + ".contextmenu");
-                    elementIdsAndActions.push(match[2] + ".mouseover");
-                    elementIdsAndActions.push(match[2] + ".mouseout");
-                    elementIdsAndActions.push(match[2] + ".mouseup");
-                    elementIdsAndActions.push(match[2] + ".mousedown");
-                    elementIdsAndActions.push(match[2] + ".focus");
-                    elementIdsAndActions.push(match[2] + ".focusin");
-                    elementIdsAndActions.push(match[2] + ".focusout");
-                    elementIdsAndActions.push(match[2] + ".blur");
-                    elementIdsAndActions.push(match[2] + ".keyup");
-                    elementIdsAndActions.push(match[2] + ".keydown");
-                    elementIdsAndActions.push(match[2] + ".touchstart");
-                    elementIdsAndActions.push(match[2] + ".touchend");
+                    if (nonAnimationClasses.indexOf(_class) < 0) {
+                        nonAnimationClasses.push(_class)
+                    }
+                }
+            })
+        })
+
+        svgElement.querySelectorAll('*[id]').forEach(function (node) {
+
+            if(!node.id) return;
+            
+            var id = node.id;
+            var ele = node.tagName;
+            ele = ele.trim().toLowerCase();
+
+            if(ele == "style") return;
+
+            if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
+                if (animationIds.indexOf(id) < 0) {
+                    animationIds.push(id)
+                    animationIdSelectors.push("#"+id)
+                    animationIdsAndActions.push(id)
+                    animationIdsAndActions.push(id + ".begin");
+                    animationIdsAndActions.push(id + ".end");
+                    animationIdsAndActions.push(id + ".repeat(1)");
+                }
+            } else if(ele != "style" ) {
+                if (nonAnimationIds.indexOf(id) < 0) {
+                    nonAnimationIds.push(id);
+                    nonAnimationIdSelectors.push("#"+id)
+                    nonAnimationIdsAndActions.push(id + ".click");
+                    nonAnimationIdsAndActions.push(id + ".dblclick");
+                    nonAnimationIdsAndActions.push(id + ".contextmenu");
+                    nonAnimationIdsAndActions.push(id + ".mouseover");
+                    nonAnimationIdsAndActions.push(id + ".mouseout");
+                    nonAnimationIdsAndActions.push(id + ".mouseup");
+                    nonAnimationIdsAndActions.push(id + ".mousedown");
+                    nonAnimationIdsAndActions.push(id + ".focus");
+                    nonAnimationIdsAndActions.push(id + ".focusin");
+                    nonAnimationIdsAndActions.push(id + ".focusout");
+                    nonAnimationIdsAndActions.push(id + ".blur");
+                    nonAnimationIdsAndActions.push(id + ".keyup");
+                    nonAnimationIdsAndActions.push(id + ".keydown");
+                    nonAnimationIdsAndActions.push(id + ".touchstart");
+                    nonAnimationIdsAndActions.push(id + ".touchend");
                 }
             }
-        }
+        })
 
         //Get all animation ids specified by the SMIL animations editable list...
         var smilAnimationsList = $("#node-input-animations-container").editableList('items');
         smilAnimationsList.each(function(i) {
-            var id = $(this).find(".node-input-animation-id").val();                
-            animationElements.push(id);
+            var aid = $(this).find(".node-input-animation-id").val();    
+            if(!aid) return;            
+            if (animationIds.indexOf(aid) < 0) {
+                animationIds.push(aid);
+                animationIdsAndActions.push(aid + ".begin");
+                animationIdsAndActions.push(aid + ".end");
+                animationIdsAndActions.push(aid + ".repeat(1)");
+            }
         });
 
+        
         $(".node-input-animation-targetId").autocomplete({
-            source: nonAnimationElements
+            source: nonAnimationIds
         });
         $(".node-input-clickable-targetId").autocomplete({
-            source: nonAnimationElements
+            source: [...nonAnimationIdSelectors,...nonAnimationClasses]
         });
-        // $("#select2").autocomplete({
-        //     source: animationElements
-        // });
+        $(".node-input-animation-attributeName").autocomplete({
+            source: [
+                        'clipPathUnits',
+                        'cx',
+                        'cy',
+                        'd',
+                        'display',
+                        'dx',
+                        'dy',
+                        'fill',
+                        'fx',
+                        'fy',
+                        'gradientTransform',
+                        'gradientUnits',
+                        'height',
+                        'lengthAdjust',
+                        'markerHeight',
+                        'markerUnits',
+                        'markerWidth',
+                        'maskContentUnits',
+                        'maskUnits',
+                        'method',
+                        'offset',
+                        'orient',
+                        'pathLength',
+                        'patternContentUnits',
+                        'patternTransform',
+                        'patternUnits',
+                        'points',
+                        'preserveAspectRatio',
+                        'r',
+                        'refX',
+                        'refY',
+                        'rotate',
+                        'rx',
+                        'ry',
+                        'spacing',
+                        'spreadMethod',
+                        'startOffset',
+                        'textLength',
+                        'transform',
+                        'viewBox',
+                        "visibility",
+                        'width',
+                        'x',
+                        'x1',
+                        'x2',
+                        'y',
+                        'y1',
+                        'y2',
+                        ]
+
+        });
 
         function tagSplit(val) {
             return val.split(/;\s*/);
@@ -95,11 +178,7 @@
         function extractLastTag(term) {
             return tagSplit(term).pop();
         }
-
-        // $("#button").on("click", function (event) {
-        //     $("#tags").autocomplete("search", "")
-        // })
-
+        
         $(".node-input-animation-custom")
             .on("keydown", function (event) {
                 
@@ -144,9 +223,9 @@
                     let list;
                     let lastTag = extractLastTag(request.term);
                     if(lastTag.includes(".")){
-                        list = elementIdsAndActions; 
+                        list = [...nonAnimationIdsAndActions,...animationIdsAndActions]; 
                     } else {
-                        list = elementsIdsOnly; 
+                        list = [...nonAnimationIds, ...animationIds]; 
                     }
                     // delegate back to autocomplete, but extract the last term
                     response($.ui.autocomplete.filter(list, lastTag));
@@ -167,8 +246,148 @@
                 }
             });
 
-
     }
+
+    // function updateSvgIdHelpers(svg) {
+    //     console.log("updateSvgIdHelpers");
+    //     //var regex = /<.*?(\S+).+?id="(.+?)"/gm; //SM - NG
+    //     //var regex = /<[^\s]+.*?id *= *"([^"]*?)".*?>/g;//BB - NG
+    //     var regex = /<\W*?(\w+)[^>]*?id\s*?=\s*?"([^"]*?)".*?>/gms;//Works with new line & whitespace after < 
+    //     var str = svg//$("#fullthing").html();
+    //     var match;
+    //     var elementsIdsOnly = [];
+    //     var elementIdsAndActions = [];
+    //     var animationElements = [];
+    //     var nonAnimationElements = [];
+        
+    //     while ((match = regex.exec(str)) !== null) {
+    //         // This is necessary to avoid infinite loops with zero-width matches
+    //         if (match.index === regex.lastIndex) {
+    //             regex.lastIndex++;
+    //         }
+
+    //         if (match.length > 2) {
+    //             let full = match[0];
+    //             let ele = match[1] || "";
+    //             let id = match[2] || "";
+    //             ele = ele.trim().toLowerCase();
+    //             elementsIdsOnly.push(match[2]);
+    //             if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
+    //                 animationElements.push(match[2]);
+    //                 elementIdsAndActions.push(match[2] + ".begin");
+    //                 elementIdsAndActions.push(match[2] + ".end");
+    //                 elementIdsAndActions.push(match[2] + ".repeat(1)");
+    //             } else {
+    //                 nonAnimationElements.push(match[2]);
+    //                 elementIdsAndActions.push(match[2] + ".click");
+    //                 elementIdsAndActions.push(match[2] + ".dblclick");
+    //                 elementIdsAndActions.push(match[2] + ".contextmenu");
+    //                 elementIdsAndActions.push(match[2] + ".mouseover");
+    //                 elementIdsAndActions.push(match[2] + ".mouseout");
+    //                 elementIdsAndActions.push(match[2] + ".mouseup");
+    //                 elementIdsAndActions.push(match[2] + ".mousedown");
+    //                 elementIdsAndActions.push(match[2] + ".focus");
+    //                 elementIdsAndActions.push(match[2] + ".focusin");
+    //                 elementIdsAndActions.push(match[2] + ".focusout");
+    //                 elementIdsAndActions.push(match[2] + ".blur");
+    //                 elementIdsAndActions.push(match[2] + ".keyup");
+    //                 elementIdsAndActions.push(match[2] + ".keydown");
+    //                 elementIdsAndActions.push(match[2] + ".touchstart");
+    //                 elementIdsAndActions.push(match[2] + ".touchend");
+    //             }
+    //         }
+    //     }
+
+    //     //Get all animation ids specified by the SMIL animations editable list...
+    //     var smilAnimationsList = $("#node-input-animations-container").editableList('items');
+    //     smilAnimationsList.each(function(i) {
+    //         var id = $(this).find(".node-input-animation-id").val();                
+    //         animationElements.push(id);
+    //     });
+
+    //     $(".node-input-animation-targetId").autocomplete({
+    //         source: nonAnimationElements
+    //     });
+    //     $(".node-input-clickable-targetId").autocomplete({
+    //         source: nonAnimationElements
+    //     });
+
+    //     function tagSplit(val) {
+    //         return val.split(/;\s*/);
+    //     }
+    //     function extractLastTag(term) {
+    //         return tagSplit(term).pop();
+    //     }
+
+    //     $(".node-input-animation-custom")
+    //         .on("keydown", function (event) {
+                
+    //             if($(this).autocomplete("instance").menu.active){
+    //                 var appendChar = "; ";
+    //                 var takeInput = true;
+    //                 switch (event.keyCode) {
+    //                     case $.ui.keyCode.RIGHT:
+    //                     appendChar = "";
+    //                     break;
+    //                     case 186:
+    //                     appendChar = "; ";
+    //                     break;
+    //                     case $.ui.keyCode.PERIOD:
+    //                     appendChar = ".";
+    //                     break;
+    //                     default:
+    //                     takeInput = false;
+    //                 }
+                    
+    //                 if (event.keyCode === $.ui.keyCode.TAB) {
+    //                     event.preventDefault();// don't navigate away from the field on tab when selecting an item
+    //                 } else if (takeInput) {
+    //                     let terms =  tagSplit(this.value);
+    //                     let selected = $(this).autocomplete("instance").menu.active.text()
+    //                     terms.pop();// remove the current input 
+    //                     terms.push(selected + appendChar); // add the selected item
+    //                     this.value = terms.join("; ");
+    //                     event.preventDefault();// don't navigate away from the field
+    //                 }
+    //             }
+    //         })
+    //         .on("click", function (event) {
+    //             //show dropdown on click (disabled/annoying/problematic)
+    //             //$( this ).autocomplete( "search", "" )
+    //         })
+    //         .autocomplete({
+    //             minLength: 0,
+    //             source: function (request, response) {
+    //                 //TODO: Consider how to handle editing in middle of string
+    //                 //currently, the last tag (after last ;) is used.
+    //                 let list;
+    //                 let lastTag = extractLastTag(request.term);
+    //                 if(lastTag.includes(".")){
+    //                     list = elementIdsAndActions; 
+    //                 } else {
+    //                     list = elementsIdsOnly; 
+    //                 }
+    //                 // delegate back to autocomplete, but extract the last term
+    //                 response($.ui.autocomplete.filter(list, lastTag));
+    //             },
+    //             focus: function () {
+    //                 // prevent value inserted on focus
+    //                 return false;
+    //             },
+    //             select: function (event, ui) {
+    //                 var terms = tagSplit(this.value);
+
+    //                 terms.pop();// remove the current input 
+    //                 terms.push(ui.item.value); // add the selected item
+    //                 // add placeholder to get the comma-and-space at the end
+    //                 terms.push("");
+    //                 this.value = terms.join("; ");
+    //                 return false;
+    //             }
+    //         });
+
+
+    // }
 
 
     function updateEditorHeight(node, editor) {
@@ -389,7 +608,7 @@
             
             function getTitle(animation) {
                 if (animation && animation.id != "") {
-                    return "Animation ( " + animation.id + " : #" + animation.targetId + "." + animation.attributeName + ")";
+                    return "Animation ( " + animation.id + " : '" + animation.targetId + "' : '" + animation.attributeName + "' )";
                 }
                 else {
                     return "Animation ( unknown id )";
@@ -475,7 +694,7 @@
                     }
 
                     // Add a 'target id' property row
-                    var targetIdRow = addPropertyRow(container, "Target id");
+                    var targetIdRow = addPropertyRow(container, "Target Element Id");
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
                     targetIdField.val(animation.targetId);
                     $('<span/>').text('%').appendTo(targetIdField);
@@ -674,13 +893,13 @@
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
             var clickableShapesList = $("#node-input-clickable-container").css('min-height','150px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:17%; margin-left:5px; display: inline-grid'><b>Element</b></div><div style='width:20%; margin-left:5px; display: inline-grid'><b>Action</b></div><div style='width:38%; margin-left:4px; display: inline-grid'><b>Payload</b></div><div style='width:17%; margin-left:-3px; display: inline-grid'><b>Topic</b></div>")),
+                header: $("<div>").append($.parseHTML("<div style='width:17%; margin-left:5px; display: inline-grid'><b>Selector</b></div><div style='width:20%; margin-left:5px; display: inline-grid'><b>Action</b></div><div style='width:38%; margin-left:4px; display: inline-grid'><b>Payload</b></div><div style='width:17%; margin-left:-3px; display: inline-grid'><b>Topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
                     // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
-                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element ID"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
                     
                     // Column 2 : Add an input field (type option) to the new row, that represents the action type 
@@ -688,6 +907,8 @@
                     var actionOptions = {
                         //https://www.w3.org/TR/2015/WD-SVG2-20150407/interact.html#SVGEvents
                         'click':'click',//A click is defined as a mousedown and mouseup over the same screen location. Works on tablet too.
+                        'dblclick':'dblclick',
+                        'contextmenu':'contextmenu',
                         'mousedown':'mousedown',//Occurs when the pointing device button is pressed over an element.
                         'mouseup':'mouseup',//Occurs when the pointing device button is released over an element.
                         'mouseover':'mouseover',//Occurs when the pointing device is moved onto an element.

@@ -119,6 +119,7 @@ module.exports = function(RED) {
                         let newMsg = {
                             topic: orig.msg.topic,
                             elementId: orig.msg.elementId,
+                            selector: orig.msg.selector,
                             event: orig.msg.event,
                             coordinates: orig.msg.coordinates,
                             position: orig.msg.position,
@@ -141,7 +142,7 @@ module.exports = function(RED) {
                             //console.log("initController.init")
                             $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
                             $scope.svg = $scope.rootDiv.querySelector("svg");
-                            $scope.svg.style.cursor = "crosshair";
+                            //$scope.svg.style.cursor = "crosshair";
                             
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
                             config.clickableShapes.forEach(function(clickableShape) {
@@ -150,11 +151,9 @@ module.exports = function(RED) {
                                 if (!clickableShape.targetId) {
                                     return;
                                 }
-                                var element = $scope.rootDiv.querySelector("#" + clickableShape.targetId);
+                                var elements = $scope.rootDiv.querySelectorAll(clickableShape.targetId);
                                 var action = clickableShape.action || "click" ;
-
-                                                                
-                                if (element) {
+                                elements.forEach(function(element){
                                     console.log("initController.init > config.clickableShapes.forEach > element ok, adding action ")
                                     // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
                                     // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
@@ -170,10 +169,11 @@ module.exports = function(RED) {
                                     
                                     $(element).on(action, function(evt) {
                                         // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                                        //console.log(action, clickableShape.targetId )
+                                        console.log( `$(element).on('${action}', function(evt) {...` )
                                         var msg = {
                                             event: action,
                                             elementId: clickableShape.targetId,
+                                            selector: clickableShape.selector,
                                             payload: clickableShape.payload, 
                                             payloadType: clickableShape.payloadType, 
                                             topic: clickableShape.topic
@@ -196,7 +196,7 @@ module.exports = function(RED) {
                                         }
                                         $scope.send(msg); 
                                     });
-                                }
+                                })
                             });
                             
                             
@@ -214,7 +214,7 @@ module.exports = function(RED) {
                                     animationElement.setAttribute("attributeType", "XML");  // TODO what is this used for ???
                                     animationElement.setAttribute("attributeName", smilAnimation.attributeName); 
                                     if(smilAnimation.fromValue != "")
-                                        animationElement.setAttribute("from"         , smilAnimation.fromValue); //permit transition from current value if not specified
+                                        animationElement.setAttribute("from"     , smilAnimation.fromValue); //permit transition from current value if not specified
                                     animationElement.setAttribute("to"           , smilAnimation.toValue); 
                                     animationElement.setAttribute("dur"          , smilAnimation.duration + (smilAnimation.durationUnit || "s")); // Seconds e.g. "2s"
                                     
@@ -410,23 +410,30 @@ module.exports = function(RED) {
                                         console.log("Invalid payload. A property named .elementId or .selector is not specified");
                                         return;
                                     }          
-                                    selector = payload.selector || "#" + payload.elementId;
-                                    elements = $scope.rootDiv.querySelectorAll(selector);
-                                    if (!elements || !elements.length) {
-                                        console.log("Invalid selector. No SVG elements found for selector " + selector);
-                                        return;
-                                    }
+                                    
                                     
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
                                     switch (op) {
                                         case "update_text":
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
                                             elements.forEach(function(element){
                                                 element.textContent = payload.textContent;
                                             });                                                
                                             break;
                                         case "update_attribute":
                                         case "set_attribute": //fall through 
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
                                             elements.forEach(function(element){
                                                 if (op == "update_attribute") {
                                                     if(!element.hasAttribute(payload.attributeName)) {
@@ -441,6 +448,13 @@ module.exports = function(RED) {
                                             });
                                             break;
                                         case "trigger_animation":
+                                                
+                                            selector = payload.selector || ("#" + payload.elementId);
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
                                             if (!payload.action) {
                                                 console.log("When triggering an animation, there should be a .action field");
                                                 return;
