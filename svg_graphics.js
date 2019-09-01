@@ -212,6 +212,7 @@ module.exports = function(RED) {
                                     var animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animate');
                                     animationElement.setAttribute("id"           , smilAnimation.id); 
                                     animationElement.setAttribute("attributeType", "XML");  // TODO what is this used for ???
+                                    animationElement.setAttribute("class", smilAnimation.classValue); 
                                     animationElement.setAttribute("attributeName", smilAnimation.attributeName); 
                                     if(smilAnimation.fromValue != "")
                                         animationElement.setAttribute("from"     , smilAnimation.fromValue); //permit transition from current value if not specified

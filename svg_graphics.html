@@ -28,6 +28,7 @@
 
         var nonAnimationClasses = [];
         var animationClasses = [];
+        var animationListClasses = [];
 
         var animationIds = [];
         var animationIdSelectors = [];
@@ -102,6 +103,11 @@
         var smilAnimationsList = $("#node-input-animations-container").editableList('items');
         smilAnimationsList.each(function(i) {
             var aid = $(this).find(".node-input-animation-id").val();    
+            var cv = $(this).find(".node-input-animation-classValue").val();    
+                        
+            if (cv && animationListClasses.indexOf(cv) < 0) {
+                animationListClasses.push(cv);
+            }
             if(!aid) return;            
             if (animationIds.indexOf(aid) < 0) {
                 animationIds.push(aid);
@@ -112,6 +118,9 @@
         });
 
         
+        $(".node-input-animation-classValue").autocomplete({
+            source: animationListClasses
+        });
         $(".node-input-animation-targetId").autocomplete({
             source: nonAnimationIds
         });
@@ -449,6 +458,7 @@
         var row = $(ele);
         var id            = row.find(".node-input-animation-id").val();
         var targetId      = row.find(".node-input-animation-targetId").val();
+        var classValue    = row.find(".node-input-animation-classValue").val();
         var attributeName = row.find(".node-input-animation-attributeName").val();
         var fromValue     = row.find(".node-input-animation-fromValue").val();
         var toValue       = row.find(".node-input-animation-toValue").val();
@@ -461,7 +471,7 @@
         var delayUnit     = row.find(".node-input-animation-delayUnit").val();
         var otherId       = row.find(".node-input-animation-otherId").val();
         var custom        = row.find(".node-input-animation-custom").val();        
-        return {id:id, targetId:targetId, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
+        return {id:id, targetId:targetId, classValue:classValue, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
     }
 
     RED.nodes.registerType('ui_svg_graphics',{
@@ -629,6 +639,7 @@
                             id            : "", 
                             targetId      : "",
                             attributeName : "",
+                            classValue    : "",
                             fromValue     : "",
                             duration      : 1,
                             durationUnit   : "s",
@@ -699,6 +710,12 @@
                     targetIdField.val(animation.targetId);
                     $('<span/>').text('%').appendTo(targetIdField);
 
+                    // Add a 'class' property row
+                    var classValueRow = addPropertyRow(container, "Class");
+                    var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
+                    classValueField.val(animation.classValue);
+                    $('<span/>').text('%').appendTo(classValueField);
+
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
@@ -717,15 +734,14 @@
                     });
 
 
-                    // Add a 'from value' property row
-                    var fromValueRow = addPropertyRow(container, "From value");
-                    var fromValueField = $('<input/>', {class: "node-input-animation-fromValue", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(fromValueRow);
+                    // Add a 'from / to value' property row
+                    var fromToValueRow = addPropertyRow(container, "From / To");
+                    var fromValueField = $('<input/>', {class: "node-input-animation-fromValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "from"}).appendTo(fromToValueRow);
                     fromValueField.val(animation.fromValue);
                     $('<span/>').text('%').appendTo(fromValueField);
 
                     // Add a 'to value' property row
-                    var toValueRow = addPropertyRow(container, "To value");
-                    var toValueField = $('<input/>', {class: "node-input-animation-toValue", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(toValueRow);
+                    var toValueField = $('<input/>', {class: "node-input-animation-toValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "to"}).appendTo(fromToValueRow);
                     toValueField.val(animation.toValue);
                     $('<span/>').text('%').appendTo(toValueField);
 
@@ -826,8 +842,8 @@
                         animationIdRow.hide();
                         targetIdRow.hide();
                         attributeNameRow.hide();
-                        fromValueRow.hide();
-                        toValueRow.hide();
+                        classValueRow.hide();
+                        fromToValueRow.hide();
                         durationRow.hide();
                         repeatCountRow.hide();
                         freezeRow.hide();
@@ -843,8 +859,8 @@
                             animationIdRow.show();
                             targetIdRow.show();
                             attributeNameRow.show();
-                            fromValueRow.show();
-                            toValueRow.show();
+                            classValueRow.show();
+                            fromToValueRow.show();
                             durationRow.show();
                             repeatCountRow.show();
                             freezeRow.show();
@@ -1130,6 +1146,7 @@
                         <li>Custom: Use standard <code>begin</code> options e.g. <code>2s; myRect.click; myAnim.end-400ms</code> <i target="blank" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin">See here</i>.  </li>
                     </ul>
                 </li>
+                <li><code>Class</code> The class field permits you to adress animations by a class name. e.g. you ould send a <code>msg</code> to "trigger_animation" of all animations with <code>selector</code> ".spinners" </ul>
             </ul>
         </div>        
         <h4>Events</h4>
