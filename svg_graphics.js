@@ -521,4 +521,16 @@ module.exports = function(RED) {
     }
 
     RED.nodes.registerType("ui_svg_graphics", SvgGraphicsNode);
+
+    // Make all the static resources from this node public available (i.e. third party JQuery plugin tableHeadFixer.js).
+    RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){
+        var options = {
+            root: __dirname /*+ '/static/'*/,
+            dotfiles: 'deny'
+        };
+       
+        // Send the requested file to the client (in this case it will be tableHeadFixer.js)
+        res.sendFile(req.params[0], options)
+    });
+
 }
