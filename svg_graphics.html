@@ -829,10 +829,13 @@
                     var animList = smilAnimationsList;
                     duplicateButton.click(function(evt){
                         debugger
-                        var anew = $.extend({}, animation);//shallow clone
-                        anew.id += "_copy";
-                        anew.expand = true;
-                        animList.editableList('addItem', anew);
+                        var duplicate = getAnimationObjectFromFormRow($(this).parent());
+                        duplicate.id += "_copy";
+                        duplicate.expand = true;
+                        // var anew = $.extend({}, animation);//shallow clone
+                        // anew.id += "_copy";
+                        //anew.expand = true;
+                        animList.editableList('addItem', duplicate);
                     })
                     
                     // When the trigger type changes, only the relevant property rows should be visible
