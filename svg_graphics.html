@@ -1005,113 +1005,137 @@
 
 
 
-                    debugger
+            debugger
+
             var stringSVG1 = node.editor ? node.editor.getValue() : ""; 
             var iframe = $('<iframe id="drawsvg" frameborder="0" marginwidth="0" marginheight="0" allowfullscreen></iframe>');
             var dialog = $("<div></div>").append(iframe).appendTo("body").dialog({
                 autoOpen: false,
                 modal: true,
-                resizable: false,
+                resizable: true,
                 width: "auto",
                 height: "auto",
+                minHeight: 440,
+                minWidth: 600,
+                // height: winhei - 100,
+                // width: winwid - 100,
                 close: function () {
-                    iframe.attr("src", "");
+                    try {
+                        $("#drawsvg")[0].src = "";
+                        window.myChan.destroy();
+                    } catch (error) {
+                        
+                    }
+                    window.myChan = null;                    
                 }
             });
             $("#node-iframe-svg-edit").on("click", function (e) {
                 console.log("node-iframe-svg-edit clicked")
                 e.preventDefault();
+                
+                // create drawsvg channel
+                window.myChan = Channel.build({
+                    debugOutput: true,
+                    window: document.getElementById("drawsvg").contentWindow,
+                    origin: "*",
+                    scope: "drawsvg"
+                });
+
+                    
+                // drawsvg ready callback
+                function onDrawSVGReady(trans,params) {
+                    // now you can communicate with drawsvg
+                    console.log("got drawsvg ready notification");
+                    // enable buttons
+                    // document.getElementById("svg1btn").disabled=false;
+                    // document.getElementById("svg2btn").disabled=false;
+                    // document.getElementById("getbtn").disabled=false;
+                    // document.getElementById("addlayerbtn").disabled=false;
+                    // setting document menu
+                    // call 'setDocumentMenu' method 
+                    // with params {enableSamples, disableTasks}
+                    window.myChan.call({
+                        method: "setDocumentMenu",
+                        params: {
+                            // disable samples sub-menu
+                            'enableSamples' : true
+                            // disable taks new and open 
+                            //'disableTasks' : 'new open'
+                        },
+                        // jsChannel callbacks
+                        error: function(error, message) { log( "ERROR: " + error + " (" + message + ")"); },
+                        success: function(v) {
+                            console.log("setting document menu done");
+                            debugger
+                            window.myChan.call({
+                                method: "loadStringSVG",
+                                params: {
+                                    // string svg contents
+                                    'stringSVG' : stringSVG1,
+                                    // svg name
+                                    'nameSVG' : 'svg1',
+                                    // The name of the service which to be called 
+                                    // when user clicks on the save button of drawsvg
+                                    'saveService' :  'onSaveSVG',
+                                    // don't show save dialog
+                                    'showSaveDialog' : true,
+                                    // Change the dimensions of the document to the full window (100%)
+                                    'fullWindow' : true,
+                                    // svg loading callbacks
+                                    'onLoad' : function() {console.log("got svg1 onLoad notification");},
+                                    'onError': function(err) {console.log("ERROR while loading svg1: "+err);}
+                                },
+                                // jsChannel callbacks
+                                error: function(error, message) { log( "ERROR: " + error + " (" + message + ")"); },
+                                success: function(v) {}
+                            });
+                        }
+                    });
+
+                    
+
+                    return "connected";
+                };
+                
+                // bind drawsvg ready callback 
+                window.myChan.bind("onDrawSVGReady", onDrawSVGReady);
+
+                // save svg service
+                function  onSaveSVG(trans,params) {
+                    console.log("onSaveSVG nameSVG="+params['nameSVG']+" stringSVG="+params['stringSVG']);
+                    node.editor.setValue(params['stringSVG']);
+                    node.editor.clearSelection(); // This will remove the highlight over the text
+                    
+                    // save svg with stringSVG 
+                    // .... write your code
+                    return "save done";
+                }
+
+                // bind save callback
+                window.myChan.bind("onSaveSVG", onSaveSVG);
+
+                var winwid = $(window).width();
+                var winhei = $(window).height();
                 var src = $(this).attr("data-href");
+
                 var title = $(this).attr("data-title");
                 var width = $(this).attr("data-width");
                 var height = $(this).attr("data-height");
                 var drawsvg = $("#drawsvg");
                 drawsvg.attr({
-                    width: +width,
-                    height: +height,
+                    width: "99%",// +width,
+                    height:"99%",// +height,
                     src: src
                 });
-                dialog.dialog("option", "title", title).dialog("open");
+                dialog.dialog("option", "width", winwid-100);
+                dialog.dialog("option", "height", winhei-100);
+                dialog.dialog("option", "title", title).dialog("open");               
             });
 
             
-            // create drawsvg channel
-            var chan = Channel.build({
-                debugOutput: true,
-                window: document.getElementById("drawsvg").contentWindow,
-                origin: "*",
-                scope: "drawsvg"
-            });
-
-
-
-            // drawsvg ready callback
-            function onDrawSVGReady(trans,params) {
-                // now you can communicate with drawsvg
-                console.log("got drawsvg ready notification");
-                // enable buttons
-                // document.getElementById("svg1btn").disabled=false;
-                // document.getElementById("svg2btn").disabled=false;
-                // document.getElementById("getbtn").disabled=false;
-                // document.getElementById("addlayerbtn").disabled=false;
-                // setting document menu
-                // call 'setDocumentMenu' method 
-                // with params {enableSamples, disableTasks}
-                chan.call({
-                    method: "setDocumentMenu",
-                    params: {
-                        // disable samples sub-menu
-                        'enableSamples' : true
-                        // disable taks new and open 
-                        //'disableTasks' : 'new open'
-                    },
-                    // jsChannel callbacks
-                    error: function(error, message) { log( "ERROR: " + error + " (" + message + ")"); },
-                    success: function(v) {console.log("setting document menu done");}
-                });
-
-                chan.call({
-                    method: "loadStringSVG",
-                    params: {
-                        // string svg contents
-                        'stringSVG' : stringSVG1,
-                        // svg name
-                        'nameSVG' : 'svg1',
-                        // The name of the service which to be called 
-                        // when user clicks on the save button of drawsvg
-                        'saveService' :  'onSaveSVG',
-                        // don't show save dialog
-                        'showSaveDialog' : false,
-                        // Change the dimensions of the document to the full window (100%)
-                        'fullWindow' : true,
-                        // svg loading callbacks
-                        'onLoad' : function() {console.log("got svg1 onLoad notification");},
-                        'onError': function(err) {console.log("ERROR while loading svg1: "+err);}
-                    },
-                    // jsChannel callbacks
-                    error: function(error, message) { log( "ERROR: " + error + " (" + message + ")"); },
-                    success: function(v) {}
-                });
-
-                return "connected";
-            };
             
-            // bind drawsvg ready callback 
-            chan.bind("onDrawSVGReady", onDrawSVGReady);
 
-            // save svg service
-            function  onSaveSVG(trans,params) {
-                console.log("onSaveSVG nameSVG="+params['nameSVG']+" stringSVG="+params['stringSVG']);
-                node.editor.setValue(params['stringSVG']);
-                node.editor.clearSelection(); // This will remove the highlight over the text
-                
-                // save svg with stringSVG 
-                // .... write your code
-                return "save done";
-            }
 
-            // bind save callback
-            chan.bind("onSaveSVG", onSaveSVG);
 
 
 
@@ -1198,7 +1222,7 @@
                 <button id="node-expand-svg-editor" class="editor-button editor-button-small" style="margin-top: 4px;"><i class="fa fa-expand"></i></button>
                 <button  id="node-iframe-svg-edit" class="editor-button editor-button-small" style="margin-top: 4px;"
                 data-href="//www.draw-svg.appspot.com/drawsvg.html#jsChannel:"
-                data-title="DrawSVG" data-width="800" data-height="600">
+                data-title="DrawSVG" data-width="95%" data-height="95%">
                     <i class="fa fa-edit"></i>    
                 </button>
             </div>
