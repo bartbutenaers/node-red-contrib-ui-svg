@@ -1003,11 +1003,6 @@
             }
             node.initialised = true;
 
-
-
-            debugger
-
-            var stringSVG1 = node.editor ? node.editor.getValue() : ""; 
             var iframe = $('<iframe id="drawsvg" frameborder="0" marginwidth="0" marginheight="0" allowfullscreen></iframe>');
             var dialog = $("<div></div>").append(iframe).appendTo("body").dialog({
                 autoOpen: false,
@@ -1017,8 +1012,6 @@
                 height: "auto",
                 minHeight: 440,
                 minWidth: 600,
-                // height: winhei - 100,
-                // width: winwid - 100,
                 close: function () {
                     try {
                         $("#drawsvg")[0].src = "";
@@ -1063,7 +1056,19 @@
                             //'disableTasks' : 'new open'
                         },
                         // jsChannel callbacks
-                        error: function(error, message) { log( "ERROR: " + error + " (" + message + ")"); },
+                        error: function(error, message) { 
+                            var errdialog = $("#svg-err-dialog");
+                            if(!errdialog.length)
+                                errdialog = $("<div id='svg-err-dialog'></div>").appendTo("body");
+                            errdialog.text(message).dialog({
+                                autoOpen: false,
+                                title: "Error setting up document!",
+                                modal: true,
+                                width: "auto",
+                                height: "auto",
+                                close: function () { $(this).text("");}
+                            }).dialog("open");
+                         },
                         success: function(v) {
                             console.log("setting document menu done");
                             debugger
@@ -1071,7 +1076,7 @@
                                 method: "loadStringSVG",
                                 params: {
                                     // string svg contents
-                                    'stringSVG' : stringSVG1,
+                                    'stringSVG' : (node && node.editor) ? node.editor.getValue() : "",
                                     // svg name
                                     'nameSVG' : 'svg1',
                                     // The name of the service which to be called 
@@ -1083,10 +1088,24 @@
                                     'fullWindow' : true,
                                     // svg loading callbacks
                                     'onLoad' : function() {console.log("got svg1 onLoad notification");},
-                                    'onError': function(err) {console.log("ERROR while loading svg1: "+err);}
+                                    'onError': function(err) {
+                                        var errdialog = $("#svg-err-dialog");
+                                        if(!errdialog.length)
+                                            errdialog = $("<div id='svg-err-dialog'></div>").appendTo("body");
+                                        errdialog.text(err).dialog({
+                                            autoOpen: false,
+                                            title: "Error loading SVG!",
+                                            modal: true,
+                                            width: "auto",
+                                            height: "auto",
+                                            close: function () { $(this).text("");}
+                                        }).dialog("open");
+                                    }
                                 },
                                 // jsChannel callbacks
-                                error: function(error, message) { log( "ERROR: " + error + " (" + message + ")"); },
+                                error: function(error, message) { 
+                                    RED.notify(RED._("notification.error", { message: "Error...\n" + message }), "error")
+                                 },
                                 success: function(v) {}
                             });
                         }
