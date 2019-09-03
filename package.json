@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "A Node-RED widget node to show interactive SVG (vector graphics) in the dashboard",
     "dependencies": {
+        "js-beautify": "^1.10.2"
     },
     "author": {
         "name": "Bart Butenaers"

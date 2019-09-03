@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-
+const beautify_html = require('js-beautify').html
+    
 module.exports = function(RED) {
     var settings = RED.settings;
     const svgUtils = require('./svg_utils');
-    
     // TODOs:
     // - Error 404 loading ACE SVG layout file
     // - SVG image should be able to load locally or pushed via file?
@@ -521,7 +521,38 @@ module.exports = function(RED) {
     }
 
     RED.nodes.registerType("ui_svg_graphics", SvgGraphicsNode);
-
+   
+    //provide a service to the node for formatting SVG
+    RED.httpAdmin.post("/ui_context_menu_beautifysvg", function (req, res) {
+		try {
+            var data = req.body.svg
+            var opts = {
+                "indent_size": "2",
+                "indent_char": " ",
+                "max_preserve_newlines": "-1",
+                "preserve_newlines": false,
+                "keep_array_indentation": false,
+                "break_chained_methods": true,
+                "indent_scripts": "normal",
+                "brace_style": "expand",
+                "space_before_conditional": true,
+                "unescape_strings": false,
+                "jslint_happy": false,
+                "end_with_newline": false,
+                "wrap_line_length": "0",
+                "indent_inner_html": false,
+                "comma_first": false,
+                "e4x": false,
+                "indent_empty_lines": false
+              }
+            var pretty = beautify_html(data, opts);
+            res.json({"pretty": pretty})
+		} catch (err) {
+			res.sendStatus(500);
+			console.error(err)
+		}
+    });
+    
     // Make all the static resources from this node public available (i.e. third party JQuery plugin tableHeadFixer.js).
     RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){
         var options = {
