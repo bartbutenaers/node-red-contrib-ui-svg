@@ -22,6 +22,7 @@
 
 
 <script src="/ui_svg_graphics/lib/jschannel.js"></script>
+<script src="/ui_svg_graphics/lib/beautify-html.js"></script>
 
 
 
@@ -1152,31 +1153,33 @@
             });
 
             $("#node-format-svg").on("click", function (e) {
-                debugger
-                var url = "ui_context_menu_beautifysvg";
-                var data = { svg: node.editor.getValue()};
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: data,
-                    datatype: 'json'
-                })
-                .done(function (data) {
-                    debugger
-                    if(data && data.pretty){
-                        node.editor.setValue(data.pretty);
-                    } else {
-                        //TODO: tell user
-                        console.warn("no data returned from " + url)
-                    }
-                })
-                .fail(function (jqXHR, textStatus, errorThrown) {
-                    debugger
-                    console.error(jqXHR, textStatus, errorThrown)
-                    callback("Cannot get get pretty code from node-red");
-                });
+                try {
+                    var svgIn = node.editor.getValue();
+                    var opts = {
+                        "indent_size": "2",
+                        "indent_char": " ",
+                        "max_preserve_newlines": "-1",
+                        "preserve_newlines": false,
+                        "keep_array_indentation": false,
+                        "break_chained_methods": true,
+                        "indent_scripts": "normal",
+                        "brace_style": "expand",
+                        "space_before_conditional": true,
+                        "unescape_strings": false,
+                        "jslint_happy": false,
+                        "end_with_newline": false,
+                        "wrap_line_length": "0",
+                        "indent_inner_html": false,
+                        "comma_first": false,
+                        "e4x": false,
+                        "indent_empty_lines": false
+                    };
+                    var svgOut = html_beautify(svgIn,opts)
+                    node.editor.setValue(svgOut);
+                } catch (error) {
+                    console.error(error);
+                }       
             });
-
         },
         oneditsave: function() {
             var node = this;
