@@ -1308,7 +1308,7 @@
     <h3>Inputs - Commands <i>(Advanced Usage)</i></h3>
     <dl class="message-properties">
         <dt><i>payload</i> <span class="property-type">string|object|Array</span></dt>
-        <dd>It is possible to dynamically trigger animations, update and set element attributes, update text elements via a <code>msg</code>
+        <dd>It is possible to dynamically trigger animations, update and set element attributes, update text elements via a <code>msg</code></dd>
         <dd>
             <p><b>Triggering an animation command - payload object</b><br>Example...<br>
                 <pre style="white-space: pre">[
@@ -1395,7 +1395,36 @@
                             
         </dd>
 
-        <dd>GENERAL NOTES...<br>
+        <h3>Inputs - databind <i>(Advanced Usage)</i></h3>
+        <dl class="message-properties">
+            <dt><i>topic</i> <span class="property-type">string</span></dt>
+            <dd>When <code>topic</code> is set to <code>databind</code> text content and attributes can be updated by properties of <code>payload</code></dd>
+            <dt><i>payload</i> <span class="property-type">string|object|Array</span></dt>
+            <dd>It is possible to update text content and element attributes by setting the appropriate <code>data-bind</code> attribute & sending an input msg to the node</dd>
+            <dd>
+                <p>
+                    Example SVG...<br>
+                        <pre style="white-space: pre">&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; xmlns:svg=&quot;http://www.w3.org/2000/svg&quot; xmlns:xlink=&quot;http://www.w3.org/1999/xlink&quot;&gt;
+    &lt;circle data-bind-attributes=&quot;fill,r&quot; data-bind-values=&quot;payload.circleColour,payload.size&quot; cx=&quot;350&quot; cy=&quot;120&quot; r=&quot;25&quot; stroke-width=&quot;0&quot; fill=&quot;lime&quot;/&gt;
+    &lt;text data-bind-text=&quot;payload.pressure&quot; x=&quot;342&quot; y=&quot;128&quot; stroke=&quot;black&quot; font-size=&quot;16&quot; text-anchor=&quot;left&quot;&gt; --- &lt;/text&gt; 
+    fill=&quot;#FF0000&quot;/&gt;
+&lt;/svg&gt;</pre>
+                    Example payload...<br>
+                        <pre style="white-space: pre">[
+    {
+        "topic": "databind",
+        "payload": {
+            "circleColour": "red",
+            "size": "40",
+            "pressure": 44
+        }
+    }
+]</pre>
+                </p>
+            </dd>
+        </dl>            
+    
+            <dd>GENERAL NOTES...<br>
         <ul>
             <li>Multiple commands objects can be executed if the payload is an array of objects</li>
             <li>Multiple elements can be addressed by the selector (e.g. ".status" would operate on all elements with class "status")</li>

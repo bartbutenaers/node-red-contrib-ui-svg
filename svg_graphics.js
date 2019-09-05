@@ -368,27 +368,94 @@ module.exports = function(RED) {
                             if (!msg) {
                                 return;
                             }
-                                     
+                            function getValueByName(obj, path, def) {
+                                path = path.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+                                path = path.replace(/^\./, '');           // strip a leading dot
+                                var a = path.split('.');
+                                for (var i = 0, n = a.length; i < n; ++i) {
+                                    var k = a[i];
+                                    if (k in obj) {
+                                        obj = obj[k];
+                                    } else {
+                                        return def;
+                                    }
+                                }
+                                return obj;
+                            }             
                             function processCommand(payload, topic){
-                                var selector, elements, element;
+                                var selector, elements, attrElements, textElements;
                                 try {
                                     if(topic){       
-                                        //additional method of updating a text update_text|selector
-                                        //e.g. @update_text|.graphtitle  or  update_text|#myText
-                                        var topicParts = msg.topic.split("|");
-                                        if(topicParts.length > 1){
-                                            if(topicParts[0] == "update_text" ){
-                                                selector = topicParts[1];
-                                                elements = $scope.rootDiv.querySelectorAll(selector);
-                                                if (!elements || !elements.length) {
-                                                    console.log("Invalid selector. No SVG elements found for selector " + selector);
-                                                    return;
-                                                }
-                                                elements.forEach(function(element){
-                                                    element.textContent = payload;
+                                        if(topic == "databind"){
+                                            debugger
+                                            textElements = $scope.rootDiv.querySelectorAll("[data-bind-text]");
+                                            if (!textElements || !textElements.length) {
+                                                //console.log("No SVG elements found for selector data-bind-text");
+                                            } else {
+                                                textElements.forEach(function (element) {
+                                                    var binder = element.getAttribute("data-bind-text");
+                                                    if(binder){
+                                                        var bindValue = getValueByName(msg,binder)
+                                                        if(bindValue !== undefined){
+                                                            if(typeof bindValue == "string" || typeof bindValue == "number"){
+                                                                element.textContent = bindValue;
+                                                            } else if(typeof bindValue == "object"){
+                                                                element.textContent = JSON.stringify(bindValue);
+                                                            }                         
+                                                        }                           
+                                                    }                                                
                                                 });
                                             }
-                                        } 
+                                            
+                                            attrElements = $scope.rootDiv.querySelectorAll("[data-bind-attributes]");
+                                            if (!attrElements || !attrElements.length) {
+                                                //console.log("No SVG elements found for selector data-bind-attribute");
+                                            } else {
+                                                attrElements.forEach(function (element) {
+                                                    var attributesCSV = element.getAttribute("data-bind-attributes");
+                                                    var attrBindToCSV = element.getAttribute("data-bind-values");
+                                                    if(attributesCSV && attrBindToCSV){
+                                                        var attrNames = attributesCSV.split(",");
+                                                        var attrBindTos = attrBindToCSV.split(",");
+                                                        if(attrNames.length != attrBindTos.length){
+                                                            console.warn("data-bind-attributes count is different to data-bind-values count")
+                                                            return;
+                                                        }    
+                                                        var index;
+                                                        for (index = 0; index < attrBindTos.length; index++){
+                                                            var attName = attrNames[index];
+                                                            var attBindVal = attrBindTos[index];
+                                                            var attrValue = getValueByName(msg,attBindVal);
+                                                            if(attrValue !== undefined){                                                                
+                                                                if(typeof attrValue == "string" || typeof attrValue == "number"){
+                                                                    element.setAttribute(attName, attrValue);
+                                                                } else if(typeof attrValue == "object"){
+                                                                    element.setAttribute(attName, JSON.stringify(attrValue));
+                                                                }                         
+                                                            }  
+                                                        }                                                    
+                                                    }                                                
+                                                });
+                                            }
+                                            
+                                        } else {
+                                            //additional method of updating a text update_text|selector
+                                            //e.g. @update_text|.graphtitle  or  update_text|#myText
+                                            var topicParts = msg.topic.split("|");
+                                            if (topicParts.length > 1) {
+                                                if (topicParts[0] == "update_text") {
+                                                    selector = topicParts[1];
+                                                    elements = $scope.rootDiv.querySelectorAll(selector);
+                                                    if (!elements || !elements.length) {
+                                                        console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                        return;
+                                                    }
+                                                    elements.forEach(function (element) {
+                                                        element.textContent = payload;
+                                                    });
+                                                }
+                                            } 
+                                        }
                                         return;
                                     }
 
@@ -476,7 +543,7 @@ module.exports = function(RED) {
 
                             var payload = msg.payload;
                             var topic = msg.topic;
-                            if((typeof payload == "string" || typeof payload == "number") && topic){
+                            if(topic == "databind" || ((typeof payload == "string" || typeof payload == "number") && topic)){
                                 processCommand(payload, topic);
                             } else {
                                 if(!Array.isArray(payload)){
