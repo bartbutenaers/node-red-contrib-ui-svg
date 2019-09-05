@@ -28,6 +28,53 @@
 
 <script type="text/javascript">
 
+    const messageBox = {
+        show: function(message, title, faicon, options) {
+            options = options || {}
+            var msgbox = $('#ui-svg-message-box');
+            if (msgbox.length == 0) {
+                var msgboxhtml = '<div id="ui-svg-message-box" title=""><p><span id="ui-svg-message-box-icon" class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span><span id="ui-svg-message-box-text"></span></p></div>'
+                msgbox = $(msgboxhtml).appendTo('body');
+            }
+
+            // var buttons = {};
+            // if(button1Text){
+            //     buttons[button1Text] = function() {
+            //     if(button1OnClick) button1OnClick();
+            //     $( this ).dialog( "close" );
+            //     }
+            // }
+            // if(button2Text){
+            //     buttons[button2Text] = function() {
+            //     if(button2OnClick) button2OnClick();
+            //     $( this ).dialog( "close" );
+            //     }
+            // }
+
+            var icon = msgbox.find("#ui-svg-message-box-icon");
+            if(faicon && icon && icon.length){
+                icon[0].className = "fa fa-4x " + faicon;
+                icon.show();
+            } else {
+                icon.hide();
+            }
+            var text = msgbox.find("#ui-svg-message-box-text");
+            text.html(message);
+
+            msgbox.attr("title",title);
+            msgbox.dialog({
+                resizable: options.resizable === false ? options.resizable : true,
+                height: options.height || "auto",
+                width: options.width || 400,
+                modal: options.modal === false ? options.modal : true,
+                buttons: options.buttons
+            });
+        },
+        close: function() {
+            $('#ui-svg-message-box').dialog( "close" );
+        }
+    }
+
     function updateSvgIdHelpers(svgStr) {
         console.log("updateSvgIdHelpers");
 
@@ -502,6 +549,7 @@
             clickableShapes: {value: []},
             smilAnimations: {value: []},
             showCoordinates: {value: false},
+            autoFormatAfterEdit: {value: false},
             outputField: {value: "payload"},
             //showMouseLines: {value: false},
             name: {value: ''}
@@ -516,7 +564,8 @@
         },
         oneditprepare: function() {
             var node = this;
-            node.initialised = true;
+            node.initialised = false;
+            window.node_ace_editor = null;
             $("#node-input-size").elementSizer({
                 width: "#node-input-width",
                 height: "#node-input-height",
@@ -588,6 +637,7 @@
                 mode: 'ace/mode/html',
                 value: $("#node-input-svgString").val()
             });
+            window.node_ace_editor = node.editor;
             RED.library.create({
                 url:"uitemplates", // where to get the data from
                 type:"ui_template", // the type of object the library is for
@@ -1003,38 +1053,111 @@
                 });
             }
             node.initialised = true;
+            
+            if(!window.svgEditorDialogDiv || !window.svgEditorDialogDiv.length){
+                window.svgEditorFrame = $('<iframe id="drawsvg" frameborder="0" marginwidth="0" marginheight="0" allowfullscreen></iframe>');
+                window.svgEditorDialogDiv = $("<div id='svg-dialog-div'></div>").append(window.svgEditorFrame).appendTo("body")
+                window.svgEditorDialog = window.svgEditorDialogDiv.dialog({
+                    autoOpen: false,
+                    modal: true,
+                    resizable: true,
+                    width: "auto",
+                    height: "auto",
+                    minHeight: 440,
+                    minWidth: 600,
+                    open: function( event, ui ) {
+                        window.svgEditorDialog.closeConfirmed = false;
+                        if(window.drawSvgCommChannel.editorSVGLoaded){
+                            sendSVGtoEditor()
+                        }
+                    },
+                    beforeClose: function(event, ui) { 
+                        console.log("SVG editor dialog close button clicked");
+                        if(window.svgEditorDialog.closeConfirmed){
+                            return true;
+                        } else {
+                            var options = {
+                                buttons : {
+                                    "Yes":function(){
+                                        saveSVG(function(){
+                                            //onSuccess
+                                            window.svgEditorDialog.closeConfirmed = true;
+                                            window.svgEditorDialog.dialog("close"); 
+                                            messageBox.close();
+                                        })
+                                    },
+                                    "No": function(){
+                                        window.svgEditorDialog.closeConfirmed = true;
+                                        window.svgEditorDialog.dialog("close"); 
+                                        messageBox.close();
+                                    },
+                                    "Cancel": function(){
+                                        window.svgEditorDialog.closeConfirmed = false;
+                                        messageBox.close();
+                                    }
+                                }
+                            }
+                            messageBox.show("Do you need to save?", "Confirm", "fa-question", options )
+                        }
+                        return false;
+                     }
+                });
 
-            var iframe = $('<iframe id="drawsvg" frameborder="0" marginwidth="0" marginheight="0" allowfullscreen></iframe>');
-            var dialog = $("<div></div>").append(iframe).appendTo("body").dialog({
-                autoOpen: false,
-                modal: true,
-                resizable: true,
-                width: "auto",
-                height: "auto",
-                minHeight: 440,
-                minWidth: 600,
-                close: function () {
-                    try {
-                        $("#drawsvg")[0].src = "";
-                        window.myChan.destroy();
-                    } catch (error) {
-                        
-                    }
-                    window.myChan = null;                    
-                }
-            });
-            $("#node-iframe-svg-edit").on("click", function (e) {
-                console.log("node-iframe-svg-edit clicked")
-                e.preventDefault();
                 
-                // create drawsvg channel
-                window.myChan = Channel.build({
+                window.svgEditorDialogDiv.parent().find(".ui-dialog-titlebar").append('<button id="btnSave" style="right: 2em" class="node-expand-svg-editor editor-button editor-button-small ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" type="button" role="button" title="Save"><i class="fa fa-save"></i></button>');
+                $("#btnSave").click(function(){
+                    saveSVG();
+                });
+
+                function saveSVG(onSuccess, onError){
+                    console.log("saveSVG called")
+                    var fail = function(error, message) { 
+                        console.error(error,message); 
+                        if(onError){
+                            onError(error,message);
+                        } else {
+                            messageBox.show(message,"Error getting SVG!","fa-exclamation-triangle", {buttons:{"OK":function(){messageBox.close();}}});
+                        }
+                    }
+                    var success = function(v) {
+                        var svg = v;
+                        debugger
+                        if(node.autoFormatAfterEdit){
+                            svg = beautifySVG(v);
+                        }
+                        window.node_ace_editor.setValue(svg);
+                        if(onSuccess){
+                            onSuccess(v);
+                        } else {
+                            messageBox.show("Changes have been sent to the SVG source","Save","fa-thumbs-o-up", {buttons:{"OK":function(){messageBox.close();}}} );
+                        }                            
+                    }
+                    
+                    getSVG(success, fail);
+                }
+
+                function getSVG(onSuccess, onError){
+                    console.log("Calling getSVG method...")
+                    window.drawSvgCommChannel.call({
+                        method: "getSVG",
+                        params: {},
+                        error: onError,
+                        success: onSuccess
+                    });
+                }
+                
+            }
+            
+
+            // create drawsvg channel
+            if(!window.drawSvgCommChannel){
+                window.drawSvgCommChannel = Channel.build({
                     debugOutput: true,
                     window: document.getElementById("drawsvg").contentWindow,
                     origin: "*",
                     scope: "drawsvg"
                 });
-
+    
                     
                 // drawsvg ready callback
                 function onDrawSVGReady(trans,params) {
@@ -1048,91 +1171,78 @@
                     // setting document menu
                     // call 'setDocumentMenu' method 
                     // with params {enableSamples, disableTasks}
-                    window.myChan.call({
+                    window.drawSvgCommChannel.call({
                         method: "setDocumentMenu",
                         params: {
-                            // disable samples sub-menu
-                            'enableSamples' : true
-                            // disable taks new and open 
-                            //'disableTasks' : 'new open'
+                            // enable samples sub-menu
+                            'enableSamples' : true,
+                            // disable save (handled manually)
+                            'disableTasks' : 'save'
                         },
                         // jsChannel callbacks
                         error: function(error, message) { 
-                            var errdialog = $("#svg-err-dialog");
-                            if(!errdialog.length)
-                                errdialog = $("<div id='svg-err-dialog'></div>").appendTo("body");
-                            errdialog.text(message).dialog({
-                                autoOpen: false,
-                                title: "Error setting up document!",
-                                modal: true,
-                                width: "auto",
-                                height: "auto",
-                                close: function () { $(this).text("");}
-                            }).dialog("open");
-                         },
+                            console.error(error);
+                            messageBox.show(message,"Error setting up editor!","fa-exclamation-triangle", {buttons:{"OK":function(){messageBox.close();}}});
+                            },
                         success: function(v) {
                             console.log("setting document menu done");
-                            debugger
-                            window.myChan.call({
-                                method: "loadStringSVG",
-                                params: {
-                                    // string svg contents
-                                    'stringSVG' : (node && node.editor) ? node.editor.getValue() : "",
-                                    // svg name
-                                    'nameSVG' : 'svg1',
-                                    // The name of the service which to be called 
-                                    // when user clicks on the save button of drawsvg
-                                    'saveService' :  'onSaveSVG',
-                                    // don't show save dialog
-                                    'showSaveDialog' : true,
-                                    // Change the dimensions of the document to the full window (100%)
-                                    'fullWindow' : true,
-                                    // svg loading callbacks
-                                    'onLoad' : function() {console.log("got svg1 onLoad notification");},
-                                    'onError': function(err) {
-                                        var errdialog = $("#svg-err-dialog");
-                                        if(!errdialog.length)
-                                            errdialog = $("<div id='svg-err-dialog'></div>").appendTo("body");
-                                        errdialog.text(err).dialog({
-                                            autoOpen: false,
-                                            title: "Error loading SVG!",
-                                            modal: true,
-                                            width: "auto",
-                                            height: "auto",
-                                            close: function () { $(this).text("");}
-                                        }).dialog("open");
-                                    }
-                                },
-                                // jsChannel callbacks
-                                error: function(error, message) { 
-                                    RED.notify(RED._("notification.error", { message: "Error...\n" + message }), "error")
-                                 },
-                                success: function(v) {}
-                            });
+                            window.drawSvgCommChannel.editorSVGLoaded = true;
+                            sendSVGtoEditor()
                         }
-                    });
-
-                    
+                    });                   
 
                     return "connected";
                 };
                 
                 // bind drawsvg ready callback 
-                window.myChan.bind("onDrawSVGReady", onDrawSVGReady);
+                window.drawSvgCommChannel.bind("onDrawSVGReady", onDrawSVGReady);
 
                 // save svg service
                 function  onSaveSVG(trans,params) {
                     console.log("onSaveSVG nameSVG="+params['nameSVG']+" stringSVG="+params['stringSVG']);
-                    node.editor.setValue(params['stringSVG']);
-                    node.editor.clearSelection(); // This will remove the highlight over the text
-                    
-                    // save svg with stringSVG 
-                    // .... write your code
+                    window.node_ace_editor.setValue(params['stringSVG']);
+                    //node.editorwindow.node_ace_editor.clearSelection(); // This will remove the highlight over the text
                     return "save done";
                 }
 
                 // bind save callback
-                window.myChan.bind("onSaveSVG", onSaveSVG);
+                window.drawSvgCommChannel.bind("onSaveSVG", onSaveSVG);
+         
+                function sendSVGtoEditor(){
+                    if(window.drawSvgCommChannel && window.drawSvgCommChannel.editorSVGLoaded){
+
+                        window.drawSvgCommChannel.call({
+                            method: "loadStringSVG",
+                            params: {
+                                'stringSVG' : window.node_ace_editor ? window.node_ace_editor.getValue() : "",// string svg contents
+                                'nameSVG' : 'node-red',// svg name
+                                // The name of the service which to be called 
+                                // when user clicks on the save button of drawsvg
+                                'saveService' :  'onSaveSVG',
+                                // don't show save dialog
+                                'showSaveDialog' : false,
+                                // Change the dimensions of the document to the full window (100%)
+                                'fullWindow' : true,
+                                // svg loading callbacks
+                                'onLoad' : function() {console.log("got svg1 onLoad notification");},
+                                'onError': function(err) {
+                                    console.error(err);
+                                    messageBox.show(err,"Error loading SVG!","fa-exclamation-triangle", {buttons:{"OK":function(){messageBox.close();}}});
+                                }
+                            },
+                            // jsChannel callbacks
+                            error: function(error, message) { 
+                                messageBox.show(message,"Error communicating to SVG Editor!","fa-exclamation-triangle", {buttons:{"OK":function(){messageBox.close();}}});
+                            },
+                            success: function(v) {}
+                        });
+                    }
+                }
+            }
+
+            $(".node-iframe-svg-edit").on("click", function (e) {
+                console.log("node-iframe-svg-edit clicked")
+                e.preventDefault();
 
                 var winwid = $(window).width();
                 var winhei = $(window).height();
@@ -1141,45 +1251,56 @@
                 var title = $(this).attr("data-title");
                 var width = $(this).attr("data-width");
                 var height = $(this).attr("data-height");
-                var drawsvg = $("#drawsvg");
-                drawsvg.attr({
-                    width: "99%",// +width,
-                    height:"99%",// +height,
-                    src: src
-                });
-                dialog.dialog("option", "width", winwid-100);
-                dialog.dialog("option", "height", winhei-100);
-                dialog.dialog("option", "title", title).dialog("open");               
+                
+                if(window.svgEditorFrame[0].src != src){
+                    window.svgEditorFrame.attr({
+                        width: "99%",// +width,
+                        height:"99%",// +height,
+                        src: src
+                    });
+                }
+                 
+                window.svgEditorDialog.dialog("option", "width", winwid-100);
+                window.svgEditorDialog.dialog("option", "height", winhei-100);
+                window.svgEditorDialog.dialog("option", "title", title).dialog("open");  
+                
             });
 
-            $("#node-format-svg").on("click", function (e) {
+            $(".node-format-svg").on("click", function (e) {
                 try {
                     var svgIn = node.editor.getValue();
-                    var opts = {
-                        "indent_size": "2",
-                        "indent_char": " ",
-                        "max_preserve_newlines": "-1",
-                        "preserve_newlines": false,
-                        "keep_array_indentation": false,
-                        "break_chained_methods": true,
-                        "indent_scripts": "normal",
-                        "brace_style": "expand",
-                        "space_before_conditional": true,
-                        "unescape_strings": false,
-                        "jslint_happy": false,
-                        "end_with_newline": false,
-                        "wrap_line_length": "0",
-                        "indent_inner_html": false,
-                        "comma_first": false,
-                        "e4x": false,
-                        "indent_empty_lines": false
-                    };
-                    var svgOut = html_beautify(svgIn,opts)
-                    node.editor.setValue(svgOut);
+                    var svgOut = beautifySVG(svgIn);
+                    window.node_ace_editor.setValue(svgOut);
                 } catch (error) {
                     console.error(error);
                 }       
             });
+
+
+            function beautifySVG(svg, options){
+                var opts = {
+                    "indent_size": "2",
+                    "indent_char": " ",
+                    "max_preserve_newlines": "-1",
+                    "preserve_newlines": false,
+                    "keep_array_indentation": false,
+                    "break_chained_methods": true,
+                    "indent_scripts": "normal",
+                    "brace_style": "expand",
+                    "space_before_conditional": true,
+                    "unescape_strings": false,
+                    "jslint_happy": false,
+                    "end_with_newline": false,
+                    "wrap_line_length": "0",
+                    "indent_inner_html": false,
+                    "comma_first": false,
+                    "e4x": false,
+                    "indent_empty_lines": false
+                };
+                $.extend(opts, options);//merge options into opts (in case of duplicates, options takes precidence)
+                return html_beautify(svg,opts);
+            }
+
         },
         oneditsave: function() {
             var node = this;
@@ -1197,7 +1318,8 @@
             $("#node-input-svgString").val(svgString);
             this.editor.destroy();
             delete this.editor;
-            
+            delete window.node_ace_editor;
+
             // Copy all the animations from the editableList to this node
             node.smilAnimations = [];
             var smilAnimationsList = $("#node-input-animations-container").editableList('items');
@@ -1219,10 +1341,12 @@
                 
                 node.clickableShapes.push({targetId:targetId, action:action, payload:payload, payloadType:payloadType, topic:topic});
             });
+            window.node_ace_editor = null;
         },
         oneditcancel: function() {
             this.editor.destroy();
             delete this.editor;
+            delete window.node_ace_editor;
         },
         oneditresize: function(size) {
             updateEditorHeight(this,this.editor);
@@ -1260,13 +1384,13 @@
             </div>
             <div class="form-row node-text-editor-row form-row-auto-height">
                 <div id="node-input-svg-editor" class="node-text-editor" style="width: 100%; height: 100%; min-height:150px;"></div>
-                <button id="node-expand-svg-editor" class="editor-button editor-button-small" style="margin-top: 4px;">
+                <button id="node-expand-svg-editor" class="node-expand-svg-editor editor-button editor-button-small" style="margin-top: 4px;">
                     <i class="fa fa-expand"></i>
                 </button>
-                <button id="node-format-svg" class="editor-button editor-button-small" style="margin-top: 4px;" title="Format SVG">
+                <button id="node-format-svg" class="node-format-svg editor-button editor-button-small" style="margin-top: 4px;" title="Format SVG">
                     <i class="fa fa-code"></i>    
                 </button>
-                <button id="node-iframe-svg-edit" class="editor-button editor-button-small" style="margin-top: 4px;"
+                <button id="node-iframe-svg-edit" class="node-iframe-svg-edit editor-button editor-button-small" style="margin-top: 4px;"
                     data-href="//www.draw-svg.appspot.com/drawsvg.html#jsChannel:" data-title="DrawSVG" data-width="95%" data-height="95%">
                     <i class="fa fa-edit"></i>    
                 </button>
@@ -1304,6 +1428,10 @@
             <!--    <input type="checkbox" id="node-input-showMouseLines" style="display: inline-block; width: auto; vertical-align: top;">-->
             <!--    <label for="node-input-showMouseLines" style="width:50%;"> Show vertical/horizontal mouse tracking lines</label>-->
             <!--</div>-->
+            <div class="form-row">
+                <input type="checkbox" id="node-input-autoFormatAfterEdit" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-autoFormatAfterEdit" style="width:50%;"> Auto format SVG Source after saving edits in SVG Editor</label>
+            </div>
         </div>
     </div>
 </script>
