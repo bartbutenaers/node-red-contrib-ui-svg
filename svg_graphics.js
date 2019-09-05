@@ -23,8 +23,7 @@ module.exports = function(RED) {
     // - SVG image should be able to load locally or pushed via file?
     // - Currently only allowed to edit SVG elements (not add or remove).  Is that ok?
     // - Working with layers : see svg-edit who uses groups/titles
-    // - Integration with svg-edit
-    // - Best way to add fontAwesome icons?
+    // - Best way to add fontAwesome icons? now that DrawSVG is in place, we need to replace "fa-xxx" with unicode
     // - Animations start automatically, which is not what we want
     // - Scrollbars appear when area too small
     // - Show mouse coordinates if requested
@@ -108,11 +107,9 @@ module.exports = function(RED) {
                         return value;
                     },
                     beforeEmit: function(msg, value) {   
-                        //debugger;
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
-                        //debugger;
                         if (!orig || !orig.msg) {
                            return;//TODO: what to do if empty? Currently, halt flow by returning nothing
                         }
@@ -134,20 +131,16 @@ module.exports = function(RED) {
                         return newMsg;
                     },
                     initController: function($scope, events) {
-                        //debugger;
                         $scope.flag = true;
-                        //console.log("initController")
+                        console.log("initController")
                         $scope.init = function (config) {
                             $scope.config = config;
-                            //console.log("initController.init")
                             $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
                             $scope.svg = $scope.rootDiv.querySelector("svg");
                             //$scope.svg.style.cursor = "crosshair";
                             
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
                             config.clickableShapes.forEach(function(clickableShape) {
-                                //debugger
-                                //console.log("initController.init > config.clickableShapes.forEach > element ok, adding action " + action + " to target " + clickableShape.targetId)
                                 if (!clickableShape.targetId) {
                                     return;
                                 }
@@ -197,8 +190,7 @@ module.exports = function(RED) {
                                         $scope.send(msg); 
                                     });
                                 })
-                            });
-                            
+                            });                            
                             
                             // Apply the animations to the SVG elements (i.e. in the DIV subtree), by adding <animation> elements
                             config.smilAnimations.forEach(function(smilAnimation) {
@@ -207,7 +199,6 @@ module.exports = function(RED) {
                                 }
                                 
                                 var element = $scope.rootDiv.querySelector("#" + smilAnimation.targetId);
-                                
                                 if (element) {
                                     var animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animate');
                                     animationElement.setAttribute("id"           , smilAnimation.id); 
@@ -238,9 +229,6 @@ module.exports = function(RED) {
                                             // Set the number of seconds (e.g. 2s) after which the animation needs to be started
                                             animationElement.setAttribute("begin", smilAnimation.delay + (smilAnimation.delayUnit || "s"));                                   
                                             break;
-                                        // case 'anim':
-                                        //     // TODO
-                                        //     break;
                                         case 'cust':
                                             animationElement.setAttribute("begin", smilAnimation.custom);
                                             break;
@@ -257,7 +245,6 @@ module.exports = function(RED) {
                             
                             if (config.showCoordinates) {
                                 $scope.tooltip = document.getElementById("tooltip_" + config.id);
-
                                 $scope.svg.addEventListener("mousemove", function(evt) {
                                     // Make sure the tooltip becomes visible, when inside the SVG drawing
                                     $scope.tooltip.style.display = "block";
@@ -381,9 +368,7 @@ module.exports = function(RED) {
                             if (!msg) {
                                 return;
                             }
-                                                    
-                        
-                            
+                                     
                             function processCommand(payload, topic){
                                 var selector, elements, element;
                                 try {
@@ -411,7 +396,6 @@ module.exports = function(RED) {
                                         console.log("Invalid payload. A property named .elementId or .selector is not specified");
                                         return;
                                     }          
-                                    
                                     
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
@@ -532,5 +516,4 @@ module.exports = function(RED) {
         // Send the requested file to the client (in this case it will be tableHeadFixer.js)
         res.sendFile(req.params[0], options)
     });
-
 }
