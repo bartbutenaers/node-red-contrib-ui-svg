@@ -37,20 +37,6 @@
                 msgbox = $(msgboxhtml).appendTo('body');
             }
 
-            // var buttons = {};
-            // if(button1Text){
-            //     buttons[button1Text] = function() {
-            //     if(button1OnClick) button1OnClick();
-            //     $( this ).dialog( "close" );
-            //     }
-            // }
-            // if(button2Text){
-            //     buttons[button2Text] = function() {
-            //     if(button2OnClick) button2OnClick();
-            //     $( this ).dialog( "close" );
-            //     }
-            // }
-
             var icon = msgbox.find("#ui-svg-message-box-icon");
             if(faicon && icon && icon.length){
                 icon[0].className = "fa fa-4x " + faicon;
@@ -77,7 +63,6 @@
 
     function updateSvgIdHelpers(svgStr) {
         console.log("updateSvgIdHelpers");
-
 
         var nonAnimationClasses = [];
         var animationClasses = [];
@@ -310,148 +295,6 @@
 
     }
 
-    // function updateSvgIdHelpers(svg) {
-    //     console.log("updateSvgIdHelpers");
-    //     //var regex = /<.*?(\S+).+?id="(.+?)"/gm; //SM - NG
-    //     //var regex = /<[^\s]+.*?id *= *"([^"]*?)".*?>/g;//BB - NG
-    //     var regex = /<\W*?(\w+)[^>]*?id\s*?=\s*?"([^"]*?)".*?>/gms;//Works with new line & whitespace after < 
-    //     var str = svg//$("#fullthing").html();
-    //     var match;
-    //     var elementsIdsOnly = [];
-    //     var elementIdsAndActions = [];
-    //     var animationElements = [];
-    //     var nonAnimationElements = [];
-        
-    //     while ((match = regex.exec(str)) !== null) {
-    //         // This is necessary to avoid infinite loops with zero-width matches
-    //         if (match.index === regex.lastIndex) {
-    //             regex.lastIndex++;
-    //         }
-
-    //         if (match.length > 2) {
-    //             let full = match[0];
-    //             let ele = match[1] || "";
-    //             let id = match[2] || "";
-    //             ele = ele.trim().toLowerCase();
-    //             elementsIdsOnly.push(match[2]);
-    //             if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
-    //                 animationElements.push(match[2]);
-    //                 elementIdsAndActions.push(match[2] + ".begin");
-    //                 elementIdsAndActions.push(match[2] + ".end");
-    //                 elementIdsAndActions.push(match[2] + ".repeat(1)");
-    //             } else {
-    //                 nonAnimationElements.push(match[2]);
-    //                 elementIdsAndActions.push(match[2] + ".click");
-    //                 elementIdsAndActions.push(match[2] + ".dblclick");
-    //                 elementIdsAndActions.push(match[2] + ".contextmenu");
-    //                 elementIdsAndActions.push(match[2] + ".mouseover");
-    //                 elementIdsAndActions.push(match[2] + ".mouseout");
-    //                 elementIdsAndActions.push(match[2] + ".mouseup");
-    //                 elementIdsAndActions.push(match[2] + ".mousedown");
-    //                 elementIdsAndActions.push(match[2] + ".focus");
-    //                 elementIdsAndActions.push(match[2] + ".focusin");
-    //                 elementIdsAndActions.push(match[2] + ".focusout");
-    //                 elementIdsAndActions.push(match[2] + ".blur");
-    //                 elementIdsAndActions.push(match[2] + ".keyup");
-    //                 elementIdsAndActions.push(match[2] + ".keydown");
-    //                 elementIdsAndActions.push(match[2] + ".touchstart");
-    //                 elementIdsAndActions.push(match[2] + ".touchend");
-    //             }
-    //         }
-    //     }
-
-    //     //Get all animation ids specified by the SMIL animations editable list...
-    //     var smilAnimationsList = $("#node-input-animations-container").editableList('items');
-    //     smilAnimationsList.each(function(i) {
-    //         var id = $(this).find(".node-input-animation-id").val();                
-    //         animationElements.push(id);
-    //     });
-
-    //     $(".node-input-animation-targetId").autocomplete({
-    //         source: nonAnimationElements
-    //     });
-    //     $(".node-input-clickable-targetId").autocomplete({
-    //         source: nonAnimationElements
-    //     });
-
-    //     function tagSplit(val) {
-    //         return val.split(/;\s*/);
-    //     }
-    //     function extractLastTag(term) {
-    //         return tagSplit(term).pop();
-    //     }
-
-    //     $(".node-input-animation-custom")
-    //         .on("keydown", function (event) {
-                
-    //             if($(this).autocomplete("instance").menu.active){
-    //                 var appendChar = "; ";
-    //                 var takeInput = true;
-    //                 switch (event.keyCode) {
-    //                     case $.ui.keyCode.RIGHT:
-    //                     appendChar = "";
-    //                     break;
-    //                     case 186:
-    //                     appendChar = "; ";
-    //                     break;
-    //                     case $.ui.keyCode.PERIOD:
-    //                     appendChar = ".";
-    //                     break;
-    //                     default:
-    //                     takeInput = false;
-    //                 }
-                    
-    //                 if (event.keyCode === $.ui.keyCode.TAB) {
-    //                     event.preventDefault();// don't navigate away from the field on tab when selecting an item
-    //                 } else if (takeInput) {
-    //                     let terms =  tagSplit(this.value);
-    //                     let selected = $(this).autocomplete("instance").menu.active.text()
-    //                     terms.pop();// remove the current input 
-    //                     terms.push(selected + appendChar); // add the selected item
-    //                     this.value = terms.join("; ");
-    //                     event.preventDefault();// don't navigate away from the field
-    //                 }
-    //             }
-    //         })
-    //         .on("click", function (event) {
-    //             //show dropdown on click (disabled/annoying/problematic)
-    //             //$( this ).autocomplete( "search", "" )
-    //         })
-    //         .autocomplete({
-    //             minLength: 0,
-    //             source: function (request, response) {
-    //                 //TODO: Consider how to handle editing in middle of string
-    //                 //currently, the last tag (after last ;) is used.
-    //                 let list;
-    //                 let lastTag = extractLastTag(request.term);
-    //                 if(lastTag.includes(".")){
-    //                     list = elementIdsAndActions; 
-    //                 } else {
-    //                     list = elementsIdsOnly; 
-    //                 }
-    //                 // delegate back to autocomplete, but extract the last term
-    //                 response($.ui.autocomplete.filter(list, lastTag));
-    //             },
-    //             focus: function () {
-    //                 // prevent value inserted on focus
-    //                 return false;
-    //             },
-    //             select: function (event, ui) {
-    //                 var terms = tagSplit(this.value);
-
-    //                 terms.pop();// remove the current input 
-    //                 terms.push(ui.item.value); // add the selected item
-    //                 // add placeholder to get the comma-and-space at the end
-    //                 terms.push("");
-    //                 this.value = terms.join("; ");
-    //                 return false;
-    //             }
-    //         });
-
-
-    // }
-
-
     function updateEditorHeight(node, editor) {
         console.log("updateEditorHeight");
         //resize the tab content divs to available height
@@ -460,7 +303,7 @@
         for (let i=0; i < formRows.length; i++) {
             height -= $(formRows[i]).outerHeight(true);
         }
-        //if ($('#node-input-templateScope').val() === "global") { h += 232; }
+
         $("#node-svg-tabs-content").css("height",height+"px");//set size of tabs area
         //now resize the item with class form-row-auto-height
         var tabs = $('.node-svg-tab-content');
@@ -865,12 +708,6 @@
                     delayUnitField.append($('<option>', {value: "min", text: 'minutes'}));
                     delayUnitField.val(animation.delayUnit || "s");
                     
-                    // // Add an 'other animation id' property row
-                    // var otherIdRow = addPropertyRow(container, "Other animation id");
-                    // var otherIdField = $('<input/>', {class: "node-input-animation-otherId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(otherIdRow);
-                    // otherIdField.val(animation.otherId);
-                    // $('<span/>').text('%').appendTo(otherIdField);
-                    
                     // Add a 'custom' property row
                     var customRow = addPropertyRow(container, "Custom");
                     var customField = $('<input/>', {class: "node-input-animation-custom", style: "width:70%; margin-right:10px;", type: "text"}).appendTo(customRow);
@@ -884,13 +721,9 @@
                     var anim = animation;
                     var animList = smilAnimationsList;
                     duplicateButton.click(function(evt){
-                        debugger
                         var duplicate = getAnimationObjectFromFormRow($(this).parent());
                         duplicate.id += "_copy";
                         duplicate.expand = true;
-                        // var anew = $.extend({}, animation);//shallow clone
-                        // anew.id += "_copy";
-                        //anew.expand = true;
                         animList.editableList('addItem', duplicate);
                     })
                     
@@ -932,9 +765,6 @@
                                     break;
                                 case 'time':
                                     delayRow.show();                                   
-                                    break;
-                                case 'anim':
-                                    //otherIdRow.show();
                                     break;
                                 case 'cust':
                                     customRow.show();
@@ -1005,10 +835,9 @@
                         $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
                     }
                     actionField.val(clickableShape.action || "click");
+
                     // Column 3 : Add a input field (type string) to the new row, that represents the msg.payload content 
                     var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    
-                    //Column 3 hidden item (payloadType)
                     var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
                     var payloadType = supportedPayloadTypes.includes(clickableShape.payloadType) ? clickableShape.payloadType : defaultPayloadType;
                     payloadField.typedInput({
@@ -1017,11 +846,11 @@
                         types: supportedPayloadTypes
                     });
                     payloadField.typedInput("type", payloadType);              
-                    payloadField.typedInput("value", clickableShape.payload);   
+                    payloadField.typedInput("value", clickableShape.payload);  
+
                     // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
                     var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(clickableShape.topic);
-                    
                     
                     // When there is not yet a topic or payload, the target Id should be cloned (when complete) to the topic and payload (as a default value).
                     targetIdField.on("change", function(){
@@ -1103,7 +932,6 @@
                      }
                 });
 
-                
                 window.svgEditorDialogDiv.parent().find(".ui-dialog-titlebar").append('<button id="btnSave" style="right: 2em" class="node-expand-svg-editor editor-button editor-button-small ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" type="button" role="button" title="Save"><i class="fa fa-save"></i></button>');
                 $("#btnSave").click(function(){
                     saveSVG();
@@ -1121,7 +949,6 @@
                     }
                     var success = function(v) {
                         var svg = v;
-                        debugger
                         if(node.autoFormatAfterEdit){
                             svg = beautifySVG(v);
                         }
@@ -1147,7 +974,6 @@
                 }
                 
             }
-            
 
             // create drawsvg channel
             if(!window.drawSvgCommChannel){
@@ -1157,17 +983,11 @@
                     origin: "*",
                     scope: "drawsvg"
                 });
-    
                     
                 // drawsvg ready callback
                 function onDrawSVGReady(trans,params) {
                     // now you can communicate with drawsvg
                     console.log("got drawsvg ready notification");
-                    // enable buttons
-                    // document.getElementById("svg1btn").disabled=false;
-                    // document.getElementById("svg2btn").disabled=false;
-                    // document.getElementById("getbtn").disabled=false;
-                    // document.getElementById("addlayerbtn").disabled=false;
                     // setting document menu
                     // call 'setDocumentMenu' method 
                     // with params {enableSamples, disableTasks}
@@ -1190,7 +1010,6 @@
                             sendSVGtoEditor()
                         }
                     });                   
-
                     return "connected";
                 };
                 
@@ -1276,7 +1095,6 @@
                 }       
             });
 
-
             function beautifySVG(svg, options){
                 var opts = {
                     "indent_size": "2",
@@ -1300,7 +1118,6 @@
                 $.extend(opts, options);//merge options into opts (in case of duplicates, options takes precidence)
                 return html_beautify(svg,opts);
             }
-
         },
         oneditsave: function() {
             var node = this;
@@ -1354,7 +1171,6 @@
     });
 </script>
 
-    
 
 <script type="text/html"  data-template-name="ui_svg_graphics">
     <div class="form-row" id="template-row-group">
