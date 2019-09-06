@@ -242,7 +242,52 @@ module.exports = function(RED) {
                                     element.appendChild(animationElement);
                                 }
                             });
-                            
+
+                            // // Add data-bind attributes to selected elements
+                            // config.bindings.forEach(function (binding) {
+                            //     if (!binding.selector) {
+                            //         return;
+                            //     }
+                            //     var elements = $scope.rootDiv.querySelectorAll(binding.selector);
+                            //     var bindingType = binding.bindingType;
+                            //     var attributeName = binding.attribute;
+                            //     var bindSource = binding.bindSource;
+                            //     elements.forEach(function (element) {
+                            //         console.log("initController.init > config.bindings.forEach > element ok, adding binding ")
+
+                            //         $(element).on(action, function (evt) {
+                            //             // Get the mouse coordinates (with origin at left top of the SVG drawing)
+                            //             console.log(`$(element).on('${action}', function(evt) {...`)
+                            //             var msg = {
+                            //                 event: action,
+                            //                 selector: binding.selector,
+                            //                 payload: binding.payload,
+                            //                 payloadType: binding.payloadType,
+                            //                 topic: binding.topic
+                            //             }
+                            //             if (evt.pageX !== undefined && evt.pageY !== undefined) {
+                            //                 var pt = $scope.svg.createSVGPoint();
+                            //                 pt.x = evt.pageX;
+                            //                 pt.y = evt.pageY;
+                            //                 pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                            //                 //relative position on svg
+                            //                 msg.coordinates = {
+                            //                     x: pt.x,
+                            //                     y: pt.y
+                            //                 }
+                            //                 //absolute position on page - usefull for sending to popup menu
+                            //                 msg.position = {
+                            //                     x: evt.pageX,
+                            //                     y: evt.pageY
+                            //                 }
+                            //             }
+                            //             $scope.send(msg);
+                            //         });
+                            //     })
+                            // });                            
+
+
+
                             if (config.showCoordinates) {
                                 $scope.tooltip = document.getElementById("tooltip_" + config.id);
                                 $scope.svg.addEventListener("mousemove", function(evt) {
@@ -387,7 +432,32 @@ module.exports = function(RED) {
                                 try {
                                     if(topic){       
                                         if(topic == "databind"){
-                                            debugger
+                                            //Bind entries in "Input Bindings" TAB
+                                            var bindings = $scope.config.bindings;
+                                            bindings.forEach(function (binding) {
+                                                if (!binding.selector) {
+                                                    return;
+                                                }
+                                                var elements = $scope.rootDiv.querySelectorAll(binding.selector);
+                                                var bindType = binding.bindType;
+                                                var attributeName = binding.attribute;
+                                                var bindSource = binding.bindSource;
+                                                elements.forEach(function (element) {
+                                                    var bindValue = getValueByName(msg,bindSource)
+                                                    if(bindValue !== undefined){
+                                                        if(typeof bindValue == "object"){
+                                                            bindValue = JSON.stringify(bindValue);
+                                                        } 
+                                                        if(bindType == "text"){
+                                                            element.textContent = bindValue;
+                                                        } else if (bindType == "attr") {
+                                                            element.setAttribute(attributeName, bindValue);
+                                                        }
+                                                    } 
+                                                });
+                                            });
+
+                                            //Bind elements with custom attributes data-bind-text and data-bind-attributes/data-bind-values
                                             textElements = $scope.rootDiv.querySelectorAll("[data-bind-text]");
                                             if (!textElements || !textElements.length) {
                                                 //console.log("No SVG elements found for selector data-bind-text");
