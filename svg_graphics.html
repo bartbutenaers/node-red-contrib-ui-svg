@@ -27,7 +27,6 @@
 
 
 <script type="text/javascript">
-
     const messageBox = {
         show: function(message, title, faicon, options) {
             options = options || {}
@@ -36,7 +35,6 @@
                 var msgboxhtml = '<div id="ui-svg-message-box" title=""><p><span id="ui-svg-message-box-icon" class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span><span id="ui-svg-message-box-text"></span></p></div>'
                 msgbox = $(msgboxhtml).appendTo('body');
             }
-
             var icon = msgbox.find("#ui-svg-message-box-icon");
             if(faicon && icon && icon.length){
                 icon[0].className = "fa fa-4x " + faicon;
@@ -46,7 +44,6 @@
             }
             var text = msgbox.find("#ui-svg-message-box-text");
             text.html(message);
-
             msgbox.attr("title",title);
             msgbox.dialog({
                 resizable: options.resizable === false ? options.resizable : true,
@@ -60,14 +57,11 @@
             $('#ui-svg-message-box').dialog( "close" );
         }
     }
-
     function updateSvgIdHelpers(svgStr, tab) {
         console.log("updateSvgIdHelpers");
-
         var nonAnimationClasses = [];
         var animationClasses = [];
         var animationListClasses = [];
-
         var animationIds = [];
         var animationIdSelectors = [];
         
@@ -76,7 +70,6 @@
         var nonAnimationIdsAndActions = [];
         var animationIdsAndActions = [];
         var svgElement = $(svgStr)[0];
-
         svgElement.querySelectorAll('[class]').forEach(function (node) {
             node.classList.forEach(function (className) {
                 if(!className) return;
@@ -94,17 +87,13 @@
                 }
             })
         })
-
         svgElement.querySelectorAll('*[id]').forEach(function (node) {
-
             if(!node.id) return;
             
             var id = node.id;
             var ele = node.tagName;
             ele = ele.trim().toLowerCase();
-
             if(ele == "style") return;
-
             if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
                 if (animationIds.indexOf(id) < 0) {
                     animationIds.push(id)
@@ -136,7 +125,6 @@
                 }
             }
         })
-
         //Get all animation ids specified by the SMIL animations editable list...
         var smilAnimationsList = $("#node-input-animations-container").editableList('items');
         smilAnimationsList.each(function(i) {
@@ -154,7 +142,6 @@
                 animationIdsAndActions.push(aid + ".repeat(1)");
             }
         });
-
         //list of animatable attributes
         var attrList = [
             'clipPathUnits', 'cx', 'cy', 'd', 'display', 'dx', 'dy', 'fill', 'fx',
@@ -166,15 +153,12 @@
             'spacing', 'spreadMethod', 'startOffset', 'textLength', 'transform',
             'viewBox', "visibility", 'width', 'x', 'x1', 'x2', 'y', 'y1', 'y2',
         ]    
-
-
         function tagSplit(val) {
             return val.split(/;\s*/);
         }
         function extractLastTag(term) {
             return tagSplit(term).pop();
         }
-
         if(tab == "node-svg-tab-animations"){
             $(".node-input-animation-classValue").autocomplete({
             source: animationListClasses
@@ -185,7 +169,6 @@
             $(".node-input-animation-attributeName").autocomplete({
                 source: attrList
             });
-
             $(".node-input-animation-custom")
             .on("keydown", function (event) {
                 
@@ -243,7 +226,6 @@
                 },
                 select: function (event, ui) {
                     var terms = tagSplit(this.value);
-
                     terms.pop();// remove the current input 
                     terms.push(ui.item.value); // add the selected item
                     // add placeholder to get the comma-and-space at the end
@@ -252,7 +234,6 @@
                     return false;
                 }
             });
-
         } 
         
         if(tab == "node-svg-tab-clickable"){
@@ -260,7 +241,6 @@
                 source: [...nonAnimationIdSelectors,...nonAnimationClasses]
             });
         }
-
         if(tab == "node-svg-tab-binding"){
             $(".node-input-binding-selector").autocomplete({
                 source: [...nonAnimationIdSelectors,...nonAnimationClasses]
@@ -269,9 +249,7 @@
                 source: attrList
             });
         }        
-
     }
-
     function updateEditorHeight(node, editor) {
         console.log("updateEditorHeight");
         //resize the tab content divs to available height
@@ -280,7 +258,6 @@
         for (let i=0; i < formRows.length; i++) {
             height -= $(formRows[i]).outerHeight(true);
         }
-
         $("#node-svg-tabs-content").css("height",height+"px");//set size of tabs area
         //now resize the item with class form-row-auto-height
         var tabs = $('.node-svg-tab-content');
@@ -305,28 +282,26 @@
         if ( editor ) {
             // Is the editor is in full-screen? ...
             node.fullscreen = document.fullscreenElement ? true : false;
-            var rows = $("#node-svg-tab-editor>div:not(.node-text-editor-row)");
-            var height = $("#node-svg-tab-editor").height() - 25;
+            var rows = $("#node-svg-tab-source>div:not(.node-source-editor-row)");
+            var height = $("#node-svg-tab-source").height() - 25;
             for (var i=0; i<rows.size(); i++) {
                 height = height - $(rows[i]).outerHeight(true);
             }
             if ($('#node-input-templateScope').val() === "global") { height += 232; }
            
             if (node.fullscreen) {
-                $('#node-expand-svg-editor').html('<i class="fa fa-compress"></i>')//compress icon
+                $('#node-expand-svg-source').html('<i class="fa fa-compress"></i>')//compress icon
             } else {               
-                $('#node-expand-svg-editor').html('<i class="fa fa-expand"></i>')//expand icon
+                $('#node-expand-svg-source').html('<i class="fa fa-expand"></i>')//expand icon
             }
             
             // Set the height of the edit box
-            $('#node-input-svg-editor').css('height',height+'px');
+            $('#node-input-svg-source').css('height',height+'px');
             // Get the content to match the edit box size
             if(editor) editor.resize();
         }
         $(".node-input-clickable-payload").typedInput('width');//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
-
     } 
-
     function getAnimationObjectFromFormRow(ele){
         var row = $(ele);
         var id            = row.find(".node-input-animation-id").val();
@@ -346,7 +321,6 @@
         var custom        = row.find(".node-input-animation-custom").val();        
         return {id:id, targetId:targetId, classValue:classValue, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
     }
-
     function getBindingFromFormRow(ele){
         var row = $(ele);
         return {
@@ -356,7 +330,6 @@
             attribute : row.find(".node-input-binding-attribute").val()
         };
     }
-
     RED.nodes.registerType('ui_svg_graphics',{
         category: 'dashboard',
         color: 'rgb( 63, 173, 181)',
@@ -415,15 +388,15 @@
                     $('#template-row-group, #template-row-size, #template-pass-store').show();
                     node._def.defaults.group.required = true;
                 }
-                var rows = $("#dialog-form>div:not(.node-text-editor-row)");
+                var rows = $("#dialog-form>div:not(.node-source-editor-row)");
                 var height = $("#dialog-form").height();
                 for (var i=0; i<rows.size(); i++) {
                     height = height - $(rows[i]).outerHeight(true);
                 }
                 if ($('#node-input-templateScope').val() === "global") { height += 240; }
-                var editorRow = $("#dialog-form>div.node-text-editor-row");
+                var editorRow = $("#dialog-form>div.node-source-editor-row");
                 height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
-                $(".node-text-editor").css("height",height+"px");
+                $(".node-source-editor").css("height",height+"px");
                 if (this.editor) { this.editor.resize(); }
             })
             
@@ -447,8 +420,8 @@
                 }
             });
             tabs.addTab({
-                id: "node-svg-tab-editor",
-                label: "SVG editor"
+                id: "node-svg-tab-source",
+                label: "SVG source"
             });
             tabs.addTab({
                 id: "node-svg-tab-animations",
@@ -468,7 +441,7 @@
             });              
             this.fullscreen = false;
             this.editor = RED.editor.createEditor({
-                id: 'node-input-svg-editor',
+                id: 'node-input-svg-source',
                 mode: 'ace/mode/html',
                 value: $("#node-input-svgString").val()
             });
@@ -481,10 +454,10 @@
                 fields:['name']
             });
             this.editor.focus();
-            var fullScrElement = $('#node-svg-tab-editor')[0];
+            var fullScrElement = $('#node-svg-tab-source')[0];
             var fsr = fullScrElement.requestFullscreen || fullScrElement.mozRequestFullScreen || fullScrElement.webkitRequestFullscreen || fullScrElement.msRequestFullScreen;
             if(fsr){
-                $('#node-expand-svg-editor').click(function(e) {
+                $('#node-expand-svg-source').click(function(e) {
                     e.preventDefault()
                     if (node.fullscreen === false) {
                         if (fsr) {
@@ -495,7 +468,7 @@
                     }
                 })
             } else {
-                $('#node-expand-svg-editor').hide();
+                $('#node-expand-svg-source').hide();
             }
             
             function addPropertyRow(container, propertyName) {
@@ -552,7 +525,6 @@
                         delete animation.expand
                         expandIcon = "fa fa-angle-down";
                     }
-
                     container.css({
                         overflow: 'hidden',
                         whiteSpace: 'nowrap'
@@ -587,32 +559,27 @@
                     animationIdField.val(animation.id);
                     $('<span/>').text('%').appendTo(animationIdField);
         
-
                     function updateTitle(ele){
                         var par = $(ele).parent().parent();
                         var anim = getAnimationObjectFromFormRow(par);
                         var newTitle = getTitle(anim);
                         titleField.text(newTitle);
                     }
-
                     // Add a 'target id' property row
                     var targetIdRow = addPropertyRow(container, "Target Element Id");
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
                     targetIdField.val(animation.targetId);
                     $('<span/>').text('%').appendTo(targetIdField);
-
                     // Add a 'class' property row
                     var classValueRow = addPropertyRow(container, "Class");
                     var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
                     classValueField.val(animation.classValue);
                     $('<span/>').text('%').appendTo(classValueField);
-
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
                     attributeNameField.val(animation.attributeName);
                     $('<span/>').text('%').appendTo(attributeNameField);
-
                     // When the animation id changes, the header line title should also be changed
                     animationIdField.on("change", function(){
                         updateTitle(this)
@@ -623,19 +590,15 @@
                     attributeNameField.on("change", function(){
                         updateTitle(this)
                     });
-
-
                     // Add a 'from / to value' property row
                     var fromToValueRow = addPropertyRow(container, "From / To");
                     var fromValueField = $('<input/>', {class: "node-input-animation-fromValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "from"}).appendTo(fromToValueRow);
                     fromValueField.val(animation.fromValue);
                     $('<span/>').text('%').appendTo(fromValueField);
-
                     // Add a 'to value' property row
                     var toValueField = $('<input/>', {class: "node-input-animation-toValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "to"}).appendTo(fromToValueRow);
                     toValueField.val(animation.toValue);
                     $('<span/>').text('%').appendTo(toValueField);
-
                     // Add a 'duration' property row
                     var durationRow = addPropertyRow(container, "Duration");
                     var durationField = $('<input/>', {class: "node-input-animation-duration", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(durationRow);
@@ -652,7 +615,6 @@
                     var repeatCountField = $('<input/>', {class: "node-input-animation-repeatCount", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(repeatCountRow);
                     repeatCountField.val(animation.repeatCount);
                     $('<span/>').text('%').appendTo(repeatCountField);                    
-
                     // Add a 'freeze' property row
                     var freezeRow = addPropertyRow(container, "Freeze");
                     var freezeField = $('<input/>', {class: "node-input-animation-freeze", style: "width:160px; margin-right:10px;", type: "checkbox"}).appendTo(freezeRow);
@@ -706,7 +668,6 @@
                     customField.val(animation.custom);
                     $('<span/>').text('%').appendTo(customField);
                     customRow.append($("<i />", {class:"fa fa-question", title:"Press down to select, right to accept, dot to access properties, semicolon/enter/tab to complete the entry."}));
-
                     //add duplicate button
                     var duplicateButton = $('<a/>', {class: "red-ui-editableList-item-remove red-ui-button red-ui-button-small", style: "margin-right: 28px"}).appendTo(container);
                     duplicateButton.html('<i class="fa fa-clone"></i>')
@@ -827,7 +788,6 @@
                         $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
                     }
                     actionField.val(clickableShape.action || "click");
-
                     // Column 3 : Add a input field (type string) to the new row, that represents the msg.payload content 
                     var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
@@ -839,7 +799,6 @@
                     });
                     payloadField.typedInput("type", payloadType);              
                     payloadField.typedInput("value", clickableShape.payload);  
-
                     // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
                     var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(clickableShape.topic);
@@ -873,7 +832,6 @@
                     clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
                 });
             }
-
             var bindingList = $("#node-input-binding-container").css('min-height','150px').css('min-width','450px').editableList({
                 header: $("<div>").css({padding:"6px"}).append($.parseHTML(
                     "<div style='width:22%; margin-left:5px; display: inline-grid'><b>Binding Source</b></div>" +
@@ -884,14 +842,11 @@
                     addItem: function(container, i, binding) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
-
                     //BINDING SOURCE
                     // Column 1 :  bind msg.xxxx 
                     var bindSourceField = $('<input/>',{class:"node-input-binding-source",type:"text",placeholder:"payload.property"})
                         .css({"width":"22%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     bindSourceField.val(binding.bindSource);  
-
-
                     //BINDING DESTINATION
                     // Column 2 : [textbox] Selector denoting what elements to add binding to (with autocomplete of .classes & #elementIDs)
                     var targetSelectorField = $('<input/>',{class:"node-input-binding-selector",type:"text",placeholder:"Element Selector"})
@@ -900,22 +855,18 @@
                     var targetSelectorFieldId = "node-input-binding-selector" + i
                     targetSelectorField.attr("id",targetSelectorFieldId);
                     targetSelectorField.val(binding.selector);
-
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
                     var bindingTypeField = $('<select/>',{class:"node-input-binding-type",type:"text",placeholder:"click"})
                         .css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-
                     $('<option />', {value: "text", text: "Text Content"}).appendTo(bindingTypeField);
                     $('<option />', {value: "attr", text: "Attribute Value"}).appendTo(bindingTypeField);
                     bindingTypeField.val(binding.bindType || "text");
-
                     // Column 4 : [textbox] Attribute to update (only used when bindingType == "attr") 
                     var attributeField = $('<input/>',{class:"node-input-binding-attribute",type:"text",placeholder:"attribute"})
                         .css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var attributeFieldId = "node-input-binding-attribute" + i
                     attributeField.attr("id",attributeFieldId);
                     attributeField.val(binding.attribute);  
-
                     bindingTypeField.change(function () {
                         if (bindingTypeField.val() === "attr") {
                             attributeField.show();
@@ -925,14 +876,11 @@
                         }
                     });
                     bindingTypeField.change();
-
                     //console.log("Created binding row for " +  binding.selector)
-
                 },
                 removable: true
             });
  
-
             // Add all the binding into the editableList
             if (this.bindings) {
                 this.bindings.forEach(function (binding, index) {
@@ -991,12 +939,10 @@
                         return false;
                      }
                 });
-
-                window.svgEditorDialogDiv.parent().find(".ui-dialog-titlebar").append('<button id="btnSave" style="right: 2em" class="node-expand-svg-editor editor-button editor-button-small ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" type="button" role="button" title="Save"><i class="fa fa-save"></i></button>');
+                window.svgEditorDialogDiv.parent().find(".ui-dialog-titlebar").append('<button id="btnSave" style="right: 2em" class="node-expand-svg-source editor-button editor-button-small ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" type="button" role="button" title="Save"><i class="fa fa-save"></i></button>');
                 $("#btnSave").click(function(){
                     saveSVG();
                 });
-
                 function saveSVG(onSuccess, onError){
                     console.log("saveSVG called")
                     var fail = function(error, message) { 
@@ -1022,7 +968,6 @@
                     
                     getSVG(success, fail);
                 }
-
                 function getSVG(onSuccess, onError){
                     console.log("Calling getSVG method...")
                     window.drawSvgCommChannel.call({
@@ -1034,7 +979,6 @@
                 }
                 
             }
-
             // create drawsvg channel
             if(!window.drawSvgCommChannel){
                 window.drawSvgCommChannel = Channel.build({
@@ -1075,7 +1019,6 @@
                 
                 // bind drawsvg ready callback 
                 window.drawSvgCommChannel.bind("onDrawSVGReady", onDrawSVGReady);
-
                 // save svg service
                 function  onSaveSVG(trans,params) {
                     console.log("onSaveSVG nameSVG="+params['nameSVG']+" stringSVG="+params['stringSVG']);
@@ -1083,13 +1026,11 @@
                     //node.editorwindow.node_ace_editor.clearSelection(); // This will remove the highlight over the text
                     return "save done";
                 }
-
                 // bind save callback
                 window.drawSvgCommChannel.bind("onSaveSVG", onSaveSVG);
          
                 function sendSVGtoEditor(){
                     if(window.drawSvgCommChannel && window.drawSvgCommChannel.editorSVGLoaded){
-
                         window.drawSvgCommChannel.call({
                             method: "loadStringSVG",
                             params: {
@@ -1118,15 +1059,12 @@
                     }
                 }
             }
-
             $(".node-iframe-svg-edit").on("click", function (e) {
                 console.log("node-iframe-svg-edit clicked")
                 e.preventDefault();
-
                 var winwid = $(window).width();
                 var winhei = $(window).height();
                 var src = $(this).attr("data-href");
-
                 var title = $(this).attr("data-title");
                 var width = $(this).attr("data-width");
                 var height = $(this).attr("data-height");
@@ -1144,9 +1082,9 @@
                 window.svgEditorDialog.dialog("option", "title", title).dialog("open");  
                 
             });
-
-            $(".node-format-svg").on("click", function (e) {
+            $(".node-format-svg-source").on("click", function (e) {
                 try {
+                debugger;
                     var svgIn = node.editor.getValue();
                     var svgOut = beautifySVG(svgIn);
                     window.node_ace_editor.setValue(svgOut);
@@ -1154,7 +1092,6 @@
                     console.error(error);
                 }       
             });
-
             function beautifySVG(svg, options){
                 var opts = {
                     "indent_size": "2",
@@ -1196,7 +1133,6 @@
             this.editor.destroy();
             delete this.editor;
             delete window.node_ace_editor;
-
             // Copy all the animations from the editableList to this node
             node.smilAnimations = [];
             var smilAnimationsList = $("#node-input-animations-container").editableList('items');
@@ -1218,7 +1154,6 @@
                 
                 node.clickableShapes.push({targetId:targetId, action:action, payload:payload, payloadType:payloadType, topic:topic});
             });
-
             // Copy all the bindings from the editableList to this node
             node.bindings = [];
             var bindingList = $("#node-input-binding-container").editableList('items');
@@ -1226,7 +1161,6 @@
                 var amin = getBindingFromFormRow(this);
                 node.bindings.push(amin);
             });
-
             window.node_ace_editor = null;
         },
         oneditcancel: function() {
@@ -1262,20 +1196,20 @@
     </div>
     <div id="node-svg-tabs-content" style="min-height: 150px">
         <!-- Content of all tabsheets -->
-        <div id="node-svg-tab-editor" class="node-svg-tab-content">
-            <!-- Ace SVG editor -->
+        <div id="node-svg-tab-source" class="node-svg-tab-content">
+            <!-- Ace SVG source editor -->
             <div class="form-row" style="margin-bottom:0px;">
                 <input type="hidden" id="node-input-svgString" style="width: 100%; height: 100%; ">
             </div>
-            <div class="form-row node-text-editor-row form-row-auto-height">
-                <div id="node-input-svg-editor" class="node-text-editor" style="width: 100%; height: 100%; min-height:150px;"></div>
-                <button id="node-expand-svg-editor" class="node-expand-svg-editor editor-button editor-button-small" style="margin-top: 4px;">
+            <div class="form-row node-source-editor-row form-row-auto-height">
+                <div id="node-input-svg-source" class="node-source-editor" style="width: 100%; height: 100%; min-height:150px;"></div>
+                <button id="node-expand-svg-source" class="node-expand-svg-source editor-button editor-button-small" style="margin-top: 4px;" title="Expand source">
                     <i class="fa fa-expand"></i>
                 </button>
-                <button id="node-format-svg" class="node-format-svg editor-button editor-button-small" style="margin-top: 4px;" title="Format SVG">
+                <button id="node-format-svg-source" class="node-format-svg-source editor-button editor-button-small" style="margin-top: 4px;" title="Format SVG">
                     <i class="fa fa-code"></i>    
                 </button>
-                <button id="node-iframe-svg-edit" class="node-iframe-svg-edit editor-button editor-button-small" style="margin-top: 4px;"
+                <button id="node-iframe-svg-edit" class="node-iframe-svg-edit editor-button editor-button-small" style="margin-top: 4px;"  title="Drawing editor" 
                     data-href="//www.draw-svg.appspot.com/drawsvg.html#jsChannel:" data-title="DrawSVG" data-width="95%" data-height="95%">
                     <i class="fa fa-edit"></i>    
                 </button>
