@@ -13,26 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
-const beautify_html = require('js-beautify').html
-    
 module.exports = function(RED) {
     var settings = RED.settings;
     const svgUtils = require('./svg_utils');
-    // TODOs:
-    // - Error 404 loading ACE SVG layout file
-    // - SVG image should be able to load locally or pushed via file?
-    // - Currently only allowed to edit SVG elements (not add or remove).  Is that ok?
-    // - Working with layers : see svg-edit who uses groups/titles
-    // - Best way to add fontAwesome icons? now that DrawSVG is in place, we need to replace "fa-xxx" with unicode
-    // - Animations start automatically, which is not what we want
-    // - Scrollbars appear when area too small
-    // - Show mouse coordinates if requested
-    // - Waar preserve aspect ratio zetten (op config screen of in de svg tag)
-    // - Remove expand button because it doesn't work
 
     function HTML(config) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config);
+
+	    faMapping = svgUtils.getFaMapping();
         
         // When a text element contains the CSS classname of a FontAwesome icon, we will replace it by its unicode value.
         var svgString = config.svgString.replace(/(<text.*>)(.*)(<\/text>)/g, function(match, $1, $2, $3, offset, input_string) {
@@ -43,7 +32,7 @@ module.exports = function(RED) {
                 return match;
             }
             
-            var uniCode = svgUtils.getUnicode(iconCssClass);
+            var uniCode = faMapping.get(iconCssClass);
             
             if (!uniCode) {
                 // Failed to get the unicode value of the specified icon, so return the original text
