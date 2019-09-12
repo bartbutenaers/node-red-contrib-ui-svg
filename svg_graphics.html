@@ -356,7 +356,7 @@
             autoFormatAfterEdit: {value: false},
             outputField: {value: "payload"},
             editorMode: {value: "dialog"},
-            editorType: {value: "drawsvg_cloud"},
+            editorUrl: {value: "http://drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
             name: {value: ''}
         },
@@ -370,10 +370,6 @@
         },
         oneditprepare: function() {
             var node = this;
-            
-            // Migrate old nodes (i.e. fill unexisting properties)
-            $('#node-input-editorMode').val(this.editorMode || "dialog");
-            $('#node-input-editorType').val(this.editorType || "drawsvg_cloud");
             
             node.initialised = false;
             window.node_ace_editor = null;
@@ -470,7 +466,7 @@
                 switch (editorMode) {
                     case "hide":
                         // Show no button and no tabsheet
-                        $("#div-editorType").hide();
+                        $("#div-editorUrl").hide();
                         $("#node-display-svg-popup").hide();
                         if (node.tabs.contains("node-svg-tab-editor")) {
                             node.tabs.removeTab("node-svg-tab-editor");
@@ -478,7 +474,7 @@
                         break;
                     case "tab":
                         // Only show an extra tabsheet "SVG editor"
-                        $("#div-editorType").show();
+                        $("#div-editorUrl").show();
                         $("#node-display-svg-popup").hide();
                         if (!node.tabs.contains("node-svg-tab-editor")) {
                             node.tabs.addTab({
@@ -486,13 +482,12 @@
                                 label: "SVG editor"
                             });
                         }
-
                         // Make sure the editor becomes the second tab
                         node.tabs.order(["node-svg-tab-source", "node-svg-tab-editor", "node-svg-tab-animations", "node-svg-tab-clickable", "node-svg-tab-binding", "node-svg-tab-settings"]); 
                         break;                    
                     case "dialog":
                         // Only show a button to open the modal popup dialog
-                        $("#div-editorType").show();
+                        $("#div-editorUrl").show();
                         $("#node-display-svg-popup").show();
                         if (node.tabs.contains("node-svg-tab-editor")) {
                             node.tabs.removeTab("node-svg-tab-editor");
@@ -1107,11 +1102,12 @@
                 }
             }
             $(".node-display-svg-popup").on("click", function (e) {
+            debugger;
                 console.log("node-display-svg-popup clicked")
                 e.preventDefault();
                 var winwid = $(window).width();
                 var winhei = $(window).height();
-                var src = $(this).attr("data-href");
+                var src = $("#node-input-editorUrl").val();
                 var title = $(this).attr("data-title");
                 var width = $(this).attr("data-width");
                 var height = $(this).attr("data-height");
@@ -1319,12 +1315,9 @@
                      <option value="dialog">In modal dialog</option>
                 </select>
             </div>
-            <div class="form-row" id="div-editorType">
-                <label for="node-input-editorType"><i class="fa fa-picture-o"></i> Editor type</label>
-                <select id="node-input-editorType">
-                    <option value="drawsvg_cloud">DrawSVG cloud</option>
-                    <option value="svgedit_cloud" style="color:gray; background: #eee;" disabled>SVG-Edit cloud</option>
-                </select>
+            <div class="form-row" id="div-editorUrl">
+                <label for="node-input-editorUrl"><i class="fa fa-globe"></i> Editor URL</label>
+                <input type="text" id="node-input-editorUrl">
             </div>
         </div>
     </div>
