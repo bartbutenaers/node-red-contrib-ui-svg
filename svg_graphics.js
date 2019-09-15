@@ -16,6 +16,9 @@
 module.exports = function(RED) {
     var settings = RED.settings;
     const svgUtils = require('./svg_utils');
+    const fs = require('fs');
+    const path = require('path');
+    const mime = require('mime');
 
     function HTML(config) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
@@ -42,6 +45,46 @@ module.exports = function(RED) {
             
             // Replace the CSS class name ($2) by its unicode value
             return $1 + "&#x" + uniCode + ";" + $3;
+        })
+        
+        // When the SVG string contains links to local images, we will replace those by a data url containing the base64 encoded
+        // string of that image.  Otherwise the Dashboard (i.e. the browser) would not have access to that image...
+        svgString = svgString.replace(/(xlink:href="file:\/\/)([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
+            if (!config.directory) {
+                console.log("For svg node with id=" + config.id + " no image directory has been specified");  
+                // Leave the local file path untouched, since we cannot load the specified image
+                return $1 + $2 + $3; 
+            }
+            
+            var fileName = $2;
+            var url = path.format({
+                root: '/ignored',
+                dir: config.directory,
+                base: fileName
+            });
+
+            if (!fs.existsSync(url)) {
+                console.log("The specified local image file (" + url + ") does not exist");  
+                // Leave the local file path untouched, since we cannot load the specified image
+                return $1 + $2 + $3; 
+            }
+            
+            try {
+                var data = fs.readFileSync(url);
+                
+                var contentType = mime.lookup(url);
+                    
+                var buff = new Buffer(data);
+                var base64data = buff.toString('base64');
+
+                // Return data url of base64 encoded image string
+                return 'xlink:href="data:' + contentType + ';base64,' + base64data + '"';
+            } 
+            catch (err) {
+                console.log("Cannot read the specified local image file (" + url + ")");  
+                // Leave the local file path untouched, since we cannot load the specified image
+                return $1 + $2 + $3;
+            }
         })
         
         var html = String.raw`
@@ -79,6 +122,8 @@ module.exports = function(RED) {
             }
             RED.nodes.createNode(this, config);
             node.outputField = config.outputField;
+            // Store the directory property, so it is available in the endpoint below
+            node.directory = config.directory;
             
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -632,14 +677,71 @@ module.exports = function(RED) {
 
     RED.nodes.registerType("ui_svg_graphics", SvgGraphicsNode);
    
-    // Make all the static resources from this node public available (i.e. third party JQuery plugin tableHeadFixer.js).
-    RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){
-        var options = {
-            root: __dirname /*+ '/static/'*/,
-            dotfiles: 'deny'
-        };
-       
-        // Send the requested file to the client (in this case it will be tableHeadFixer.js)
-        res.sendFile(req.params[0], options)
+    // Make some static resources from this node public available (to be used in the flow editor).
+    RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){ 
+        if (req.params[0].startsWith("lib/")) {
+            var options = {
+                root: __dirname,
+                dotfiles: 'deny'
+            };
+        
+            // Send the requested js library file to the client
+            res.sendFile(req.params[0], options);
+        }
+        else if(req.params[0].startsWith("image/")) {
+            // The url format to load a local image file will be "image/<svg_node_id>/<filename>"
+            var parts = req.params[0].split("/");
+            
+            var svgNodeId = parts[1];
+            var svgNode = RED.nodes.getNode(svgNodeId);
+            
+            if (parts.length !== 3) {
+                console.log("To request a local image, the url should look like image/<svg_node_id>/<filename>");
+                return;
+            }
+            
+            if (!svgNode) {
+                console.log("Svg node with id=" + svgNodeId + " cannot be found");
+                return;
+            }
+            
+            if (!svgNode.directory || svgNode.directory === "") {
+                console.log("For svg node with id=" + svgNodeId + " no image directory has been specified");
+                return;
+            }
+            
+            var fileName = parts[2];
+            
+            var url = path.format({
+                root: '/ignored',
+                dir: svgNode.directory,
+                base: fileName
+            });
+
+            if (fs.existsSync(url)) {
+                fs.readFile(url, function(err, data) {
+                    if (err) {
+                        res.writeHead(404);
+                        return res.end("File not found.");
+                    }
+
+                    res.setHeader("Content-Type", mime.lookup(url)); 
+                    res.writeHead(200);
+                    
+                    var buff = new Buffer(data);
+                    var base64data = buff.toString('base64');
+
+                    res.end(base64data);
+                });
+            } 
+            else {
+                res.writeHead(403);
+                return res.end("Forbidden.");
+            }
+        }
+        else {
+            console.log("Only paths starting with 'lib' or 'image' are supported");
+            return;
+        }
     });
 }
