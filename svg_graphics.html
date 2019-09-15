@@ -57,199 +57,101 @@
             $('#ui-svg-message-box').dialog( "close" );
         }
     }
-    function updateSvgIdHelpers(svgStr, tab) {
+    
+    // Collect information for the auto-complete fields
+    function updateSvgIdHelpers(node, svgStr) {
         console.log("updateSvgIdHelpers");
-        var nonAnimationClasses = [];
-        var animationClasses = [];
-        var animationListClasses = [];
-        var animationIds = [];
-        var animationIdSelectors = [];
         
-        var nonAnimationIds = [];
-        var nonAnimationIdSelectors = [];
-        var nonAnimationIdsAndActions = [];
-        var animationIdsAndActions = [];
-        var svgElement = $(svgStr)[0];
-        svgElement.querySelectorAll('[class]').forEach(function (node) {
-            node.classList.forEach(function (className) {
+        // Reset all information that we have previously collected
+        node.nonAnimationClasses = [];
+        node.animationClasses = [];
+        node.animationListClasses = [];
+        node.animationIds = [];
+        node.animationIdSelectors = [];
+        node.nonAnimationIds = [];
+        node.nonAnimationIdSelectors = [];
+        node.nonAnimationIdsAndActions = [];
+        node.animationIdsAndActions = [];
+        
+        // Convert the SVG string into a temporary DOM tree, which allows us to search easily through the SVG.
+        // See https://discourse.nodered.org/t/temporary-dom-elements-somewhere-cached/15520
+        var svgElement = new DOMParser().parseFromString(svgStr, "image/svg+xml");
+
+        svgElement.querySelectorAll('[class]').forEach(function (element) {
+            element.classList.forEach(function (className) {
                 if(!className) return;
                 var _class = "." + className;
-                var ele = node.tagName;
+                var ele = element.tagName;
                 ele = ele.trim().toLowerCase();
                 if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
-                    if (animationClasses.indexOf(_class) < 0) {
-                        animationClasses.push(_class)
+                    if (node.animationClasses.indexOf(_class) < 0) {
+                        node.animationClasses.push(_class)
                     }
                 } else {
-                    if (nonAnimationClasses.indexOf(_class) < 0) {
-                        nonAnimationClasses.push(_class)
+                    if (node.nonAnimationClasses.indexOf(_class) < 0) {
+                        node.nonAnimationClasses.push(_class)
                     }
                 }
             })
         })
-        svgElement.querySelectorAll('*[id]').forEach(function (node) {
-            if(!node.id) return;
+        svgElement.querySelectorAll('*[id]').forEach(function (element) {
+            if(!element.id) return;
             
-            var id = node.id;
-            var ele = node.tagName;
+            var id = element.id;
+            var ele = element.tagName;
             ele = ele.trim().toLowerCase();
             if(ele == "style") return;
             if (ele == "set" || ele == "animate" || ele == "animatemotion" || ele == "animatecolor" || ele == "animatetransform") {
-                if (animationIds.indexOf(id) < 0) {
-                    animationIds.push(id)
-                    animationIdSelectors.push("#"+id)
-                    animationIdsAndActions.push(id)
-                    animationIdsAndActions.push(id + ".begin");
-                    animationIdsAndActions.push(id + ".end");
-                    animationIdsAndActions.push(id + ".repeat(1)");
+                if (node.animationIds.indexOf(id) < 0) {
+                    node.animationIds.push(id)
+                    node.animationIdSelectors.push("#"+id)
+                    node.animationIdsAndActions.push(id)
+                    node.animationIdsAndActions.push(id + ".begin");
+                    node.animationIdsAndActions.push(id + ".end");
+                    node.animationIdsAndActions.push(id + ".repeat(1)");
                 }
             } else if(ele != "style" ) {
-                if (nonAnimationIds.indexOf(id) < 0) {
-                    nonAnimationIds.push(id);
-                    nonAnimationIdSelectors.push("#"+id)
-                    nonAnimationIdsAndActions.push(id + ".click");
-                    nonAnimationIdsAndActions.push(id + ".dblclick");
-                    nonAnimationIdsAndActions.push(id + ".contextmenu");
-                    nonAnimationIdsAndActions.push(id + ".mouseover");
-                    nonAnimationIdsAndActions.push(id + ".mouseout");
-                    nonAnimationIdsAndActions.push(id + ".mouseup");
-                    nonAnimationIdsAndActions.push(id + ".mousedown");
-                    nonAnimationIdsAndActions.push(id + ".focus");
-                    nonAnimationIdsAndActions.push(id + ".focusin");
-                    nonAnimationIdsAndActions.push(id + ".focusout");
-                    nonAnimationIdsAndActions.push(id + ".blur");
-                    nonAnimationIdsAndActions.push(id + ".keyup");
-                    nonAnimationIdsAndActions.push(id + ".keydown");
-                    nonAnimationIdsAndActions.push(id + ".touchstart");
-                    nonAnimationIdsAndActions.push(id + ".touchend");
+                if (node.nonAnimationIds.indexOf(id) < 0) {
+                    node.nonAnimationIds.push(id);
+                    node.nonAnimationIdSelectors.push("#"+id)
+                    node.nonAnimationIdsAndActions.push(id + ".click");
+                    node.nonAnimationIdsAndActions.push(id + ".dblclick");
+                    node.nonAnimationIdsAndActions.push(id + ".contextmenu");
+                    node.nonAnimationIdsAndActions.push(id + ".mouseover");
+                    node.nonAnimationIdsAndActions.push(id + ".mouseout");
+                    node.nonAnimationIdsAndActions.push(id + ".mouseup");
+                    node.nonAnimationIdsAndActions.push(id + ".mousedown");
+                    node.nonAnimationIdsAndActions.push(id + ".focus");
+                    node.nonAnimationIdsAndActions.push(id + ".focusin");
+                    node.nonAnimationIdsAndActions.push(id + ".focusout");
+                    node.nonAnimationIdsAndActions.push(id + ".blur");
+                    node.nonAnimationIdsAndActions.push(id + ".keyup");
+                    node.nonAnimationIdsAndActions.push(id + ".keydown");
+                    node.nonAnimationIdsAndActions.push(id + ".touchstart");
+                    node.nonAnimationIdsAndActions.push(id + ".touchend");
                 }
             }
         })
+        
         //Get all animation ids specified by the SMIL animations editable list...
         var smilAnimationsList = $("#node-input-animations-container").editableList('items');
         smilAnimationsList.each(function(i) {
             var aid = $(this).find(".node-input-animation-id").val();    
             var cv = $(this).find(".node-input-animation-classValue").val();    
                         
-            if (cv && animationListClasses.indexOf(cv) < 0) {
-                animationListClasses.push(cv);
+            if (cv && node.animationListClasses.indexOf(cv) < 0) {
+                node.animationListClasses.push(cv);
             }
             if(!aid) return;            
-            if (animationIds.indexOf(aid) < 0) {
-                animationIds.push(aid);
-                animationIdsAndActions.push(aid + ".begin");
-                animationIdsAndActions.push(aid + ".end");
-                animationIdsAndActions.push(aid + ".repeat(1)");
+            if (node.animationIds.indexOf(aid) < 0) {
+                node.animationIds.push(aid);
+                node.animationIdsAndActions.push(aid + ".begin");
+                node.animationIdsAndActions.push(aid + ".end");
+                node.animationIdsAndActions.push(aid + ".repeat(1)");
             }
         });
-        //list of animatable attributes
-        var attrList = [
-            'clipPathUnits', 'cx', 'cy', 'd', 'display', 'dx', 'dy', 'fill', 'fx',
-            'fy', 'gradientTransform', 'gradientUnits', 'height', 'lengthAdjust',
-            'markerHeight', 'markerUnits', 'markerWidth', 'maskContentUnits',
-            'maskUnits', 'method', 'offset', 'orient', 'pathLength',
-            'patternContentUnits', 'patternTransform', 'patternUnits', 'points',
-            'preserveAspectRatio', 'r', 'refX', 'refY', 'rotate', 'rx', 'ry',
-            'spacing', 'spreadMethod', 'startOffset', 'textLength', 'transform',
-            'viewBox', "visibility", 'width', 'x', 'x1', 'x2', 'y', 'y1', 'y2',
-        ]    
-        function tagSplit(val) {
-            return val.split(/;\s*/);
-        }
-        function extractLastTag(term) {
-            return tagSplit(term).pop();
-        }
-        if(tab == "node-svg-tab-animations"){
-            $(".node-input-animation-classValue").autocomplete({
-            source: animationListClasses
-            });
-            $(".node-input-animation-targetId").autocomplete({
-                source: nonAnimationIds
-            });
-            $(".node-input-animation-attributeName").autocomplete({
-                source: attrList
-            });
-            $(".node-input-animation-custom")
-            .on("keydown", function (event) {
-                
-                if($(this).autocomplete("instance").menu.active){
-                    var appendChar = "; ";
-                    var takeInput = true;
-                    switch (event.keyCode) {
-                        case $.ui.keyCode.RIGHT:
-                        appendChar = "";
-                        break;
-                        case 186:
-                        appendChar = "; ";
-                        break;
-                        case $.ui.keyCode.PERIOD:
-                        appendChar = ".";
-                        break;
-                        default:
-                        takeInput = false;
-                    }
-                    
-                    if (event.keyCode === $.ui.keyCode.TAB) {
-                        event.preventDefault();// don't navigate away from the field on tab when selecting an item
-                    } else if (takeInput) {
-                        let terms =  tagSplit(this.value);
-                        let selected = $(this).autocomplete("instance").menu.active.text()
-                        terms.pop();// remove the current input 
-                        terms.push(selected + appendChar); // add the selected item
-                        this.value = terms.join("; ");
-                        event.preventDefault();// don't navigate away from the field
-                    }
-                }
-            })
-            .on("click", function (event) {
-                //show dropdown on click (disabled/annoying/problematic)
-                //$( this ).autocomplete( "search", "" )
-            })
-            .autocomplete({
-                minLength: 0,
-                source: function (request, response) {
-                    //TODO: Consider how to handle editing in middle of string
-                    //currently, the last tag (after last ;) is used.
-                    let list;
-                    let lastTag = extractLastTag(request.term);
-                    if(lastTag.includes(".")){
-                        list = [...nonAnimationIdsAndActions,...animationIdsAndActions]; 
-                    } else {
-                        list = [...nonAnimationIds, ...animationIds]; 
-                    }
-                    // delegate back to autocomplete, but extract the last term
-                    response($.ui.autocomplete.filter(list, lastTag));
-                },
-                focus: function () {
-                    // prevent value inserted on focus
-                    return false;
-                },
-                select: function (event, ui) {
-                    var terms = tagSplit(this.value);
-                    terms.pop();// remove the current input 
-                    terms.push(ui.item.value); // add the selected item
-                    // add placeholder to get the comma-and-space at the end
-                    terms.push("");
-                    this.value = terms.join("; ");
-                    return false;
-                }
-            });
-        } 
-        
-        if(tab == "node-svg-tab-clickable"){
-            $(".node-input-clickable-targetId").autocomplete({
-                source: [...nonAnimationIdSelectors,...nonAnimationClasses]
-            });
-        }
-        if(tab == "node-svg-tab-binding"){
-            $(".node-input-binding-selector").autocomplete({
-                source: [...nonAnimationIdSelectors,...nonAnimationClasses]
-            });
-            $(".node-input-binding-attribute").autocomplete({
-                source: attrList
-            });
-        }        
     }
+    
     function updateEditorHeight(node, editor) {
         console.log("updateEditorHeight");
         //resize the tab content divs to available height
@@ -358,6 +260,7 @@
             editorMode: {value: "dialog"},
             editorUrl: {value: "http://drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
+            directory: {value: ""},
             name: {value: ''}
         },
         inputs:1,
@@ -370,6 +273,18 @@
         },
         oneditprepare: function() {
             var node = this;
+            
+            //list of animatable attributes
+            node.attrList = [
+                'clipPathUnits', 'cx', 'cy', 'd', 'display', 'dx', 'dy', 'fill', 'fx',
+                'fy', 'gradientTransform', 'gradientUnits', 'height', 'lengthAdjust',
+                'markerHeight', 'markerUnits', 'markerWidth', 'maskContentUnits',
+                'maskUnits', 'method', 'offset', 'orient', 'pathLength',
+                'patternContentUnits', 'patternTransform', 'patternUnits', 'points',
+                'preserveAspectRatio', 'r', 'refX', 'refY', 'rotate', 'rx', 'ry',
+                'spacing', 'spreadMethod', 'startOffset', 'textLength', 'transform',
+                'viewBox', "visibility", 'width', 'x', 'x1', 'x2', 'y', 'y1', 'y2',
+            ]   
             
             node.initialised = false;
             window.node_ace_editor = null;
@@ -412,11 +327,14 @@
                     $("#node-svg-tabs-content").children().hide();
                     $("#" + tab.id).show();
                     updateEditorHeight(node,node.editor);
+                    
                     if(tab.id == "node-svg-tab-animations" || tab.id == "node-svg-tab-clickable" || tab.id == "node-svg-tab-binding"){
                         let svgStr = node.editor ? node.editor.getValue() : ""; 
                         try {
-                            updateSvgIdHelpers(svgStr, tab.id);    
-                        } catch (error) {
+                            // When tabsheet changes, all autocomplete sources should be updated (since element ids, ... might have changed)
+                            updateSvgIdHelpers(node, svgStr);    
+                        } 
+                        catch (error) {
                             console.error(error)
                         }
                     }
@@ -462,7 +380,7 @@
             // Depending on the selected editor mode, the visibility of a number of elements needs to be changed
             $("#node-input-editorMode").change(function() {
                 var editorMode = $("#node-input-editorMode").val();
-                debugger;
+
                 switch (editorMode) {
                     case "hide":
                         // Show no button and no tabsheet
@@ -529,6 +447,21 @@
                 else {
                     return "Animation ( unknown id )";
                 }
+            }
+            
+            function updateTitle(titleField, ele){
+                var par = $(ele).parent().parent();
+                var anim = getAnimationObjectFromFormRow(par);
+                var newTitle = getTitle(anim);
+                titleField.text(newTitle);
+            }
+            
+            function tagSplit(val) {
+                return val.split(/;\s*/);
+            }
+            
+            function extractLastTag(term) {
+                return tagSplit(term).pop();
             }
             
             // Create a table of (SMIL) animations
@@ -599,39 +532,50 @@
                     var animationIdRow = addPropertyRow(container, "Animation id");
                     var animationIdField = $('<input/>', {class: "node-input-animation-id", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(animationIdRow);
                     animationIdField.val(animation.id);
-                    $('<span/>').text('%').appendTo(animationIdField);
-        
-                    function updateTitle(ele){
-                        var par = $(ele).parent().parent();
-                        var anim = getAnimationObjectFromFormRow(par);
-                        var newTitle = getTitle(anim);
-                        titleField.text(newTitle);
-                    }
+                    animationIdField.on("change", function(){
+                        updateTitle(titleField, this)
+                    });
+                    $('<span/>').text('%').appendTo(animationIdField);         
+                                    
                     // Add a 'target id' property row
                     var targetIdRow = addPropertyRow(container, "Target Element Id");
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
                     targetIdField.val(animation.targetId);
+                    targetIdField.autocomplete({
+                        source: function(req, add){        
+                            add(node.nonAnimationIds || []);
+                        }
+                    });
+                    targetIdField.on("change", function(){
+                        updateTitle(titleField, this)
+                    });
                     $('<span/>').text('%').appendTo(targetIdField);
+                    
                     // Add a 'class' property row
                     var classValueRow = addPropertyRow(container, "Class");
                     var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
                     classValueField.val(animation.classValue);
+                    classValueField.autocomplete({
+                        source: function(req, add){        
+                            add(node.animationListClasses || []);
+                        }
+                    });
                     $('<span/>').text('%').appendTo(classValueField);
+                    
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
                     attributeNameField.val(animation.attributeName);
-                    $('<span/>').text('%').appendTo(attributeNameField);
-                    // When the animation id changes, the header line title should also be changed
-                    animationIdField.on("change", function(){
-                        updateTitle(this)
-                    });
-                    targetIdField.on("change", function(){
-                        updateTitle(this)
+                    attributeNameField.autocomplete({
+                        source: function(req, add){        
+                            add(node.attrList || []);
+                        }
                     });
                     attributeNameField.on("change", function(){
-                        updateTitle(this)
+                        updateTitle(titleField, this)
                     });
+                    $('<span/>').text('%').appendTo(attributeNameField); 
+                    
                     // Add a 'from / to value' property row
                     var fromToValueRow = addPropertyRow(container, "From / To");
                     var fromValueField = $('<input/>', {class: "node-input-animation-fromValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "from"}).appendTo(fromToValueRow);
@@ -708,8 +652,72 @@
                     var customRow = addPropertyRow(container, "Custom");
                     var customField = $('<input/>', {class: "node-input-animation-custom", style: "width:70%; margin-right:10px;", type: "text"}).appendTo(customRow);
                     customField.val(animation.custom);
+                    customField.on("keydown", function (event) {
+                        if($(this).autocomplete("instance").menu.active){
+                            var appendChar = "; ";
+                            var takeInput = true;
+                            switch (event.keyCode) {
+                                case $.ui.keyCode.RIGHT:
+                                appendChar = "";
+                                break;
+                                case 186:
+                                appendChar = "; ";
+                                break;
+                                case $.ui.keyCode.PERIOD:
+                                appendChar = ".";
+                                break;
+                                default:
+                                takeInput = false;
+                            }
+                            
+                            if (event.keyCode === $.ui.keyCode.TAB) {
+                                event.preventDefault();// don't navigate away from the field on tab when selecting an item
+                            } else if (takeInput) {
+                                let terms =  tagSplit(this.value);
+                                let selected = $(this).autocomplete("instance").menu.active.text()
+                                terms.pop();// remove the current input 
+                                terms.push(selected + appendChar); // add the selected item
+                                this.value = terms.join("; ");
+                                event.preventDefault();// don't navigate away from the field
+                            }
+                        }
+                    })
+                    .on("click", function (event) {
+                        //show dropdown on click (disabled/annoying/problematic)
+                        //$( this ).autocomplete( "search", "" )
+                    })
+                    .autocomplete({
+                        minLength: 0,
+                        source: function (request, response) {
+                            //TODO: Consider how to handle editing in middle of string
+                            //currently, the last tag (after last ;) is used.
+                            let list;
+                            let lastTag = extractLastTag(request.term);
+                            if(lastTag.includes(".")){
+                                list = [...node.nonAnimationIdsAndActions,...node.animationIdsAndActions]; 
+                            } else {
+                                list = [...node.nonAnimationIds, ...node.animationIds]; 
+                            }
+                            // delegate back to autocomplete, but extract the last term
+                            response($.ui.autocomplete.filter(list, lastTag));
+                        },
+                        focus: function () {
+                            // prevent value inserted on focus
+                            return false;
+                        },
+                        select: function (event, ui) {
+                            var terms = tagSplit(this.value);
+                            terms.pop();// remove the current input 
+                            terms.push(ui.item.value); // add the selected item
+                            // add placeholder to get the comma-and-space at the end
+                            terms.push("");
+                            this.value = terms.join("; ");
+                            return false;
+                        }
+                    });                 
                     $('<span/>').text('%').appendTo(customField);
                     customRow.append($("<i />", {class:"fa fa-question", title:"Press down to select, right to accept, dot to access properties, semicolon/enter/tab to complete the entry."}));
+                    
                     //add duplicate button
                     var duplicateButton = $('<a/>', {class: "red-ui-editableList-item-remove red-ui-button red-ui-button-small", style: "margin-right: 28px"}).appendTo(container);
                     duplicateButton.html('<i class="fa fa-clone"></i>')
@@ -770,14 +778,6 @@
                     
                     // Only show the relevant widget type properties
                     triggerField.change();
-                    if(node.initialised){
-                        let svgStr = node.editor ? node.editor.getValue() : ""; 
-                        try {
-                            updateSvgIdHelpers(svgStr);    
-                        } catch (error) {
-                            console.error(error)
-                        }
-                    }
                 },                    
                 removable: true,
                 sortable: false
@@ -801,6 +801,11 @@
                     // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
                     var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
+                    targetIdField.autocomplete({
+                        source: function(req, add){        
+                            add([...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []);
+                        }
+                    });
                     
                     // Column 2 : Add an input field (type option) to the new row, that represents the action type 
                     var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
@@ -856,14 +861,6 @@
                             topicField.val($(this).val());
                         }
                     });
-                    if(node.initialised){
-                        let svgStr = node.editor ? node.editor.getValue() : ""; 
-                        try {
-                            updateSvgIdHelpers(svgStr);    
-                        } catch (error) {
-                            console.error(error)
-                        }
-                    }
                 },
                 removable: true
             });
@@ -881,7 +878,7 @@
                     "<div style='width:24%; margin-left:5px; display: inline-grid'><b>Binding Destination</b></div>" +  
                     "<div style='width:24%; margin-left:5px; display: inline-grid'><b>&nbsp</b></div>"
                 )),
-                    addItem: function(container, i, binding) {
+                addItem: function(container, i, binding) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     //BINDING SOURCE
@@ -889,6 +886,7 @@
                     var bindSourceField = $('<input/>',{class:"node-input-binding-source",type:"text",placeholder:"payload.property"})
                         .css({"width":"22%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     bindSourceField.val(binding.bindSource);  
+               
                     //BINDING DESTINATION
                     // Column 2 : [textbox] Selector denoting what elements to add binding to (with autocomplete of .classes & #elementIDs)
                     var targetSelectorField = $('<input/>',{class:"node-input-binding-selector",type:"text",placeholder:"Element Selector"})
@@ -897,6 +895,10 @@
                     var targetSelectorFieldId = "node-input-binding-selector" + i
                     targetSelectorField.attr("id",targetSelectorFieldId);
                     targetSelectorField.val(binding.selector);
+                    targetSelectorField.autocomplete({
+                        source: [...node.nonAnimationIdSelectors,...node.nonAnimationClasses]
+                    });
+           
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
                     var bindingTypeField = $('<select/>',{class:"node-input-binding-type",type:"text",placeholder:"click"})
                         .css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
@@ -909,6 +911,11 @@
                     var attributeFieldId = "node-input-binding-attribute" + i
                     attributeField.attr("id",attributeFieldId);
                     attributeField.val(binding.attribute);  
+                    attributeField.autocomplete({
+                        source: function(req, add){        
+                            add(node.attrList);
+                        }
+                    });
                     bindingTypeField.change(function () {
                         if (bindingTypeField.val() === "attr") {
                             attributeField.show();
@@ -933,9 +940,12 @@
             
             node.initialised = true;
             
+            // Create once an iFrame (inside a Div) to display the DrawSvg editor
             if(!window.svgEditorDialogDiv || !window.svgEditorDialogDiv.length){
                 window.svgEditorFrame = $('<iframe id="drawsvg" frameborder="0" marginwidth="0" marginheight="0" allowfullscreen></iframe>');
                 window.svgEditorDialogDiv = $("<div id='svg-dialog-div'></div>").append(window.svgEditorFrame).appendTo("body")
+                
+                // Open the Div (containing an iFrame) in a popup dialog
                 window.svgEditorDialog = window.svgEditorDialogDiv.dialog({
                     autoOpen: false,
                     modal: true,
@@ -946,11 +956,15 @@
                     minWidth: 600,
                     open: function( event, ui ) {
                         window.svgEditorDialog.closeConfirmed = false;
+                        
+                        // When the editor's iFrame has been opened in the popup dialog (and the communication channel is ready),
+                        // then the SVG string can be loaded into the editor (via that communication channel).
                         if(window.drawSvgCommChannel.editorSVGLoaded){
                             sendSVGtoEditor()
                         }
                     },
                     beforeClose: function(event, ui) { 
+                    
                         console.log("SVG editor dialog close button clicked");
                         if(window.svgEditorDialog.closeConfirmed){
                             return true;
@@ -981,7 +995,10 @@
                         return false;
                      }
                 });
+                
+                // Let's customize the popup dialog, by setting a custom title and a 'Save' menu button (to save intermediate)
                 window.svgEditorDialogDiv.parent().find(".ui-dialog-titlebar").append('<button id="btnSave" style="right: 2em" class="node-expand-svg-source editor-button editor-button-small ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" type="button" role="button" title="Save"><i class="fa fa-save"></i></button>');
+                
                 $("#btnSave").click(function(){
                     saveSVG();
                 });
@@ -996,11 +1013,28 @@
                         }
                     }
                     var success = function(v) {
-                        var svg = v;
+                        var svgStr = v;
+                        
+                        // Convert the SVG string (that we received from DrawSvg) into a temporary DOM tree, which allows us to 
+                        // search easily through the SVG.  See https://discourse.nodered.org/t/temporary-dom-elements-somewhere-cached/15520
+                        var svgElement = new DOMParser().parseFromString(svgStr, "image/svg+xml");
+
+                        // When the element contains a data-xlink-href, this means it is referring to a local image.  The xlink:href attribute will
+                        // contain the base64 encoded string of that local image, and the data-xlink-href contains the url (file://...) to that
+                        // local image.  We will replace the base64 string by the local image url.
+                        svgElement.querySelectorAll("[data-xlink-href]").forEach(function (element) {
+                            var xlinkHref = element.getAttribute("data-xlink-href");
+                            element.removeAttribute("data-xlink-href");
+                            element.setAttribute("xlink:href", xlinkHref);
+                        })       
+
+                        // Convert the manipulated DOM tree back into an SVG string
+                        svgStr = new XMLSerializer().serializeToString(svgElement);                        
+                        
                         if(node.autoFormatAfterEdit){
-                            svg = beautifySVG(v);
+                            svgStr = beautifySVG(svgStr);
                         }
-                        window.node_ace_editor.setValue(svg);
+                        window.node_ace_editor.setValue(svgStr);
                         if(onSuccess){
                             onSuccess(v);
                         } else {
@@ -1008,20 +1042,17 @@
                         }                            
                     }
                     
-                    getSVG(success, fail);
-                }
-                function getSVG(onSuccess, onError){
                     console.log("Calling getSVG method...")
                     window.drawSvgCommChannel.call({
                         method: "getSVG",
                         params: {},
-                        error: onError,
-                        success: onSuccess
+                        error: fail,
+                        success: success
                     });
                 }
-                
             }
-            // create drawsvg channel
+            
+            // Create once a drawsvg channel (to communicate with the editor in the iFrame)
             if(!window.drawSvgCommChannel){
                 window.drawSvgCommChannel = Channel.build({
                     debugOutput: true,
@@ -1029,9 +1060,9 @@
                     origin: "*",
                     scope: "drawsvg"
                 });
-                    
-                // drawsvg ready callback
-                function onDrawSVGReady(trans,params) {
+                
+                // bind drawsvg ready callback 
+                window.drawSvgCommChannel.bind("onDrawSVGReady", function (trans,params) {
                     // now you can communicate with drawsvg
                     console.log("got drawsvg ready notification");
                     // setting document menu
@@ -1057,26 +1088,53 @@
                         }
                     });                   
                     return "connected";
-                };
-                
-                // bind drawsvg ready callback 
-                window.drawSvgCommChannel.bind("onDrawSVGReady", onDrawSVGReady);
+                });
+
                 // save svg service
-                function  onSaveSVG(trans,params) {
+                // bind save callback
+                window.drawSvgCommChannel.bind("onSaveSVG", function (trans,params) {
                     console.log("onSaveSVG nameSVG="+params['nameSVG']+" stringSVG="+params['stringSVG']);
                     window.node_ace_editor.setValue(params['stringSVG']);
                     //node.editorwindow.node_ace_editor.clearSelection(); // This will remove the highlight over the text
                     return "save done";
-                }
-                // bind save callback
-                window.drawSvgCommChannel.bind("onSaveSVG", onSaveSVG);
+                });
          
                 function sendSVGtoEditor(){
+                    // Since the external cloud editor cannot access local image files, we will load the base64 string (of that image) into the SVG string.
+                    // For example: xlink:href="file://C:\myimage.png"
+                    // TODO dit is te laat, want DrawSvg probeert die local links al reeds op te laden:
+                    //    "Not allowed to load local resource: file:///C:/temp/floorplan.jpg"
+                    // TODO daarom verhuizen naar onDrawSVGReady?  Probleem is wel dat sendSvgToEditor op 2 plaatsen opgeroepen wordt (en niet enkel uit sendSvgEditor)!!!!!
+                    var svgString = window.node_ace_editor ? window.node_ace_editor.getValue() : "";
+                    svgString = svgString.replace(/(xlink:href="file:\/\/)([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
+                        var newUrl = "";
+                        var fileName = $2;
+
+                        $.ajax({
+                            type: "GET",
+                            url: "/ui_svg_graphics/image/" + node.id + "/" + fileName, 
+                            async: false, // Synchronous call
+                            success: function(response, status, xhr){ 
+                                var contentType = xhr.getResponseHeader("content-type") || "";
+                            
+                                // Return data url of base64 encoded image string.
+                                // And store the original file name in a custom 'data' attribute
+                                newUrl = 'xlink:href="data:' + contentType + ';base64,' + response + '" data-xlink-href="file://' + fileName + '"';
+                            },
+                            error: function() {
+                                // Leave the local file path untouched, since we cannot load the specified image
+                                newUrl = $1 + $2 + $3;
+                            }
+                        });
+
+                        return newUrl;
+                    })
+                        
                     if(window.drawSvgCommChannel && window.drawSvgCommChannel.editorSVGLoaded){
                         window.drawSvgCommChannel.call({
                             method: "loadStringSVG",
                             params: {
-                                'stringSVG' : window.node_ace_editor ? window.node_ace_editor.getValue() : "",// string svg contents
+                                'stringSVG' : svgString,
                                 'nameSVG' : 'node-red',// svg name
                                 // The name of the service which to be called 
                                 // when user clicks on the save button of drawsvg
@@ -1102,7 +1160,6 @@
                 }
             }
             $(".node-display-svg-popup").on("click", function (e) {
-            debugger;
                 console.log("node-display-svg-popup clicked")
                 e.preventDefault();
                 var winwid = $(window).width();
@@ -1111,6 +1168,11 @@
                 var title = $(this).attr("data-title");
                 var width = $(this).attr("data-width");
                 var height = $(this).attr("data-height");
+                
+                // When the "#jsChannel:" postfix is not available in the URL, then the onDrawSVGReady will never be executed!
+                if (!src.endsWith("#jsChannel:")) {
+                    src += "#jsChannel:";
+                }
                 
                 if(window.svgEditorFrame[0].src != src){
                     window.svgEditorFrame.attr({
@@ -1127,7 +1189,6 @@
             });
             $(".node-format-svg-source").on("click", function (e) {
                 try {
-                debugger;
                     var svgIn = node.editor.getValue();
                     var svgOut = beautifySVG(svgIn);
                     window.node_ace_editor.setValue(svgOut);
@@ -1318,6 +1379,10 @@
             <div class="form-row" id="div-editorUrl">
                 <label for="node-input-editorUrl"><i class="fa fa-globe"></i> Editor URL</label>
                 <input type="text" id="node-input-editorUrl">
+            </div>
+            <div class="form-row">
+                <label for="node-input-directory"><i class="fa fa-folder"></i> Directory</label>
+                <input type="text" id="node-input-directory" placeholder="Select directory">
             </div>
         </div>
     </div>
