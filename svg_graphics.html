@@ -257,7 +257,6 @@
             showCoordinates: {value: false},
             autoFormatAfterEdit: {value: false},
             outputField: {value: "payload"},
-            editorMode: {value: "dialog"},
             editorUrl: {value: "http://drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
             directory: {value: ""},
@@ -376,43 +375,6 @@
                 fields:['name']
             });
             this.editor.focus();
-            
-            // Depending on the selected editor mode, the visibility of a number of elements needs to be changed
-            $("#node-input-editorMode").change(function() {
-                var editorMode = $("#node-input-editorMode").val();
-
-                switch (editorMode) {
-                    case "hide":
-                        // Show no button and no tabsheet
-                        $("#div-editorUrl").hide();
-                        $("#node-display-svg-popup").hide();
-                        if (node.tabs.contains("node-svg-tab-editor")) {
-                            node.tabs.removeTab("node-svg-tab-editor");
-                        }
-                        break;
-                    case "tab":
-                        // Only show an extra tabsheet "SVG editor"
-                        $("#div-editorUrl").show();
-                        $("#node-display-svg-popup").hide();
-                        if (!node.tabs.contains("node-svg-tab-editor")) {
-                            node.tabs.addTab({
-                                id: "node-svg-tab-editor",
-                                label: "SVG editor"
-                            });
-                        }
-                        // Make sure the editor becomes the second tab
-                        node.tabs.order(["node-svg-tab-source", "node-svg-tab-editor", "node-svg-tab-animations", "node-svg-tab-clickable", "node-svg-tab-binding", "node-svg-tab-settings"]); 
-                        break;                    
-                    case "dialog":
-                        // Only show a button to open the modal popup dialog
-                        $("#div-editorUrl").show();
-                        $("#node-display-svg-popup").show();
-                        if (node.tabs.contains("node-svg-tab-editor")) {
-                            node.tabs.removeTab("node-svg-tab-editor");
-                        }
-                        break;
-                }
-            });
             
             var fullScrElement = $('#node-svg-tab-source')[0];
             var fsr = fullScrElement.requestFullscreen || fullScrElement.mozRequestFullScreen || fullScrElement.webkitRequestFullscreen || fullScrElement.msRequestFullScreen;
@@ -1319,13 +1281,6 @@
                 </button>
             </div>
         </div>
-        <div id="node-svg-tab-editor" class="node-svg-tab-content" style="display:none;">
-            <!-- Third party SVG drawing editor -->
-            <div class="form-row form-row-auto-height">
-                <!-- The iframe will be injected automatically here -->
-                <button id="node-expand-svg-editor" class="editor-button editor-button-small" style="margin-top: 4px;"><i class="fa fa-expand"></i></button>
-            </div>
-        </div>
         <div id="node-svg-tab-animations" class="node-svg-tab-content">
             <div class="form-row form-row-auto-height">
                 <!-- Table with SMIL animations -->
@@ -1367,14 +1322,6 @@
             <div class="form-row">
                 <input type="checkbox" id="node-input-autoFormatAfterEdit" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-autoFormatAfterEdit" style="width:70%;"> Auto format SVG Source after saving edits in SVG Editor</label>
-            </div>
-            <div class="form-row">
-                <label for="node-input-editorMode"><i class="fa fa-window-restore"></i> Editor</label>
-                <select id="node-input-editorMode">
-                    <option value="hide">Hide</option>
-                    <option value="tab">In tabsheet</option>
-                     <option value="dialog">In modal dialog</option>
-                </select>
             </div>
             <div class="form-row" id="div-editorUrl">
                 <label for="node-input-editorUrl"><i class="fa fa-globe"></i> Editor URL</label>
