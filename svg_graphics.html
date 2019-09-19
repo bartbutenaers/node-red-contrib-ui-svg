@@ -272,6 +272,18 @@
         },
         oneditprepare: function() {
             var node = this;
+          
+            // Make sure the autocomplete fields at least refer to Iterable node fields...
+            // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/33
+            node.nonAnimationClasses = [];
+            node.animationClasses = [];
+            node.animationListClasses = [];
+            node.animationIds = [];
+            node.animationIdSelectors = [];
+            node.nonAnimationIds = [];
+            node.nonAnimationIdSelectors = [];
+            node.nonAnimationIdsAndActions = [];
+            node.animationIdsAndActions = [];
             
             //list of animatable attributes
             node.attrList = [
