@@ -216,12 +216,12 @@
         var duration      = row.find(".node-input-animation-duration").val();
         var durationUnit  = row.find(".node-input-animation-durationUnit").val();
         var repeatCount   = row.find(".node-input-animation-repeatCount").val();
-        var freeze        = row.find(".node-input-animation-freeze").is(":checked");
+        var end           = row.find(".node-input-animation-end").is(":checked");
         var delay         = row.find(".node-input-animation-delay").val();
         var delayUnit     = row.find(".node-input-animation-delayUnit").val();
         var otherId       = row.find(".node-input-animation-otherId").val();
         var custom        = row.find(".node-input-animation-custom").val();        
-        return {id:id, targetId:targetId, classValue:classValue, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, freeze:freeze, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
+        return {id:id, targetId:targetId, classValue:classValue, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, end:end, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
     }
     function getBindingFromFormRow(ele){
         var row = $(ele);
@@ -272,7 +272,7 @@
         },
         oneditprepare: function() {
             var node = this;
-          
+            
             // Make sure the autocomplete fields at least refer to Iterable node fields...
             // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/33
             node.nonAnimationClasses = [];
@@ -378,7 +378,9 @@
                 mode: 'ace/mode/html',
                 value: $("#node-input-svgString").val()
             });
+            node.editor.setFontSize(14); 
             window.node_ace_editor = node.editor;
+            
             RED.library.create({
                 url:"uitemplates", // where to get the data from
                 type:"ui_template", // the type of object the library is for
@@ -439,7 +441,7 @@
             }
             
             // Create a table of (SMIL) animations
-            // Columns: element id - attributeName - from - to - duration - repeatCount - freeze
+            // Columns: element id - attributeName - from - to - duration - repeatCount - end
             var smilAnimationsList = $("#node-input-animations-container").css('min-height','150px').css('min-width','400px').editableList({
                 addItem: function(container, i, animation) {
                     // By default the list items will be compressed, so show the expand icon
@@ -457,7 +459,7 @@
                             duration      : 1,
                             durationUnit   : "s",
                             repeatCount   : 0,
-                            freeze        : false,
+                            end           : "restore",
                             trigger       : "msg",
                             delay         : 1,
                             delayUnit     : "s",
@@ -499,12 +501,12 @@
                     // - To value
                     // - Duration + DurationUnit
                     // - Repeat count
-                    // - Freeze
+                    // - End
                     // - Trigger type
                     
                     // Add an 'animation id' property row
                     var animationIdRow = addPropertyRow(container, "Animation id");
-                    var animationIdField = $('<input/>', {class: "node-input-animation-id", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(animationIdRow);
+                    var animationIdField = $('<input/>', {class: "node-input-animation-id", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(animationIdRow);
                     animationIdField.val(animation.id);
                     animationIdField.on("change", function(){
                         updateTitle(titleField, this)
@@ -513,7 +515,7 @@
                                     
                     // Add a 'target id' property row
                     var targetIdRow = addPropertyRow(container, "Target Element Id");
-                    var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
+                    var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
                     targetIdField.val(animation.targetId);
                     targetIdField.autocomplete({
                         source: function(req, add){        
@@ -527,7 +529,7 @@
                     
                     // Add a 'class' property row
                     var classValueRow = addPropertyRow(container, "Class");
-                    var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
+                    var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:180px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
                     classValueField.val(animation.classValue);
                     classValueField.autocomplete({
                         source: function(req, add){        
@@ -538,7 +540,7 @@
                     
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
-                    var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:160px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
+                    var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
                     attributeNameField.val(animation.attributeName);
                     attributeNameField.autocomplete({
                         source: function(req, add){        
@@ -552,16 +554,16 @@
                     
                     // Add a 'from / to value' property row
                     var fromToValueRow = addPropertyRow(container, "From / To");
-                    var fromValueField = $('<input/>', {class: "node-input-animation-fromValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "from"}).appendTo(fromToValueRow);
+                    var fromValueField = $('<input/>', {class: "node-input-animation-fromValue", style: "width:180px; margin-right:10px;", type: "text", placeholder: "from"}).appendTo(fromToValueRow);
                     fromValueField.val(animation.fromValue);
                     $('<span/>').text('%').appendTo(fromValueField);
                     // Add a 'to value' property row
-                    var toValueField = $('<input/>', {class: "node-input-animation-toValue", style: "width:160px; margin-right:10px;", type: "text", placeholder: "to"}).appendTo(fromToValueRow);
+                    var toValueField = $('<input/>', {class: "node-input-animation-toValue", style: "width:180px; margin-right:10px;", type: "text", placeholder: "to"}).appendTo(fromToValueRow);
                     toValueField.val(animation.toValue);
                     $('<span/>').text('%').appendTo(toValueField);
                     // Add a 'duration' property row
                     var durationRow = addPropertyRow(container, "Duration");
-                    var durationField = $('<input/>', {class: "node-input-animation-duration", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(durationRow);
+                    var durationField = $('<input/>', {class: "node-input-animation-duration", style: "width:180px; margin-right:10px;", type: "number"}).appendTo(durationRow);
                     durationField.val(animation.duration);
                     $('<span/>').text('%').appendTo(durationField);
                     var delayUnitField = $('<select/>', {class: "node-input-animation-durationUnit", style: "width:120px; margin-right:10px;", type: "text"}).appendTo(durationRow);
@@ -572,18 +574,20 @@
                     
                     // Add a 'repeat count' property row
                     var repeatCountRow = addPropertyRow(container, "Repeat count");
-                    var repeatCountField = $('<input/>', {class: "node-input-animation-repeatCount", style: "width:160px; margin-right:10px;", type: "number"}).appendTo(repeatCountRow);
+                    var repeatCountField = $('<input/>', {class: "node-input-animation-repeatCount", style: "width:180px; margin-right:10px;", type: "number"}).appendTo(repeatCountRow);
                     repeatCountField.val(animation.repeatCount);
-                    $('<span/>').text('%').appendTo(repeatCountField);                    
-                    // Add a 'freeze' property row
-                    var freezeRow = addPropertyRow(container, "Freeze");
-                    var freezeField = $('<input/>', {class: "node-input-animation-freeze", style: "width:160px; margin-right:10px;", type: "checkbox"}).appendTo(freezeRow);
-                    freezeField.prop('checked', animation.freeze);
-                    $('<span/>').text('%').appendTo(freezeField);   
+                    $('<span/>').text('%').appendTo(repeatCountField);       
+                    
+                    // Add a 'animation end' property row
+                    var endRow = addPropertyRow(container, "Animation end");
+                    var endField = $('<select/>', {class: "node-input-animation-end", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(endRow);
+                    endField.append($('<option>', {value: "freeze", text: 'Freeze new value'}));
+                    endField.append($('<option>', {value: "restore", text: 'Restore original value'}));
+                    endField.val(animation.end);                    
                     
                     // Add a 'trigger' property row
                     var triggerRow = addPropertyRow(container, "Trigger");
-                    var triggerField = $('<select/>',{class:"node-input-animation-trigger", style:"width:160px; margin-right:10px;"}).appendTo(triggerRow);
+                    var triggerField = $('<select/>',{class:"node-input-animation-trigger", style:"width:180px; margin-right:10px;"}).appendTo(triggerRow);
                     triggerField.append($("<option></option>").val('msg').text("Input message"));
                     triggerField.append($("<option></option>").val('time').text("Time delay"));
                     //triggerField.append($("<option></option>").val('anim').text("Other animation"));
@@ -715,7 +719,7 @@
                         fromToValueRow.hide();
                         durationRow.hide();
                         repeatCountRow.hide();
-                        freezeRow.hide();
+                        endRow.hide();
                         triggerRow.hide();
                         delayRow.hide();
                         //otherIdRow.hide();
@@ -732,7 +736,7 @@
                             fromToValueRow.show();
                             durationRow.show();
                             repeatCountRow.show();
-                            freezeRow.show();
+                            endRow.show();
                             triggerRow.show();
                         
                             // Some other property rows should only be visible for specific trigger types
@@ -785,23 +789,23 @@
                     var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var actionOptions = {
                         //https://www.w3.org/TR/2015/WD-SVG2-20150407/interact.html#SVGEvents
-                        'click':'click',//A click is defined as a mousedown and mouseup over the same screen location. Works on tablet too.
-                        'dblclick':'dblclick',
-                        'contextmenu':'contextmenu',
-                        'mousedown':'mousedown',//Occurs when the pointing device button is pressed over an element.
-                        'mouseup':'mouseup',//Occurs when the pointing device button is released over an element.
-                        'mouseover':'mouseover',//Occurs when the pointing device is moved onto an element.
-                        'mouseout':'mouseout', //Occurs when the pointing device is moved away from an element
+                        'click':'Click',//A click is defined as a mousedown and mouseup over the same screen location. Works on tablet too.
+                        'dblclick':'Double click',
+                        'contextmenu':'Context menu',
+                        'mousedown':'Mouse down',//Occurs when the pointing device button is pressed over an element.
+                        'mouseup':'Mouse up',//Occurs when the pointing device button is released over an element.
+                        'mouseover':'Mouse over',//Occurs when the pointing device is moved onto an element.
+                        'mouseout':'Mouse out', //Occurs when the pointing device is moved away from an element
                         //'mousemove':'mousemove', //Occurs when the pointing device is moved while it is over an element.
-                        'focus':'focus',//Occurs when an element receives focus.
-                        'focusin':'focusin',//Occurs when an element is about to receive focus
-                        'focusout':'focusout',//Occurs when an element is about to lose focus.
-                        'blur':'blur',//Occurs when an element loses focus.
-                        'keydown':'keydown',//Occurs when a key is pressed down
-                        'keyup':'keyup',
+                        'focus':'Focus',//Occurs when an element receives focus.
+                        'focusin':'Focus in',//Occurs when an element is about to receive focus
+                        'focusout':'Focus out',//Occurs when an element is about to lose focus.
+                        'blur':'Blur',//Occurs when an element loses focus.
+                        'keydown':'Key down',//Occurs when a key is pressed down
+                        'keyup':'Key up',
                         //https://www.w3.org/TR/touch-events/#list-of-touchevent-types
-                        'touchstart':'touchstart', //mobile/tablet only
-                        'touchend':'touchend', //mobile/tablet only
+                        'touchstart':'Touch start', //mobile/tablet only
+                        'touchend':'Touch end', //mobile/tablet only
                         // 'touchmove':'touchmove',
                         // 'touchcancel':'touchcancel',
                     }
@@ -903,7 +907,7 @@
                 },
                 removable: true
             });
- 
+
             // Add all the binding into the editableList
             if (this.bindings) {
                 this.bindings.forEach(function (binding, index) {
@@ -1048,7 +1052,7 @@
                             // enable samples sub-menu
                             'enableSamples' : true,
                             // disable save (handled manually)
-                            'disableTasks' : 'save'
+                            'disableTasks' : 'save new open'
                         },
                         // jsChannel callbacks
                         error: function(error, message) { 
@@ -1374,7 +1378,12 @@
             <p>Notes...</p>
             <ul>
                 <li>The <code>from</code> and <code>to</code> values specify what changes. </li>
-                <li><code>Freeze</code> = Keep the state of the last animation frame </li>
+                <li><code>Animation end</code>
+                    <ul>
+                        <li>Freeze new value: Keep the animation end value at the animation end</li>
+                        <li>Restore original value: Restore the original value at the animation end</li>
+                    </ul>
+                </li>
                 <li><code>Trigger</code> 
                     <ul>
                         <li>Input Message: Dont start the animation, instead, wait for a <code>msg</code> (See Triggering an animation command below) </li>
