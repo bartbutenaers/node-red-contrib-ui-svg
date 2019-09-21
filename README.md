@@ -304,3 +304,25 @@ Steps to use DrawSvg:
 6. The updated SVG source will appear in this node.
 
 By default this node will use the free online DrawSvg service (see *"Editor URL"* in the "Settings" tabsheet).  However we have planned to provide a new Node-RED node in the near future, which will allow to host DrawSVG locally for offline systems.
+
+### Display images
+SVG offers an image element, that can be used to display an image inside an SVG drawing.  You have to specify at which path the image is available, but the image can be stored a different locations:
+1. The easiest solution is an online image that is public available.  For example:
+   ```
+   <image xlink:href="https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg"\>
+   ```
+   You can also make local images online available in Node-RED, e.g. by using a httpIn/httpOut nodes based flow.  However the disadvantage of online images is that they are public available ...
+   
+2. Load a local image, via the file selection dialog in DrawSvg.  This way you can easily select a local image available on the machine where you are *viewing* your dashboard in a browser.  DrawSvg will convert the image to a base64 encoded string, which is being inserted into the SVG source.
+   ```
+   <image xlink:href="xlink:href="data:image/png;base64,base64_encoded_image_string_..."\>
+   ```
+   The advantage is that the image stays available (even when it is deleted from the file system), but the size of the Node-RED flow file size will increase drastically.
+   
+3. In the SVG Source tabsheet you can use a local image file, which needs to exist (in the directory specified on the 'Settings' tabsheet) on the system where your Node-RED instance is running:
+   ```
+   <image xlink:href="xlink:href="file://some_local_file_name"\>
+   ```
+   Since both DrawSvg and the Node-RED dashboard cannot access this local path, this node will automatically convert the image  to a base64 encoded url.  That way DrawSvg and the dasbhoard can both display the image, and in the flow file only the local path is being stored.  The disadvantage is that you have to enter the path manually in the SVG Source tabsheet.
+   
+4. In the next version of DrawSvg it should be possible to work with local files.  See [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/35).
