@@ -257,3 +257,18 @@ Fontawesome icons are used widely in Node-RED, and are in fact little SVG drawin
 4. The result will be the fontawesome icon at the specified location:
 
    ![icon](https://user-images.githubusercontent.com/14224149/63217104-29828c80-c140-11e9-957b-22ea8eb9a0ed.png)
+
+### DrawSvg drawing editor
+[DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSVG into this node, to allow users to edit their SVG source via a nice drawing program.
+
+***!!! Note that DrawSvg and the online service is used as is without warranty of bugs !!!***
+
+Steps to use DrawSvg:
+1. Click the *"Drawing editor"* button in the "SVG source" tabsheet.
+2. DrawSvg will be opened in a popup dialog window, and it will visualize the SVG source.
+3. The SVG drawing can be edited, but the original SVG source in this node will remain unchanged!
+4. You can intermediately save your changes to the SVG source in this node, using the *"Save"* button in the upper right corner of the popup dialog window.
+5. As soon as the popup dialog window is being closed, a notification will appear.  There you can choose to ignore all changes (i.e. you don't need them anymore), or to save all the changes to the SVG source in this node.
+6. The updated SVG source will appear in this node.
+
+By default this node will use the free online DrawSvg service (see *"Editor URL"* in the "Settings" tabsheet).  However we have planned to provide a new Node-RED node in the near future, which will allow to host DrawSVG locally for offline systems.
