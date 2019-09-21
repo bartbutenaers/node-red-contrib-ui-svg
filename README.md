@@ -30,10 +30,9 @@ An SVG drawing contains a series of SVG elements, which will be rendered by the 
 ```
 The browser will first draw the (background) image, then the circle (on top of the image), and so on ...
 
-The node can be used to visualize all kind of things: floorplans, industrial processes, piping, wiring, ...
-A floorplan is in fact a simple image of your floor, and a series of other SVG elements (e.g. Fontawesome icons) drawn on top of that (background) image.
-
 ## Node usage
+
+This node can be used to visualize all kind of graphical stuff in the Node-RED dashboard.  From simple graphics (e.g. a round button, ...) to complex graphics (floorplans, industrial processes, piping, wiring, ...).  But even the complex graphics consist out of simple graphical shapes.  For example a floorplan is in fact a simple image of your floor, and a series of other SVG elements (e.g. Fontawesome icons) drawn on top of that (background) image.
 
 The node's config screen consists of a series of tabsheets:
 
@@ -43,7 +42,7 @@ The node's config screen consists of a series of tabsheets:
 
 Enter you (XML-based) SVG graphics in this editor.  This can be done in two ways:
 + If you are a die-hard SVG fanatic, you can enter the SVG string manually in the *"SVG Source"* tabsheet.
-+ If you prefer to use an SVG editor, you can use the embedded DrawSvg editor (see further).
++ If you prefer to use an SVG drawing editor, you can use the embedded DrawSvg editor (see further).
 + If you need very specific types of drawings, you can use a third party SVG editor to create your drawing.  Multiple (online) editors are free available, each with their own dedicated speciality:
    + [Floorplanner](http://floorplanner.com)
    + [Floorplancreator](https://floorplancreator.net/#pricing)
@@ -229,6 +228,15 @@ When this option is selected, a ***tooltip*** will be displayed to show the curr
 This option has been introduced to simplify layouting during manual editing of the SVG string (without external SVG drawing tool).  Without this option determining the location of your shapes would require a lot of calculations or guessing ...
 
 Remark: The location is measured in the SVG coordinate system, which means the origin (X=Y=0) is in the top left of your drawing.
+
+### Auto format SVG Source after saving edits in SVG Editor
+When editing the SVG source via DrawSvg, the manipulated SVG source isn't very pretty: the SVG source will contain emtpy lines, multiple SVG elements on a single line ...  This SVG source can be manually beautified using the "*Format SVG*" button, or automatically (every time the DrawSVG popup dialog window is closed - by activating this checkbox.
+
+### Editor URL
+This is the URL where the DrawSvg editor instance is being hosted.  By default this field contains a link to the official [DrawSvg cloud](http://drawsvg.org/drawsvg.html) system.  *Be aware that this is a free system, so there is no garuantee about availability of the system!*
+
+### Directory
+This directory of your local system (where your Node-RED instance is running) can be used to make your local images available, to both your dashboard and your flow editor.
 
 ## Various stuff
 
