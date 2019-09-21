@@ -51,6 +51,14 @@ Enter you (XML-based) SVG graphics in this editor.  This can be done in two ways
    Once you are finished, the generated SVG can be pasted into the 'SVG source' tabsheet.  However:
       + Be aware that those third-party SVG editors will create rather complex SVG strings, which are harder to understand when you want to change them manually afterwards.
       + Be aware that the browser has a lot of work to render all the SVG elements in the drawing!  To gain performance it is advised not to simply past the SVG string into the editor, but create an image from it.  For example in Floorplanner website, the SVG drawing can be saved as a JPEG/PNG image.  That image can be loaded into an SVG *'image'* element, like I have done in the example flows on this readme page ...
+      
+Below the SVG source a series of buttons are available:
+
+![buttons](https://user-images.githubusercontent.com/14224149/65372066-55c38880-dc6b-11e9-9dda-cbfa885f0285.png)
+
++ *Expand source*: show the SVG source in full screen mode.
++ *Format SVG*: by formatting the SVG source, the source will be beatyfied.  This means the empty lines will be removed, each line will get a single SVG element, indents will be corrected ...
++ *Drawing editor*: show the SVG source in the [DrawSvg](http://drawsvg.org/) drawing editor as a popup dialog window.
 
 ### Animations
 
@@ -121,6 +129,23 @@ A number of properties need to be entered:
 + ***Action***: the event that the shape needs to intercept.
 + ***Payload***: the ```msg.payload``` content of the output message.
 + ***Topic***: the ```msg.topic``` content of the output message.
+
+As soon as one of these event occurs on the specified element, an output message will be send on the node output:
+```
+"coordinates": {
+   x: 195.3749237060547,
+   y: 201.20571899414062
+}
+"elementId": "circle"
+"event": "click"
+"payload": {
+   elementId: "cam3spin",
+   status: "start"
+}
+"position": {x: 854, y: 284}
+"selector": undefined
+"topic": "circle"
+```
 
 ### Input bindings
 
