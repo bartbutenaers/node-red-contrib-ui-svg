@@ -697,7 +697,7 @@
                     customRow.append($("<i />", {class:"fa fa-question", title:"Press down to select, right to accept, dot to access properties, semicolon/enter/tab to complete the entry."}));
                     
                     //add duplicate button
-                    var duplicateButton = $('<a/>', {class: "red-ui-editableList-item-remove red-ui-button red-ui-button-small", style: "margin-right: 28px"}).appendTo(container);
+                    var duplicateButton = $('<a/>', {class: "red-ui-editableList-item-remove red-ui-button red-ui-button-small", style: "margin-right: 28px",  title: "Duplicate this entry"}).appendTo(container);
                     duplicateButton.html('<i class="fa fa-clone"></i>')
                     var anim = animation;
                     var animList = smilAnimationsList;
@@ -776,8 +776,8 @@
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
-                    // Column 1 : Add an input field (type string) to the new row, that represents the SVG element ID 
-                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on 
+                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
                     targetIdField.autocomplete({
                         source: function(req, add){  
@@ -1373,16 +1373,35 @@
             The name of this node 
         </div>
         <h3><b>Tabs...</b></h3>
-        <h4>SVG editor</h4>
+        <h4>SVG source</h4>
         <div style="padding-left: 15px">
-            The raw SVG to be displayed.
+            The raw SVG to be displayed. The SVG source can be edited directly here. 
+            <p>Buttons...</p>
+            <ul>
+                <li><span class="editor-button editor-button-small" style="margin-top: 4px;" title="Expand source">
+                        <i class="fa fa-expand"></i>    
+                    </span> will expand the SVG source editor to full screen.
+                </li>
+                <li><span class="editor-button editor-button-small" style="margin-top: 4px;" title="Format SVG">
+                        <i class="fa fa-code"></i>    
+                    </span> will reformat the SVG source code.
+                </li>
+                <li><span class="editor-button editor-button-small" style="margin-top: 4px;" title="Drawing editor">
+                        <i class="fa fa-edit"></i>    
+                    </span> will open the SVG drawing editor.
+                </li>
+            </ul>
         </div>
         <h4>Animations</h4>
         <div style="padding-left: 15px">
             A customisable list of animations. Each animation targets an element where you can specify an attribute to animate. 
             <p>Notes...</p>
             <ul>
-                <li>The <code>from</code> and <code>to</code> values specify what changes. </li>
+                <li>The <code>Animation id</code> specifies the id to apply to this animation.</li>
+                <li>The <code>Target Element id</code> specifies what element to apply the animation to.</li>
+                <li><code>Class</code> The class field permits you to adress animations by a class name. e.g. you could send a <code>msg</code> to "trigger_animation" of all animations with <code>selector</code> ".spinners" </ul>
+                <li>The <code>Attribute name</code> specifies what attribute to animate</li>
+                <li>The <code>from</code> and <code>to</code> values specifies what begining and end value of the animation</li>
                 <li><code>Animation end</code>
                     <ul>
                         <li>Freeze new value: Keep the animation end value at the animation end</li>
@@ -1396,7 +1415,6 @@
                         <li>Custom: Use standard <code>begin</code> options e.g. <code>2s; myRect.click; myAnim.end-400ms</code> <i target="blank" href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin">See here</i>.  </li>
                     </ul>
                 </li>
-                <li><code>Class</code> The class field permits you to adress animations by a class name. e.g. you ould send a <code>msg</code> to "trigger_animation" of all animations with <code>selector</code> ".spinners" </ul>
             </ul>
         </div>        
         <h4>Events</h4>
@@ -1417,7 +1435,7 @@
                     </ul>    
                 </ul>
             </ul>
-            <p>Notes: The <code>topic</code> must be set to <code>databind</code></p>
+            <p>Notes: The <code>topic</code> must be set to the value of <b>databind</b></p>
         </div>
     </dl>
     <h3>Output</h3>
@@ -1496,7 +1514,7 @@
  {
     "command": "update_text",
     "selector": "#myRect > .faultMessage",
-    "textConent": "Hello from a command message"
+    "textContent": "Hello from a command message"
  }
 ]</pre>
                 
@@ -1510,7 +1528,7 @@
                 <p><i>Command Method Details...</i><br>
                     <ul>
                         <li>selector: (string|required) A query selector to select the animations</li>
-                        <li>textConent: (string|required) This attribute be updated</li>
+                        <li>textContent: (string|required) This attribute be updated</li>
                     </ul>
                 </p>
             </p>
