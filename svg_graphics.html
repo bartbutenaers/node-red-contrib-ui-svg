@@ -216,7 +216,7 @@
         var duration      = row.find(".node-input-animation-duration").val();
         var durationUnit  = row.find(".node-input-animation-durationUnit").val();
         var repeatCount   = row.find(".node-input-animation-repeatCount").val();
-        var end           = row.find(".node-input-animation-end").is(":checked");
+        var end           = row.find(".node-input-animation-end").val();
         var delay         = row.find(".node-input-animation-delay").val();
         var delayUnit     = row.find(".node-input-animation-delayUnit").val();
         var otherId       = row.find(".node-input-animation-otherId").val();
@@ -583,7 +583,7 @@
                     var endField = $('<select/>', {class: "node-input-animation-end", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(endRow);
                     endField.append($('<option>', {value: "freeze", text: 'Freeze new value'}));
                     endField.append($('<option>', {value: "restore", text: 'Restore original value'}));
-                    endField.val(animation.end);                    
+                    endField.val(animation.end || "restore");//SMIL default is restore                    
                     
                     // Add a 'trigger' property row
                     var triggerRow = addPropertyRow(container, "Trigger");
