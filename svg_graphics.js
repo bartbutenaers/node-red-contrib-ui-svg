@@ -165,6 +165,26 @@ module.exports = function(RED) {
                         return newMsg;
                     },
                     initController: function($scope, events) {
+                        // Remark: all client-side functions should be added here!  
+                        // If added above, it will be server-side functions which are not available at the client-side ...
+                     
+                        function setTextContent(element, textContent) {
+                            var children = [];
+
+                            // By setting the text content (which is similar to innerHtml), all animation child elements will be removed.
+                            // To solve that we will remove the child elements in advance, and add them again afterwards...
+                            children.push(...element.children);
+                            for (var i = children.length - 1; i > -1; i--) {
+                                element.removeChild(children[i]);
+                            }
+                            
+                            element.textContent = textContent;
+                            
+                            for (var j = 0; j < children.length; j++) {
+                                element.appendChild(children[j]);
+                            }                           
+                        }
+                        
                         $scope.flag = true;
                         console.log("initController")
                         $scope.init = function (config) {
@@ -511,7 +531,7 @@ module.exports = function(RED) {
                                                             bindValue = JSON.stringify(bindValue);
                                                         } 
                                                         if(bindType == "text"){
-                                                            element.textContent = bindValue;
+                                                            setTextContent(element, bindValue);
                                                         } else if (bindType == "attr") {
                                                             element.setAttribute(attributeName, bindValue);
                                                         }
@@ -530,9 +550,9 @@ module.exports = function(RED) {
                                                         var bindValue = getValueByName(msg,binder)
                                                         if(bindValue !== undefined){
                                                             if(typeof bindValue == "string" || typeof bindValue == "number"){
-                                                                element.textContent = bindValue;
+                                                                setTextContent(element, bindValue);
                                                             } else if(typeof bindValue == "object"){
-                                                                element.textContent = JSON.stringify(bindValue);
+                                                                setTextContent(element, JSON.stringify(bindValue));
                                                             }                         
                                                         }                           
                                                     }                                                
@@ -583,7 +603,7 @@ module.exports = function(RED) {
                                                         return;
                                                     }
                                                     elements.forEach(function (element) {
-                                                        element.textContent = payload;
+                                                        setTextContent(element, payload);
                                                     });
                                                 }
                                             } 
@@ -607,7 +627,7 @@ module.exports = function(RED) {
                                                 return;
                                             }
                                             elements.forEach(function(element){
-                                                element.textContent = payload.textContent;
+                                                setTextContent(element, payload.textContent);
                                             });                                                
                                             break;
                                         case "update_attribute":
