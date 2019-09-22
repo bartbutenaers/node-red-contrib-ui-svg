@@ -274,6 +274,34 @@ module.exports = function(RED) {
                                     // By appending the animation as a child of the SVG element, that parent SVG element will be animated.
                                     // So there is no need to specify explicit the xlink:href attribute on the animation element.
                                     element.appendChild(animationElement);
+                                    
+                                    /* TODO...
+                                    // if this element is a <text> then calling update_text will wipe out the inner <animation>
+                                    // element so we add the xlink:href and place the new animation element higher up the tree
+
+                                    // PROBLEM: Adding the xlink:href <animate> AFTER dom is created doesnt work. It doesnt trigger!
+
+                                    // possible solution: Use a DOMParser (server side - e.g. jsdom package) in the HTML() function 
+                                    // and add the xlink:href <animate> elements into the SVG before its added to scope/dom
+
+                                    //below is a proof that the <animate> element gets nicely added to the DOM but it doesnt trigger.
+                                    // The <animate> element IS CORRECT - e.g. use DEVTOOLS, cut the <animate> element. then re-add 
+                                    // the element - suddenly it works!  
+                                    if(element.tagName == "text"){
+                                        animationElement.setAttribute("xlink:href", "#" + smilAnimation.targetId);
+                                        element.insertAdjacentElement("beforebegin", animationElement);
+                                    } else {
+                                        element.appendChild(animationElement);
+                                    }
+
+                                    //two other possibilities...
+                                    // when textContent is updated, perhaps check to see if it has an element inside
+                                    // and perhaps using regex or dom? replace only the text - however - text might be intertwined!
+                                    // OR
+                                    // Rebuild the text elements animation after textContent is updated ?
+                                    //
+                                    //  what to do?!?!?
+                                    */
                                 }
                             });
 
