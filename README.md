@@ -347,11 +347,11 @@ The input message should have following format:
 There are 2 methods for updating text...
 
 + Topic Method
-+ Comand Method
++ Command Method
 
 The topic method reduces the complexity but is simplistic and can only change the selector to one value.
 
-The control method is similar to the `update_atttribute` and `set_atttribute` control methods. The 2 can even be combined to permit an attribute change and text content change in the same control msg.
+The Command method is similar to the `update_atttribute` and `set_atttribute` command methods. They can even be combined to permit an attribute change and text content change in the same command msg.
 
 Example Topic Method...
 
@@ -367,7 +367,7 @@ Example Topic Method...
  ```
 Example Command Method - payload object...
 ```
-[
+"payload": [
   {
      "command": "update_text",
      "selector": "#myRect > .faultMessage",
@@ -391,8 +391,8 @@ As stated above, the animations can be started/stopped via an input message.
 Example messages to trigger animations:
 ```
 "payload": {
-    "elementId": "myAnimation",
-    "status": "start"
+    "selector": "#myAnimation",
+    "action": "start"
 }
 "topic": "trigger_animation"
 ```
