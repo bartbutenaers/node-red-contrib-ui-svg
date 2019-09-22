@@ -157,13 +157,24 @@ Two things will happen when an event occurs on such an SVG element:
    ```
    Note that the coordinates (where the event occurs) are also available in the output message.  This allows the next nodes in the flow to display information at that location.  For example we have developed the [node-red-contrib-ui-contextmenu](https://github.com/bartbutenaers/node-red-contrib-ui-contextmenu) to show a popup context menu in the dashboard above the SVG drawing, at the location where a shape has been clicked.
 
-   ![svg_click_cam](https://user-images.githubusercontent.com/14224149/63216845-b4ad5380-c13b-11e9-8aaf-c63b29a194ca.gif)
 
-   ```
-   [{"id":"f3883602.216b58","type":"debug","z":"60ad596.8120ba8","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":920,"y":220,"wires":[]},{"id":"1fb8c46e.6bfb5c","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"ba24f321.07795","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\"/>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\"/>\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"blue\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg>","clickableShapes":[{"targetId":"camera_living"}],"smilAnimations":[],"name":"","x":720,"y":220,"wires":[["f3883602.216b58"]]},{"id":"ba24f321.07795","type":"ui_group","z":"","name":"Floorplan test","tab":"fb3be807.e7ef18","disp":true,"width":"14","collapse":false},{"id":"fb3be807.e7ef18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
-   ```
+*Demo...*
 
-### Input bindings
+![2019-09-22_14-12-06](https://user-images.githubusercontent.com/44235289/65387884-149ea780-dd43-11e9-9cd4-a6bb4fb59d65.gif)
+
+*Demo Flow...*
+
+```
+[{"id":"b93a4d6b.cee94","type":"debug","z":"f939feb8.8dc6","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":330,"y":280,"wires":[]},{"id":"180fb86a.53e2e8","type":"ui_svg_graphics","z":"f939feb8.8dc6","group":"997e40da.b5acc","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\"/>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\"/>\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"blue\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg>","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[],"bindings":[],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"","directory":"","name":"","x":130,"y":280,"wires":[["b93a4d6b.cee94"]]},{"id":"997e40da.b5acc","type":"ui_group","z":"","name":"Floorplan test","tab":"95801a22.bd5f18","disp":true,"width":"14","collapse":false},{"id":"95801a22.bd5f18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
+```  
+
+
+*Config...*
+
+![image](https://user-images.githubusercontent.com/44235289/65388020-54fe2580-dd43-11e9-8194-82304b2e7461.png)
+
+
+### Input bind
 As explained in the section "Control via messages" (TODO link), this node can be controlled via input messages.  For example to change the fill color of circle with id "mycircle" to green.  However this means that a lot of information needs to be passed via that input message (element id, attribute name, attribute value ...), to let this node know what you want it to do.  As a result the flow might become quite complex, since you need extra nodes to put all that information in the message.
 
 Another way to control this node is by using bindings, which means we specify most of the information in the binding (so the input message will only need to contain the new value).  This means that the flow itself can be kept very simple ... 
@@ -179,13 +190,34 @@ A number of properties need to be entered:
    + *Attribute value*: when this option is selected, the value (from the input message) will be applied to an attribute.  This means an extra "attribute name" will have to be specified, to make sure the new value will be applied to the attribute with that name.
    + *Text content*: when this option is selected, the value (from the input message) will be be applied to the inner text content of the element.
    
-Make sure that the ```msg.payload.topic``` of the input message contains the literal "***databind***".
-For example to apply orange as fill color value for the first binding:
+*Demo...*
+
+![2019-09-22_14-58-05](https://user-images.githubusercontent.com/44235289/65389024-7b26c400-dd49-11e9-9792-94c6216e53ef.gif)
+
+*Demo flow...*
+
 ```
-"payload": {
-    "attributeValue": "orange"
-}
-"topic": "databind"
+[{"id":"c997135f.8035f","type":"debug","z":"f939feb8.8dc6","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":400,"y":120,"wires":[]},{"id":"bb93fff5.927ba","type":"ui_svg_graphics","z":"f939feb8.8dc6","group":"997e40da.b5acc","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"","directory":"","name":"","x":320,"y":80,"wires":[["c997135f.8035f"]]},{"id":"356e2a8f.a08fe6","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":120,"y":100,"wires":[["bb93fff5.927ba"]]},{"id":"4e2e2d82.5950e4","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":120,"y":60,"wires":[["bb93fff5.927ba"]]},{"id":"997e40da.b5acc","type":"ui_group","z":"","name":"Floorplan test","tab":"95801a22.bd5f18","disp":true,"width":"14","collapse":false},{"id":"95801a22.bd5f18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
+```
+
+*Demo Setup...*
+
+![image](https://user-images.githubusercontent.com/44235289/65389078-ef616780-dd49-11e9-91c0-45731ef17509.png)
+
+*Demo message...*
+
+```
+  "topic": "databind",
+  "payload": {
+    "camera": {
+      "colour": "green"
+    },
+    "position": {
+      "x": 250
+    },
+    "title": "New banner title by databind"
+  }
+
 ```
 
 ## Control via messages
@@ -200,14 +232,13 @@ Some general guidelines:
         "textContent": "my title"
     }
    ```
-+ In all the examples below, a message contains a single command.  For example:
++ In the example below, a message contains a single command.  For example:
    ```
    "payload": {
        "selector": "#cam_living_room",
        "attributeName": "fill",
        "attributeValue": "orange"
    }
-   "topic": "update_attribute"
    ```
    But it is always possible to specify ***multiple commands*** (as an array) in a single control message.  For example:
    ```
@@ -227,7 +258,7 @@ Some general guidelines:
    }
    "topic": "update_attribute"
    ```
-+ In all examples below the action can be specified in the ```msg.topic```:
++ In the example below, action can be specified in the ```msg.topic```:
    ```
    "payload": {
        "selector": "#cam_living_room",
@@ -245,90 +276,149 @@ Some general guidelines:
        "attributeValue": "orange"
    }
    ```   
+   ... This  gives the additional flexability of being able to perform many things at once for example...
+   ```
+   "payload": [  
+     {
+         "command": "update_text",
+         "selector": "#faultMessage",
+         "textContent": "Something when wrong"
+     },
+     {
+         "command": "update_attribute",
+         "selector": "#faultMessage",
+         "attributeName": "fill",
+         "attributeValue": "red"
+     },
+     {
+         "command": "trigger_animation",
+         "selector": "#faultMessage_blink",
+         "action": "start"
+     }
+   ```
 + In all examples below, the selector also can be part of the topic
 
-### Updating element attribute values
+### Updating/setting element attribute values
 The SVG elements have attributes, whose values can be specified in the SVG editor.  Any of these attribute values can be changed via an input message. 
 
 For example the camera is visualized by a text, which has multiple attributes (x, y, fill ...):
+
 ```
 <text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" ...>
 ```
 
-Let's change the *'fill'* color attribute value via input messages:
+Let's change the *'fill'* color and *'rotation'* attribute value via input messages:
 
-![svg_update_fill](https://user-images.githubusercontent.com/14224149/63216938-d14a8b00-c13d-11e9-8592-d112117bd1ac.gif)
+![2019-09-22_15-21-49](https://user-images.githubusercontent.com/44235289/65389304-c1c9ed80-dd4c-11e9-83a7-d7f41e380da2.gif)
 
 ```
-[{"id":"ad76788b.158348","type":"inject","z":"60ad596.8120ba8","name":"Fill camera icon green","topic":"update_attribute","payload":"{\"elementId\":\"camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"green\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":480,"y":300,"wires":[["f3e1600.918b6a"]]},{"id":"e51f4d2c.b6317","type":"inject","z":"60ad596.8120ba8","name":"Fill camera icon orange","topic":"update_attribute","payload":"{\"elementId\":\"camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"orange\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":480,"y":340,"wires":[["f3e1600.918b6a"]]},{"id":"a9f25ec5.4bec5","type":"inject","z":"60ad596.8120ba8","name":"Fill camera icon blue","topic":"update_attribute","payload":"{\"elementId\":\"camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":470,"y":260,"wires":[["f3e1600.918b6a"]]},{"id":"f3e1600.918b6a","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"ba24f321.07795","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\"/>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\"/>\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"blue\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg>","clickableShapes":[{"targetId":"camera_living"}],"smilAnimations":[{"id":"myanimation","targetId":"pir_living","attributeName":"r","fromValue":"0","toValue":"40","trigger":"msg","duration":"2","repeatCount":"0","freeze":false}],"name":"","x":720,"y":300,"wires":[[]]},{"id":"ba24f321.07795","type":"ui_group","z":"","name":"Floorplan test","tab":"fb3be807.e7ef18","disp":true,"width":"14","collapse":false},{"id":"fb3be807.e7ef18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
+[{"id":"c997135f.8035f","type":"debug","z":"f939feb8.8dc6","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":400,"y":360,"wires":[]},{"id":"bb93fff5.927ba","type":"ui_svg_graphics","z":"f939feb8.8dc6","group":"997e40da.b5acc","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"","directory":"","name":"","x":300,"y":320,"wires":[["c997135f.8035f"]]},{"id":"356e2a8f.a08fe6","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":120,"y":400,"wires":[["bb93fff5.927ba"]]},{"id":"4e2e2d82.5950e4","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":120,"y":360,"wires":[["bb93fff5.927ba"]]},{"id":"97b80c2d.b5c35","type":"inject","z":"f939feb8.8dc6","name":"Fill camera green + rotate 90","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"green\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"90\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":180,"y":220,"wires":[["bb93fff5.927ba"]]},{"id":"4be0130f.78b13c","type":"inject","z":"f939feb8.8dc6","name":"Fill camera orange + rotate 180","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"orange\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"180\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":190,"y":260,"wires":[["bb93fff5.927ba"]]},{"id":"46128135.4fcdd","type":"inject","z":"f939feb8.8dc6","name":"Fill camera icon blue","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"0\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":150,"y":180,"wires":[["bb93fff5.927ba"]]},{"id":"997e40da.b5acc","type":"ui_group","z":"","name":"Floorplan test","tab":"95801a22.bd5f18","disp":true,"width":"14","collapse":false},{"id":"95801a22.bd5f18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
+```
+
+The `payload` looks like this:
+
+```
+  [
+      {
+          "command": "update_attribute",
+          "selector": "#camera_living",
+          "attributeName": "fill",
+          "attributeValue": "green"
+      },
+      {
+          "command": "set_attribute",
+          "selector": "#camera_living",
+          "attributeName": "rotate",
+          "attributeValue": "90"
+      }
+  ]
 ```
 
 The input message should have following format:
-+ ```msg.payload.command``` or the ```msg.payload.topic``` should contain one of the following values:
++ ```msg.payload.command``` or the ```msg.topic``` should contain one of the following values:
    + ***update_attribute***: to update the value of an *existing* SVG element attribute. 
    + ***set_attribute***: identical to update_attribute, but now the attribute will be created if it doesn't exist yet in the SVG element.
 + ```msg.payload.selector``` should contain a query selector, e.g. #my_circle to find SVG element with id="my_circle" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
 + ```msg.payload.attributeName``` should contain the name of attribute whose value needs to be changed.
 + ```msg.payload.attributeValue``` should contain the new value of the specified attribute.
 
-Example message:
-```
-"payload": {
-    "selector": "#cam_living_room",
-    "attributeName": "fill",
-    "attributeValue": "orange"
-}
-"topic": "update_attribute"
-```
 
 ### Set text content
-When using a ```text``` element, the text itself is not an attribute (instead it is innerHtml).  So you can ***not*** update the text content similar to how you update an attribute.
+There are 2 methods for updating text...
 
-For example on a floorplan the text *'Living room'* is displayed:
-```
-<text id="room_label" x="310" y="45" ...>Living room</text>
-```
++ Topic Method
++ Comand Method
 
-The input message should have following format:
-+ ```msg.payload.command``` or ```msg.payload.topic``` should contain ***update_text***.
-+ ```msg.payload.selector``` should contain a query selector, e.g. #my_circle to find SVG element with id="my_circle" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
-+ ```msg.payload.textContent``` should contain the new text that needs to be applied.
+The topic method reduces the complexity but is simplistic and can only change the selector to one value.
 
-Example message:
+The control method is similar to the `update_atttribute` and `set_atttribute` control methods. The 2 can even be combined to permit an attribute change and text content change in the same control msg.
+
+Example Topic Method...
+
+ // send a msg with topic formatted as...   
+ //  update_text|selector  
+ // and the payload with the text to display
+ ```
+ var msg = {
+    "topic": "update_text|#myRect > .faultMessage",
+    "payload": "hello"
+ }
+ return msg;
+ ```
+Example Command Method - payload object...
 ```
-"payload": {
-    "selector": "#label_living_room",
-    "textContent": "Living room"
-}
-"topic": "update_text"
+[
+  {
+     "command": "update_text",
+     "selector": "#myRect > .faultMessage",
+     "textContent": "Hello from a command message"
+  },
+  {
+     //another command
+  }
+]
 ```
 
 ### Start/stop animations
-As stated above, the animations can be started/stopped dynamically via an input message (when the 'trigger' field has value 'msg').  To change the attribute value of an animation, use a normal *'update_attribute'* topic as described in a previous section.
+As stated above, the animations can be started/stopped via an input message.
 
-For example let's visualize that the IP camera in the living room has detected motion:
-
-![svg_animate_cam](https://user-images.githubusercontent.com/14224149/63217299-53d64900-c144-11e9-9df3-960cdb45c574.gif)
+![animationcontrol](https://user-images.githubusercontent.com/44235289/65391018-ccd84a00-dd5b-11e9-815f-fa62b0fe24e8.gif)
 
 ```
-[{"id":"6ffd6cf6.f91834","type":"inject","z":"60ad596.8120ba8","name":"Start animation","topic":"trigger_animation","payload":"{\"elementId\":\"myanimation\",\"status\":\"start\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":740,"y":220,"wires":[["1fb8c46e.6bfb5c"]]},{"id":"8adfc00a.8696b","type":"inject","z":"60ad596.8120ba8","name":"Stop animation","topic":"trigger_animation","payload":"{\"elementId\":\"myanimation\",\"status\":\"stop\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":740,"y":260,"wires":[["1fb8c46e.6bfb5c"]]},{"id":"1fb8c46e.6bfb5c","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"ba24f321.07795","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\"/>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\"/>\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"blue\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg>","clickableShapes":[],"smilAnimations":[{"id":"myanimation","targetId":"pir_living","attributeName":"r","fromValue":"0","toValue":"40","trigger":"msg","duration":"2","repeatCount":"0","freeze":false}],"name":"","x":960,"y":240,"wires":[[]]},{"id":"ba24f321.07795","type":"ui_group","z":"","name":"Floorplan test","tab":"fb3be807.e7ef18","disp":true,"width":"14","collapse":false},{"id":"fb3be807.e7ef18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
+[{"id":"c997135f.8035f","type":"debug","z":"f939feb8.8dc6","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":520,"y":220,"wires":[]},{"id":"bb93fff5.927ba","type":"ui_svg_graphics","z":"f939feb8.8dc6","group":"997e40da.b5acc","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"1\" stroke-width=\"1\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[{"id":"myAnimation","targetId":"pir_living","classValue":"all_animation","attributeName":"r","fromValue":"1","toValue":"30","trigger":"cust","duration":"500","durationUnit":"ms","repeatCount":"5","end":"restore","delay":"1","delayUnit":"s","custom":"camera_living.click; "},{"id":"textRotate","targetId":"banner","classValue":"all_animation","attributeName":"rotate","fromValue":"0","toValue":"360","trigger":"msg","duration":"750","durationUnit":"ms","repeatCount":"3","end":"restore","delay":"1","delayUnit":"s","custom":""}],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"","directory":"","name":"","x":420,"y":180,"wires":[["c997135f.8035f"]]},{"id":"356e2a8f.a08fe6","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":260,"wires":[["bb93fff5.927ba"]]},{"id":"4e2e2d82.5950e4","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":220,"wires":[["bb93fff5.927ba"]]},{"id":"97b80c2d.b5c35","type":"inject","z":"f939feb8.8dc6","name":"Fill camera green + rotate 90","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"green\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"90\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":300,"y":360,"wires":[["bb93fff5.927ba"]]},{"id":"4be0130f.78b13c","type":"inject","z":"f939feb8.8dc6","name":"Fill camera orange + rotate 180","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"orange\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"180\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":310,"y":400,"wires":[["bb93fff5.927ba"]]},{"id":"46128135.4fcdd","type":"inject","z":"f939feb8.8dc6","name":"Fill camera icon blue","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"0\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":270,"y":320,"wires":[["bb93fff5.927ba"]]},{"id":"735182fa.b0c50c","type":"inject","z":"f939feb8.8dc6","name":"Start animation","topic":"trigger_animation","payload":"[{\"command\":\"trigger_animation\",\"selector\":\".all_animation\",\"action\":\"start\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":60,"wires":[["bb93fff5.927ba"]]},{"id":"7b608d5b.d892a4","type":"inject","z":"f939feb8.8dc6","name":"Stop animation","topic":"","payload":"[{\"command\":\"trigger_animation\",\"selector\":\"#myAnimation\",\"action\":\"stop\"},{\"command\":\"trigger_animation\",\"selector\":\"#textRotate\",\"action\":\"stop\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":100,"wires":[["bb93fff5.927ba"]]},{"id":"997e40da.b5acc","type":"ui_group","z":"","name":"Floorplan test","tab":"95801a22.bd5f18","disp":true,"width":"14","collapse":false},{"id":"95801a22.bd5f18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
-In the control message to update that text, the ```msg.payload.command``` or the ```msg.payload.topic``` should contain value ***trigger_animation***.  And the text content itself should be available in the ```msg.payload.textContent``` field.
-The control message looks like this (with status is 'start' or 'stop'):
 
-The input message should have following format:
-+ ```msg.payload.command``` or ```msg.payload.topic``` should contain ***trigger_animation***.
-+ ```msg.payload.selector``` should contain a query selector, e.g. #my_circle to find SVG element with id="my_circle" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
-+ ```msg.payload.action``` should contain ***start*** or ***stop***, depending on which action you want to perform on the animation.
-
-Example message:
+Example messages to trigger animations:
 ```
 "payload": {
-    "elementId": "myanimation",
+    "elementId": "myAnimation",
     "status": "start"
 }
 "topic": "trigger_animation"
 ```
+
+```
+"payload": [
+    {
+        "command": "trigger_animation",
+        "selector": "#myAnimation",
+        "action": "start"
+    },
+    {
+        "command": "trigger_animation",
+        "elementId": "textRotate",
+        "action": "start"
+    }
+]
+```
+
+The input message should have following format:
++ ```msg.payload.command``` or ```msg.topic``` should contain ***trigger_animation***.
++ ```msg.payload.selector``` should contain a query selector, e.g. #myAnimation to find SVG element with id="myAnimation" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
++ ```msg.payload.action``` should contain ***start*** or ***stop***, depending on which action you want to perform on the animation.
+
+
+
 ## Settings
 
 ### Show coordinates
