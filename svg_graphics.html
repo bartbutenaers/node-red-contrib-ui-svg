@@ -518,8 +518,8 @@
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
                     targetIdField.val(animation.targetId);
                     targetIdField.autocomplete({
-                        source: function(req, add){        
-                            add(node.nonAnimationIds || []);
+                        source: function(req, add){    
+                            add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
                         }
                     });
                     targetIdField.on("change", function(){
@@ -533,7 +533,7 @@
                     classValueField.val(animation.classValue);
                     classValueField.autocomplete({
                         source: function(req, add){        
-                            add(node.animationListClasses || []);
+                            add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
                         }
                     });
                     $('<span/>').text('%').appendTo(classValueField);
@@ -543,8 +543,8 @@
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
                     attributeNameField.val(animation.attributeName);
                     attributeNameField.autocomplete({
-                        source: function(req, add){        
-                            add(node.attrList || []);
+                        source: function(req, add){     
+                            add($.ui.autocomplete.filter(node.attrList || [], req.term));
                         }
                     });
                     attributeNameField.on("change", function(){
@@ -780,8 +780,9 @@
                     var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"SVG element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
                     targetIdField.autocomplete({
-                        source: function(req, add){        
-                            add([...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []);
+                        source: function(req, add){  
+                            var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                            add($.ui.autocomplete.filter(list , req.term));
                         }
                     });
                     
@@ -874,7 +875,10 @@
                     targetSelectorField.attr("id",targetSelectorFieldId);
                     targetSelectorField.val(binding.selector);
                     targetSelectorField.autocomplete({
-                        source: [...node.nonAnimationIdSelectors,...node.nonAnimationClasses]
+                        source: function(req, add){  
+                            var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                            add($.ui.autocomplete.filter(list, req.term));
+                        }
                     });
            
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
@@ -891,7 +895,8 @@
                     attributeField.val(binding.attribute);  
                     attributeField.autocomplete({
                         source: function(req, add){        
-                            add(node.attrList);
+                            add($.ui.autocomplete.filter(node.attrList, req.term));
+
                         }
                     });
                     bindingTypeField.change(function () {
