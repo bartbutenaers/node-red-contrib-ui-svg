@@ -1,7 +1,9 @@
 # node-red-contrib-ui-svg
 A Node-RED widget node to show interactive SVG (vector graphics) in the dashboard
 
-Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner in crime for this node!  And also lots of credits to Joseph Liard, the author of [DrawSvg](http://www.drawsvg.org/home-en.html#contact) for all his assistance!
+Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner in crime for this node!
+
+And also lots of credits to Joseph Liard, the author of [DrawSvg](http://www.drawsvg.org/home-en.html#contact) for his assistance!
 
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
@@ -49,11 +51,12 @@ Enter you (XML-based) SVG graphics in this editor.  This can be done in differen
    + [Floorplanner](http://floorplanner.com)
    + [Floorplancreator](https://floorplancreator.net/#pricing)
    + ...
-   However:
-      + Be aware that those third-party SVG editors could create rather complex SVG strings, which are harder to understand when you want to change them manually afterwards.
-      + Be aware that the browser has a lot of work to render all the SVG elements in the drawing!  To gain performance it is advised not to simply past the SVG string into the editor, but create an image from it.  For example in Floorplanner website, the SVG drawing can be saved as a JPEG/PNG image.  That image can be loaded into an SVG *'image'* element, like I have done in the example flows on this readme page ...
+
+However:
+   + Be aware that those third-party SVG editors could create rather complex SVG strings, which are harder to understand when you want to change them manually afterwards.
+   + Be aware that the browser has a lot of work to render all the SVG elements in the drawing!  To gain performance it is advised not to simply past the SVG string into the editor, but create an image from it.  For example in Floorplanner website, the SVG drawing can be saved as a JPEG/PNG image.  That image can be loaded into an SVG *'image'* element, like I have done in the example flows on this readme page ...
       
-Below the SVG source a series of buttons are available:
+At the bottom of the "SVG source" tabsheet, a series of buttons are available:
 
 ![buttons](https://user-images.githubusercontent.com/14224149/65372066-55c38880-dc6b-11e9-9dda-cbfa885f0285.png)
 
@@ -67,12 +70,18 @@ Below the SVG source a series of buttons are available:
 
 SVG allows users to animate element attributes over time.  For example you can make the radius of a circle grow in 3 seconds from 10 pixels to 40 pixels. 
 
-Adding animations to your SVG graphics can be done in two ways:
+Adding animations to your SVG graphics can be done in different ways:
 + Die-hard SVG fanatics can add the animation in the *'SVG source'* manually:
    ```
    <circle id="mycircle" ... r="5" ...>
       <animate id="myanimation" attributeName="r" begin="0s" dur="3s" repeatCount="1" from="10" to="40"/>
    </circle>
+   ```
+   The animation will be applied by the browser to the parent element.
+   However it is also possible to add an animation element with a link to the SVG element it needs to be applied to:
+   ```
+   <circle id="mycircle" ... r="5" .../>
+   <animate xlink:href="#mycircle" id="myanimation" attributeName="r" begin="0s" dur="3s" repeatCount="1" from="10" to="40"/>
    ```
 
 + But to keep the drawing and the animations separated, the animations can also be added via the node's config screen.  Click the *'add'* button to create a new animation record, where following properties need to be entered:
@@ -85,12 +94,15 @@ Adding animations to your SVG graphics can be done in two ways:
    + ***Duration***: How long the animation will take.
    + ***Repeat count***: How many times the animation needs to be repeated (in this example *"1" which means only once).  Caution: when *"0"* is selected, this means that the animation will be repeated ***"indefinite"***!
    + ***Animation end***: What to do with the new value when the animation is ended.
-      + Freeze new value: the attribute value will keep the new *'To'* value (in this example *"40"*).  
-      + Restore original value: the attribute value will be restored to its original value (in this example *"5"*), from the start of the animation.
+      + *Freeze new value*: the attribute value will keep the new *'To'* value (in this example *"40"*).  
+      + *Restore original value*: the attribute value will be restored to its original value (in this example *"5"*), from the start of the animation.
    + ***Trigger***: Which trigger will result in the animation being started.
-      + Input message: TODO.
-      + Time delay: TODO
-      + Custom: TODO
+      + Input message: the animation will be started by injecting an input message (see below).
+      + Time delay: the animation will be started after a specified time.
+      + Custom: the animation will be started using standard [begin](https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin) options.  For example:
+      ```
+      2s; myRect.click; myAnim.end-400ms
+      ```
    
    Creating animations via this tabsheet has the advantage that the SVG source and the animations are being kept separate.  More specifically when the SVG is being created in a third-party SVG editor (which most of the time don't support animations), your manullay inserted animation elements would be overwritten each time you need to update your SVG...
 
@@ -106,7 +118,7 @@ An SVG element can be added here, to make that element able to intercept one of 
 + *Mouse up*: when a mouse button is released on an element.
 + *Mouse over*: when the mouse is moved onto an element.
 + *Mouse out*: when the mouse is moved away from an element.
-+ *Focus': when an element receives focus.
++ *Focus*: when an element receives focus.
 + *Focus in*: when an element is about to receive focus.
 + *Focus out*: when an element is about to lose focus.
 + *Blur*: when an element loses focus.
@@ -121,8 +133,12 @@ When adding a new line in this tabsheet, a number of properties need to be enter
 + ***Payload***: the ```msg.payload``` content of the output message.
 + ***Topic***: the ```msg.topic``` content of the output message.
 
-Two things will occur for an event that responds to events:
-1. The mouse ***cursor*** will change (TODO) when hoovering above the element, to visualize that an element responds to events.
+By default the content will be stored in ```msg.payload```.  However when the result needs to end up in ```msg.anotherField```, this message field can be specfied at the top of the tabsheet:
+
+![image](https://user-images.githubusercontent.com/14224149/65385332-dd71cb80-dd2d-11e9-8ae9-7b604d3f077e.png)
+
+Two things will happen when an event occurs on such an SVG element:
+1. The mouse ***cursor*** will change when hoovering above the element, to visualize that an element responds to events.
 1. An ***output message*** will be send as soon as the element is clicked:
    ```
    "coordinates": {
@@ -158,10 +174,10 @@ Input bindings can be added to link sources (= input message fields) to destinat
 
 A number of properties need to be entered:
 + ***Binding source***: the field of the input message that will contain the new value.
-+ ***Selector***: one or more SVG elements on which those new values will be applied.  If no elements can be found, nothing will happen.
-+ ***Binding destionation***: on which part of the SVG elements the applied.
-   + Attribute value: when this option is selected, an extra "attribute name" will have to be specified, since the new value has to be applied to that attribute.
-   + Text content: when this option is selected, a custom text content (which is not an attribute) can be specified for an SVG ```<text>``` element.
++ ***Selector***: on which SVG elements the new values will be applied.  If no elements can be found, nothing will happen.
++ ***Binding destination***: on which part of the SVG elements the new values will be applied.
+   + *Attribute value*: when this option is selected, the value (from the input message) will be applied to an attribute.  This means an extra "attribute name" will have to be specified, to make sure the new value will be applied to the attribute with that name.
+   + *Text content*: when this option is selected, the value (from the input message) will be be applied to the inner text content of the element.
    
 Make sure that the ```msg.payload.topic``` of the input message contains the literal "***databind***".
 For example to apply orange as fill color value for the first binding:
@@ -173,10 +189,63 @@ For example to apply orange as fill color value for the first binding:
 ```
 
 ## Control via messages
-Most of the SVG information can be manipulated by sending input messages to this node.  Depending on what you want to achieve, the ```msg.payload.command``` or the ```msg.payload.topic``` should have one of the following values:
+Most of the SVG information can be manipulated by sending input messages to this node.  
 
-
-+ ***trigger_animation***: via ```msg.payload.action``` a "start" or "stop" action needs to specified.
+Some general guidelines:
++ To define on which SVG element(s) the control message needs to be applied, the element needs to be identified via a [css selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
+   ```
+   "payload": {
+        "command": "update_text",
+        "selector": ".titleText", //standard dom selector '#' for id, '.' for class etc.
+        "textContent": "my title"
+    }
+   ```
++ In all the examples below, a message contains a single command.  For example:
+   ```
+   "payload": {
+       "selector": "#cam_living_room",
+       "attributeName": "fill",
+       "attributeValue": "orange"
+   }
+   "topic": "update_attribute"
+   ```
+   But it is always possible to specify ***multiple commands*** (as an array) in a single control message.  For example:
+   ```
+   "payload": [
+        {
+           "elementId": "camera_living",
+           "selector": "#cam_living",
+           "attributeName": "fill",
+           "attributeValue": "orange"
+        },
+        {
+           "elementId": "camera_kitchen",
+           "selector": "#cam_kitchen",
+           "attributeName": "fill",
+           "attributeValue": "red"
+        },        
+   }
+   "topic": "update_attribute"
+   ```
++ In all examples below the action can be specified in the ```msg.topic```:
+   ```
+   "payload": {
+       "selector": "#cam_living_room",
+       "attributeName": "fill",
+       "attributeValue": "orange"
+   }
+   "topic": "update_attribute"
+   ```
+   But it is also possible to use ```msg.command``` instead:
+   ```
+   "payload": {
+       "command": "update_attribute",
+       "selector": "#cam_living_room",
+       "attributeName": "fill",
+       "attributeValue": "orange"
+   }
+   ```   
++ In all examples below, the selector also can be part of the topic
 
 ### Updating element attribute values
 The SVG elements have attributes, whose values can be specified in the SVG editor.  Any of these attribute values can be changed via an input message. 
@@ -193,14 +262,19 @@ Let's change the *'fill'* color attribute value via input messages:
 ```
 [{"id":"ad76788b.158348","type":"inject","z":"60ad596.8120ba8","name":"Fill camera icon green","topic":"update_attribute","payload":"{\"elementId\":\"camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"green\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":480,"y":300,"wires":[["f3e1600.918b6a"]]},{"id":"e51f4d2c.b6317","type":"inject","z":"60ad596.8120ba8","name":"Fill camera icon orange","topic":"update_attribute","payload":"{\"elementId\":\"camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"orange\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":480,"y":340,"wires":[["f3e1600.918b6a"]]},{"id":"a9f25ec5.4bec5","type":"inject","z":"60ad596.8120ba8","name":"Fill camera icon blue","topic":"update_attribute","payload":"{\"elementId\":\"camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":470,"y":260,"wires":[["f3e1600.918b6a"]]},{"id":"f3e1600.918b6a","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"ba24f321.07795","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\"/>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\"/>\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"blue\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg>","clickableShapes":[{"targetId":"camera_living"}],"smilAnimations":[{"id":"myanimation","targetId":"pir_living","attributeName":"r","fromValue":"0","toValue":"40","trigger":"msg","duration":"2","repeatCount":"0","freeze":false}],"name":"","x":720,"y":300,"wires":[[]]},{"id":"ba24f321.07795","type":"ui_group","z":"","name":"Floorplan test","tab":"fb3be807.e7ef18","disp":true,"width":"14","collapse":false},{"id":"fb3be807.e7ef18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
-The ```msg.payload.command``` or the ```msg.payload.topic``` should have one of the following values:
-+ ***update_attribute***: to update the value of an *existing* SVG element attribute.  The attribute name needs to be specified in ```msg.payload.attributeName``` and the value in ```msg.payload.attributeValue```.
-+ ***set_attribute***: identical to update_attribute, but now the attribute will be created if it doesn't exist yet in the SVG element.
+
+The input message should have following format:
++ ```msg.payload.command``` or the ```msg.payload.topic``` should contain one of the following values:
+   + ***update_attribute***: to update the value of an *existing* SVG element attribute. 
+   + ***set_attribute***: identical to update_attribute, but now the attribute will be created if it doesn't exist yet in the SVG element.
++ ```msg.payload.selector``` should contain a query selector, e.g. #my_circle to find SVG element with id="my_circle" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
++ ```msg.payload.attributeName``` should contain the name of attribute whose value needs to be changed.
++ ```msg.payload.attributeValue``` should contain the new value of the specified attribute.
 
 Example message:
 ```
 "payload": {
-    "elementId": "camera_living",
+    "selector": "#cam_living_room",
     "attributeName": "fill",
     "attributeValue": "orange"
 }
@@ -215,19 +289,22 @@ For example on a floorplan the text *'Living room'* is displayed:
 <text id="room_label" x="310" y="45" ...>Living room</text>
 ```
 
-In the control message to update that text, the ```msg.payload.command``` or the ```msg.payload.topic``` should contain value ***update_text***.  And the text content itself should be available in the ```msg.payload.textContent``` field.
+The input message should have following format:
++ ```msg.payload.command``` or ```msg.payload.topic``` should contain ***update_text***.
++ ```msg.payload.selector``` should contain a query selector, e.g. #my_circle to find SVG element with id="my_circle" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
++ ```msg.payload.textContent``` should contain the new text that needs to be applied.
 
 Example message:
 ```
 "payload": {
-    "elementId": "room_label",
+    "selector": "#label_living_room",
     "textContent": "Living room"
 }
 "topic": "update_text"
 ```
 
 ### Start/stop animations
-As stated above, the animations can be started/stopped via an input message (when the 'trigger' field has value 'msg').
+As stated above, the animations can be started/stopped dynamically via an input message (when the 'trigger' field has value 'msg').  To change the attribute value of an animation, use a normal *'update_attribute'* topic as described in a previous section.
 
 For example let's visualize that the IP camera in the living room has detected motion:
 
@@ -236,7 +313,15 @@ For example let's visualize that the IP camera in the living room has detected m
 ```
 [{"id":"6ffd6cf6.f91834","type":"inject","z":"60ad596.8120ba8","name":"Start animation","topic":"trigger_animation","payload":"{\"elementId\":\"myanimation\",\"status\":\"start\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":740,"y":220,"wires":[["1fb8c46e.6bfb5c"]]},{"id":"8adfc00a.8696b","type":"inject","z":"60ad596.8120ba8","name":"Stop animation","topic":"trigger_animation","payload":"{\"elementId\":\"myanimation\",\"status\":\"stop\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":740,"y":260,"wires":[["1fb8c46e.6bfb5c"]]},{"id":"1fb8c46e.6bfb5c","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"ba24f321.07795","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\"/>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\"/>\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"blue\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg>","clickableShapes":[],"smilAnimations":[{"id":"myanimation","targetId":"pir_living","attributeName":"r","fromValue":"0","toValue":"40","trigger":"msg","duration":"2","repeatCount":"0","freeze":false}],"name":"","x":960,"y":240,"wires":[[]]},{"id":"ba24f321.07795","type":"ui_group","z":"","name":"Floorplan test","tab":"fb3be807.e7ef18","disp":true,"width":"14","collapse":false},{"id":"fb3be807.e7ef18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
+In the control message to update that text, the ```msg.payload.command``` or the ```msg.payload.topic``` should contain value ***trigger_animation***.  And the text content itself should be available in the ```msg.payload.textContent``` field.
 The control message looks like this (with status is 'start' or 'stop'):
+
+The input message should have following format:
++ ```msg.payload.command``` or ```msg.payload.topic``` should contain ***trigger_animation***.
++ ```msg.payload.selector``` should contain a query selector, e.g. #my_circle to find SVG element with id="my_circle" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
++ ```msg.payload.action``` should contain ***start*** or ***stop***, depending on which action you want to perform on the animation.
+
+Example message:
 ```
 "payload": {
     "elementId": "myanimation",
@@ -280,15 +365,16 @@ Fontawesome icons are used widely in Node-RED, and are in fact little SVG drawin
 
    ![icon](https://user-images.githubusercontent.com/14224149/63217104-29828c80-c140-11e9-957b-22ea8eb9a0ed.png)
    
-That is all...
-The node will automatically lookup the ***unicode*** value for that icon, based on this [list](https://fontawesome.com/v4.7.0/cheatsheet/):
+Some remarks:
++ The node will automatically lookup the ***unicode*** value for that icon, based on this [list](https://fontawesome.com/v4.7.0/cheatsheet/):
 
-![unicode](https://user-images.githubusercontent.com/14224149/63217056-9e08fb80-c13f-11e9-8b48-0ec516752d90.png)
+   ![unicode](https://user-images.githubusercontent.com/14224149/63217056-9e08fb80-c13f-11e9-8b48-0ec516752d90.png)
    
-As a result, in the generated dashboard html you will see only the unicode value (instead of the original fa-video-camera value):
-```
-<text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" font-size="35" text-anchor="middle" alignment-baseline="middle" stroke-width="1">&#xf03d;</text>
-```
+   As a result, in the generated dashboard html you will see only the unicode value (instead of the original fa-video-camera value):
+   ```
+   <text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" font-size="35" text-anchor="middle"  alignment-baseline="middle" stroke-width="1">&#xf03d;</text>
+   ```
++ Currently DrawSvg doesn't support the FontAwesome font.  See this issue.
 
 ### DrawSvg drawing editor
 [DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSVG into this node, to allow users to edit their SVG source via a nice drawing program.
