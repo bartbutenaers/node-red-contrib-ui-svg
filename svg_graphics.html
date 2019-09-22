@@ -365,7 +365,7 @@
             });
             node.tabs.addTab({
                 id: "node-svg-tab-binding",
-                label: "Input Binding"
+                label: "Input Bind"
             });
             node.tabs.addTab({
                 id: "node-svg-tab-settings",
@@ -815,7 +815,7 @@
                     }
                     actionField.val(clickableShape.action || "click");
                     // Column 3 : Add a input field (type string) to the new row, that represents the msg.payload content 
-                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"Payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
                     var payloadType = supportedPayloadTypes.includes(clickableShape.payloadType) ? clickableShape.payloadType : defaultPayloadType;
                     payloadField.typedInput({
@@ -851,11 +851,10 @@
                 });
             }
             var bindingList = $("#node-input-binding-container").css('min-height','150px').css('min-width','450px').editableList({
-                header: $("<div>").css({padding:"6px"}).append($.parseHTML(
-                    "<div style='width:22%; margin-left:5px; display: inline-grid'><b>Binding Source</b></div>" +
-                    "<div style='width:22%; margin-left:5px; display: inline-grid'><b>Selector</b></div>" +  
-                    "<div style='width:24%; margin-left:5px; display: inline-grid'><b>Binding Destination</b></div>" +  
-                    "<div style='width:24%; margin-left:5px; display: inline-grid'><b>&nbsp</b></div>"
+                header: $("<div>").css({"margin-left":"6px"}).append($.parseHTML(
+                    "<div style='width:28%; margin-left:5px; display: inline-grid'><b>Binding Source</b></div>" +
+                    "<div style='width:28%; margin-left:1px; display: inline-grid'><b>Selector</b></div>" +  
+                    "<div style='width:36%; margin-left:1px; display: inline-grid'><b>Binding Destination</b></div>" 
                 )),
                 addItem: function(container, i, binding) {
                     // Add a new row to the editableList
@@ -863,14 +862,13 @@
                     //BINDING SOURCE
                     // Column 1 :  bind msg.xxxx 
                     var bindSourceField = $('<input/>',{class:"node-input-binding-source",type:"text",placeholder:"payload.property"})
-                        .css({"width":"22%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                        .css({"width":"28%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     bindSourceField.val(binding.bindSource);  
                
                     //BINDING DESTINATION
                     // Column 2 : [textbox] Selector denoting what elements to add binding to (with autocomplete of .classes & #elementIDs)
                     var targetSelectorField = $('<input/>',{class:"node-input-binding-selector",type:"text",placeholder:"Element Selector"})
-                        .css({"width":"22%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                        targetSelectorFieldId
+                        .css({"width":"28%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var targetSelectorFieldId = "node-input-binding-selector" + i
                     targetSelectorField.attr("id",targetSelectorFieldId);
                     targetSelectorField.val(binding.selector);
@@ -883,13 +881,14 @@
            
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
                     var bindingTypeField = $('<select/>',{class:"node-input-binding-type",type:"text",placeholder:"click"})
-                        .css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    $('<option />', {value: "text", text: "Text Content"}).appendTo(bindingTypeField);
-                    $('<option />', {value: "attr", text: "Attribute Value"}).appendTo(bindingTypeField);
+                        .css({"width":"16%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    $('<option />', {value: "text", text: "Text"}).appendTo(bindingTypeField);
+                    $('<option />', {value: "attr", text: "Attribute"}).appendTo(bindingTypeField);
                     bindingTypeField.val(binding.bindType || "text");
+                    
                     // Column 4 : [textbox] Attribute to update (only used when bindingType == "attr") 
                     var attributeField = $('<input/>',{class:"node-input-binding-attribute",type:"text",placeholder:"attribute"})
-                        .css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                        .css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var attributeFieldId = "node-input-binding-attribute" + i
                     attributeField.attr("id",attributeFieldId);
                     attributeField.val(binding.attribute);  
@@ -1316,7 +1315,7 @@
                         <span class="red-ui-typedInput-type-label">msg.</span>
                     </button>
                     <div class="red-ui-typedInput-input-wrap" style="left: 46px; right: 2px;">
-                        <input type="text" id="node-input-outputField" placeholder="Payload" style="width: 100%; margin-right: 0px; margin-left: 0px; border-top-right-radius: 0px; border-bottom-right-radius: 0px;" autocomplete="disable" dir="" class="red-ui-typedInput-input">
+                        <input type="text" id="node-input-outputField" placeholder="payload" style="width: 100%; margin-right: 0px; margin-left: 0px; border-top-right-radius: 0px; border-bottom-right-radius: 0px;" autocomplete="disable" dir="" class="red-ui-typedInput-input">
                     </div>
                 </div>
             </div>
@@ -1422,20 +1421,21 @@
             A customisable list of events. Each event targets an element where you can specify what action (e.g. click, mouseover, focus, etc) and a payload/topic to send upon the specified action.
             Additionally, <code>Output to</code> permits you to specify what part of the <code>msg</code> to send the payload to.
         </div>
-        <h4>Input Binding</h4>
+        <h4>Input Bind</h4>
         <div style="padding-left: 15px">
-            A customisable list of bindings that permit the user to easily specify text and attribute value binding.  e.g. it is possible to send a <code>msg</code> with nested objects and animate an elements' text and attributes as specified in this list.
+            A customisable list of bindings that permit the user to easily specify text and attribute binding.  
+            e.g. it is possible to send a <code>msg</code> object with nested objects/properties to animate an elements' text and attributes as specified in this list.
             <ul>
-                <li><b>Source</b> What data in the <code>msg</code> you wish to use as the value in this binding</li>
-                <li><b>Selector</b> What elements this binding should work on (e.g. <code>.Circles</code> would affect all elements in the SVG with class="Circles")</li>
-                <li><b>Destination</b> 
+                <li><b>Source</b> - What properties in the <code>msg</code> you wish to use as the value in this binding</li>
+                <li><b>Selector</b> - What elements this binding should work on (e.g. <code>.indicators</code> would affect all elements in the SVG with class="indicators")</li>
+                <li><b>Destination</b> - 
                     <ul>
-                        <li>If <code>Text Content</code> is selected, the inner text content of the element will be updated with the value of the binding source.</li>
-                        <li>If <code>Attribute Value</code> is selected, the attribute specified in the next input will be updated with the value of the binding source.</li>
+                        <li>If <code>Text</code> is selected, the inner text content of the element will be updated with the value of the binding source.</li>
+                        <li>If <code>Attribute</code> is selected, the attribute specified in the next input will be updated with the value of the binding source.</li>
                     </ul>    
                 </ul>
             </ul>
-            <p>Notes: The <code>topic</code> must be set to the value of <b>databind</b></p>
+            <p>Notes: The <code>topic</code> must be set to <code>databind</code></p>
         </div>
     </dl>
     <h3>Output</h3>
