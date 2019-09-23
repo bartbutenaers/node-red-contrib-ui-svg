@@ -145,7 +145,7 @@ module.exports = function(RED) {
                     convertBack: function (value) {
                         return value;
                     },
-                    beforeEmit: function(msg, value) {                  
+                    beforeEmit: function(msg, value) {                    
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
@@ -179,17 +179,29 @@ module.exports = function(RED) {
                             // When the text contains a FontAwesome icon name, we need to replace it by its unicode value.
                             // This is required when the text content is dynamically changed by a control message.
                             if (textContent.startsWith("fa-")) {
-                                // Get the unicode value (that corresponds to the cssClass fa-xxx) from the server-side via a synchronous call
-                                $.ajax({ 
-                                    url: "ui_svg_graphics/famapping/" + textContent, 
-                                    dataType: 'json', 
-                                    async: false, 
-                                    success: function(json){ 
-                                        if (json.uniCode) {
-                                            textContent = json.uniCode;
-                                        }
-                                    } 
-                                });
+                                // Try to get the unicode from our faMapping cache
+                                var uniCode = $scope.faMapping[textContent.trim()];
+                                
+                                if(uniCode) {
+                                    textContent = uniCode;
+                                }
+                                else {
+                                    // Get the unicode value (that corresponds to the cssClass fa-xxx) from the server-side via a synchronous call
+                                    $.ajax({ 
+                                        url: "ui_svg_graphics/famapping/" + textContent, 
+                                        dataType: 'json', 
+                                        async: false, 
+                                        success: function(json){ 
+                                            // Only replace the fa-xxx icon when the unicode value is available.
+                                            if (json.uniCode) {
+                                                // Cache the unicode mapping on the client-side
+                                                $scope.faMapping[json.cssClass] = json.uniCode;             
+
+                                                textContent = json.uniCode;
+                                            }
+                                        } 
+                                    });
+                                }
                             }
 
                             // By setting the text content (which is similar to innerHtml), all animation child elements will be removed.
@@ -211,6 +223,7 @@ module.exports = function(RED) {
                         console.log("initController")
                         $scope.init = function (config) {
                             $scope.config = config;
+                                                    $scope.faMapping = {};
                             $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
                             $scope.svg = $scope.rootDiv.querySelector("svg");
                             //$scope.svg.style.cursor = "crosshair";
