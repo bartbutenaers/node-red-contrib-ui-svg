@@ -22,7 +22,7 @@ module.exports = function(RED) {
     // Shared object between N instances of this node (caching for performance)
     var faMapping;
 
-    function HTML(config) {
+    function HTML(config) {       
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config);
 
@@ -31,8 +31,20 @@ module.exports = function(RED) {
             faMapping = svgUtils.getFaMapping();
         }
         
+        var svgString = config.svgString;
+        
+        // When no SVG string has been specified, we will show a notification
+        if (!svgString || svgString === "") {
+            svgString = String.raw`<svg width="250" height="100" xmlns="http://www.w3.org/2000/svg"> 
+                            <g>
+                                <rect stroke="#000000" id="svg_2" height="50" width="200" y="2.73322" x="2.00563" stroke-width="5" fill="#ff0000"/>
+                                <text font-weight="bold" stroke="#000000" xml:space="preserve" text-anchor="middle" font-family="Sans-serif" font-size="24" id="svg_1" y="35.85669" x="100" stroke-width="0" fill="#000000">SVG is empty</text>
+                            </g>
+                        </svg>`;
+        }
+        
         // When a text element contains the CSS classname of a FontAwesome icon, we will replace it by its unicode value.
-        var svgString = config.svgString.replace(/(<text.*>)(.*)(<\/text>)/g, function(match, $1, $2, $3, offset, input_string) {
+        svgString = svgString.replace(/(<text.*>)(.*)(<\/text>)/g, function(match, $1, $2, $3, offset, input_string) {
             var iconCssClass = $2.trim();
             
             if (!iconCssClass.startsWith("fa-")) {
@@ -223,7 +235,7 @@ module.exports = function(RED) {
                         console.log("initController")
                         $scope.init = function (config) {
                             $scope.config = config;
-                                                    $scope.faMapping = {};
+                            $scope.faMapping = {};
                             $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
                             $scope.svg = $scope.rootDiv.querySelector("svg");
                             //$scope.svg.style.cursor = "crosshair";
@@ -403,9 +415,8 @@ module.exports = function(RED) {
                             //     })
                             // });                            
 
-
-
-                            if (config.showCoordinates) {
+                            // Remark: it is not possible to show the coordinates when there is no svg element
+                            if (config.showCoordinates && $scope.svg) {
                                 $scope.tooltip = document.getElementById("tooltip_" + config.id);
                                 $scope.svg.addEventListener("mousemove", function(evt) {
                                     // Make sure the tooltip becomes visible, when inside the SVG drawing
