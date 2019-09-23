@@ -140,7 +140,7 @@ module.exports = function(RED) {
                     convertBack: function (value) {
                         return value;
                     },
-                    beforeEmit: function(msg, value) {   
+                    beforeEmit: function(msg, value) {                 
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
@@ -170,6 +170,22 @@ module.exports = function(RED) {
                      
                         function setTextContent(element, textContent) {
                             var children = [];
+                            
+                            // When the text contains a FontAwesome icon name, we need to replace it by its unicode value.
+                            // This is required when the text content is dynamically changed by a control message.
+                            if (textContent.startsWith("fa-")) {
+                                // Get the unicode value (that corresponds to the cssClass fa-xxx) from the server-side via a synchronous call
+                                $.ajax({ 
+                                    url: "ui_svg_graphics/famapping/" + textContent, 
+                                    dataType: 'json', 
+                                    async: false, 
+                                    success: function(json){ 
+                                        if (json.uniCode) {
+                                            textContent = json.uniCode;
+                                        }
+                                    } 
+                                });
+                            }
 
                             // By setting the text content (which is similar to innerHtml), all animation child elements will be removed.
                             // To solve that we will remove the child elements in advance, and add them again afterwards...
@@ -178,7 +194,8 @@ module.exports = function(RED) {
                                 element.removeChild(children[i]);
                             }
                             
-                            element.textContent = textContent;
+                            // Cannot use element.textContent because then the FontAwesome icons are not rendered
+                            element.innerHTML = textContent;
                             
                             for (var j = 0; j < children.length; j++) {
                                 element.appendChild(children[j]);
@@ -725,7 +742,7 @@ module.exports = function(RED) {
 
     RED.nodes.registerType("ui_svg_graphics", SvgGraphicsNode);
    
-    // Make some static resources from this node public available (to be used in the flow editor).
+    // Make some static resources from this node public available (to be used in the FLOW EDITOR).
     RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){ 
         if (req.params[0].startsWith("lib/")) {
             var options = {
@@ -791,5 +808,37 @@ module.exports = function(RED) {
             console.log("Only paths starting with 'lib' or 'image' are supported");
             return;
         }
+    });
+    
+    // By default the UI path in the settings.js file will be in comment:
+    //     //ui: { path: "ui" },
+    // But as soon as the user has specified a custom UI path there, we will need to use that path:
+    //     ui: { path: "mypath" },
+    var uiPath = ((RED.settings.ui || {}).path) || 'ui';
+	
+    // Create the complete server-side path
+    uiPath = '/' + uiPath + '/ui_svg_graphics';
+    
+    // Replace a sequence of multiple slashes (e.g. // or ///) by a single one
+    uiPath = uiPath.replace(/\/+/g, '/');
+	
+    // Make the unicode conversion available (to the DASHBOARD).
+    RED.httpNode.get(uiPath + "/:cmd/:value", function(req, res){
+        var result = {};
+        
+        if (req.params.cmd === "famapping") {
+            result.cssClass = req.params.value.trim();
+            
+            // TODO for performance, the FaMapping map should be stored somewhere
+            var faMapping = svgUtils.getFaMapping();
+            result.uniCode = faMapping.get(result.cssClass);
+            
+            if (result.uniCode) {
+                result.uniCode = "&#x" + result.uniCode + ";";
+            }
+        }
+       
+        // Return a json object (containing the unicode value) to the dashboard
+        res.json(result);
     });
 }
