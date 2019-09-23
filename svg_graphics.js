@@ -19,12 +19,17 @@ module.exports = function(RED) {
     const fs = require('fs');
     const path = require('path');
     const mime = require('mime');
+    // Shared object between N instances of this node (caching for performance)
+    var faMapping;
 
     function HTML(config) {
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config);
 
-	    faMapping = svgUtils.getFaMapping();
+        // Fill the map once
+        if (!faMapping) {
+            faMapping = svgUtils.getFaMapping();
+        }
         
         // When a text element contains the CSS classname of a FontAwesome icon, we will replace it by its unicode value.
         var svgString = config.svgString.replace(/(<text.*>)(.*)(<\/text>)/g, function(match, $1, $2, $3, offset, input_string) {
@@ -140,7 +145,7 @@ module.exports = function(RED) {
                     convertBack: function (value) {
                         return value;
                     },
-                    beforeEmit: function(msg, value) {                 
+                    beforeEmit: function(msg, value) {                  
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
@@ -829,8 +834,6 @@ module.exports = function(RED) {
         if (req.params.cmd === "famapping") {
             result.cssClass = req.params.value.trim();
             
-            // TODO for performance, the FaMapping map should be stored somewhere
-            var faMapping = svgUtils.getFaMapping();
             result.uniCode = faMapping.get(result.cssClass);
             
             if (result.uniCode) {
