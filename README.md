@@ -487,6 +487,8 @@ Steps to use DrawSvg:
 5. As soon as the popup dialog window is being closed, a notification will appear.  There you can choose to ignore all changes (i.e. you don't need them anymore), or to save all the changes to the SVG source in this node.
 6. The updated SVG source will appear in this node.
 
+![svg_drawsvg](https://user-images.githubusercontent.com/14224149/65639275-14730600-dfe8-11e9-93be-423f358b9fb2.gif)
+
 By default this node will use the free online DrawSvg service (see *"Editor URL"* in the "Settings" tabsheet).  However we have planned to provide a new Node-RED node in the near future, which will allow to host DrawSVG locally for offline systems.
 
 ### Display images
