@@ -42,6 +42,8 @@ Simply deploy your SVG string in the config screen, and the Node-RED dashboard w
 
 ![svg_demo](https://user-images.githubusercontent.com/14224149/65639986-94e63680-dfe9-11e9-8086-89d78394301b.gif)
 
+But what if you are not familiar with the SVG syntax.  Don't worry, we have integrated a [DrawSvg](#DrawSvg-drawing-editor) drawing editor in the config screen of our node. 
+
 The node's config screen consists of a series of tabsheets:
 
 ### SVG source
