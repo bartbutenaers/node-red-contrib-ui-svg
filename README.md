@@ -3,7 +3,7 @@ A Node-RED widget node to show interactive SVG (vector graphics) in the dashboar
 
 Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner in crime for this node!
 
-And also lots of credits to Joseph Liard, the author of [DrawSvg](http://www.drawsvg.org/home-en.html#contact) for his assistance!
+And also lots of credits to Joseph Liard, the author of [DrawSvg](#-DrawSvg-drawing-editor) for his assistance!
 
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
@@ -46,7 +46,7 @@ The node's config screen consists of a series of tabsheets:
 
 Enter you (XML-based) SVG graphics in this editor.  This can be done in different ways:
 + If you are a die-hard SVG fanatic, you can enter the SVG string manually in the *"SVG Source"* tabsheet.
-+ If you prefer to use an SVG drawing editor, you can use the embedded DrawSvg editor (see further).
++ If you prefer to use an SVG drawing editor, you can use the embedded [DrawSvg](#-DrawSvg-drawing-editor) editor.
 + If you need very specific types of drawings, you can use a third party SVG editor to create your drawing (and simple paste the generated SVG string into this tabsheet).  Multiple (online) editors are free available, each with their own dedicated speciality:
    + [Floorplanner](http://floorplanner.com)
    + [Floorplancreator](https://floorplancreator.net/#pricing)
@@ -62,7 +62,7 @@ At the bottom of the "SVG source" tabsheet, a series of buttons are available:
 
 + *Expand source*: show the SVG source in full screen mode.
 + *Format SVG*: by formatting the SVG source, the source will be beatyfied.  This means the empty lines will be removed, each line will get a single SVG element, indents will be corrected ...
-+ *Drawing editor*: show the SVG source in the [DrawSvg](http://drawsvg.org/) drawing editor as a popup dialog window.
++ *Drawing editor*: show the SVG source in the [DrawSvg](#-DrawSvg-drawing-editor) drawing editor as a popup dialog window.
 
 ### Animations
 
@@ -431,10 +431,10 @@ This option has been introduced to simplify layouting during manual editing of t
 Remark: The location is measured in the SVG coordinate system, which means the origin (X=Y=0) is in the top left of your drawing.
 
 ### Auto format SVG Source after saving edits in SVG Editor
-When editing the SVG source via DrawSvg, the manipulated SVG source isn't very pretty: the SVG source will contain emtpy lines, multiple SVG elements on a single line ...  This SVG source can be manually beautified using the "*Format SVG*" button, or automatically (every time the DrawSVG popup dialog window is closed - by activating this checkbox.
+When editing the SVG source via [DrawSvg](#-DrawSvg-drawing-editor), the manipulated SVG source isn't very pretty: the SVG source will contain emtpy lines, multiple SVG elements on a single line ...  This SVG source can be manually beautified using the "*Format SVG*" button, or automatically (every time the DrawSVG popup dialog window is closed - by activating this checkbox.
 
 ### Editor URL
-This is the URL where the DrawSvg editor instance is being hosted.  By default this field contains a link to the official [DrawSvg cloud](http://drawsvg.org/drawsvg.html) system.  *Be aware that this is a free system, so there is no garuantee about availability of the system!*
+This is the URL where the [DrawSvg](#-DrawSvg-drawing-editor) editor instance is being hosted.  By default this field contains a link to the official [DrawSvg cloud](http://drawsvg.org/drawsvg.html) system.  *Be aware that this is a free system, so there is no garuantee about availability of the system!*
 
 ### Directory
 This directory of your local system (where your Node-RED instance is running) can be used to make your local images available, to both your dashboard and your flow editor.
@@ -464,7 +464,7 @@ Some remarks:
    ```
    <text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" font-size="35" text-anchor="middle"  alignment-baseline="middle" stroke-width="1">&#xf03d;</text>
    ```
-+ Currently DrawSvg doesn't support the FontAwesome font.  See this [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/34).
++ Currently [DrawSvg](#-DrawSvg-drawing-editor) doesn't support the FontAwesome font.  See this [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/34).
 
 + Since FontAwesome icons are displayed in ```<text>``` SVG elements, it is very easy to change the icon using a ***update_text*** (see 'Control messages' section above):
 
@@ -497,7 +497,7 @@ SVG offers an image element, that can be used to display an image inside an SVG 
    ```
    You can also make local images online available in Node-RED, e.g. by using a httpIn/httpOut nodes based flow.  However the disadvantage of online images is that they are public available ...
    
-2. Load a local image, via the file selection dialog in DrawSvg.  This way you can easily select a local image available on the machine where you are *viewing* your dashboard in a browser.  DrawSvg will convert the image to a base64 encoded string, which is being inserted into the SVG source.
+2. Load a local image, via the file selection dialog in [DrawSvg](#-DrawSvg-drawing-editor).  This way you can easily select a local image available on the machine where you are *viewing* your dashboard in a browser.  DrawSvg will convert the image to a base64 encoded string, which is being inserted into the SVG source.
    ```
    <image xlink:href="xlink:href="data:image/png;base64,base64_encoded_image_string_..."\>
    ```
