@@ -477,7 +477,7 @@ Some remarks:
 ### DrawSvg drawing editor
 [DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSVG into this node, to allow users to edit their SVG source via a nice drawing program.
 
-***!!! Drawsvg is free software.  Note that DrawSvg and the online service is used as is without warranty of bugs !!!***
+***!!! DrawSvg is free software.  Note that DrawSvg and the online service is used as is without warranty of bugs !!!***
 
 Steps to use DrawSvg:
 1. Click the *"Drawing editor"* button in the "SVG source" tabsheet.
