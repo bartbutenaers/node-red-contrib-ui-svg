@@ -257,7 +257,7 @@ module.exports = function(RED) {
                                     //}
                                     
                                     //if the cursor is NOT set and the action is click, set cursor
-                                    if(/*!config.showMouseLines && */ action == "click" && !element.style.cursor) {
+                                    if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
                                         element.style.cursor = "pointer";
                                     }
                                     
