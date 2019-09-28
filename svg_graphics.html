@@ -1216,6 +1216,10 @@
                 $.extend(opts, options);//merge options into opts (in case of duplicates, options takes precidence)
                 return html_beautify(svg,opts);
             }
+            
+            $("#node-input-restoreUrl").on("click", function (e) {
+                $("#node-input-editorUrl").val("http://drawsvg.org/drawsvg.html");
+            }); 
         },
         oneditsave: function() {
             var node = this;
@@ -1311,7 +1315,7 @@
                     <i class="fa fa-code"></i>    
                 </button>
                 <button id="node-display-svg-popup" class="node-display-svg-popup editor-button editor-button-small" style="margin-top: 4px;"  title="Drawing editor" 
-                    data-href="//www.draw-svg.appspot.com/drawsvg.html#jsChannel:" data-title="DrawSVG" data-width="95%" data-height="95%">
+                    data-href="http://drawsvg.org/drawsvg.html#jsChannel:" data-title="DrawSVG" data-width="95%" data-height="95%">
                     <i class="fa fa-edit"></i>    
                 </button>
             </div>
@@ -1361,6 +1365,7 @@
             <div class="form-row" id="div-editorUrl">
                 <label for="node-input-editorUrl"><i class="fa fa-globe"></i> Editor URL</label>
                 <input type="text" id="node-input-editorUrl">
+                <button id="node-input-restoreUrl" class="editor-button" title="Restore default URL""><i class="fa fa-undo"></i></button>
             </div>
             <div class="form-row">
                 <label for="node-input-directory"><i class="fa fa-folder"></i> Directory</label>
