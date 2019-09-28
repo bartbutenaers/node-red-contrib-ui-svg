@@ -349,6 +349,21 @@
                             console.error(error)
                         }
                     }
+                    else if (tab.id == "node-svg-tab-source") {
+                        var popupButton = $("#node-display-svg-popup")[0];
+                        var url = $("#node-input-editorUrl").val();
+                        
+                        if (!url || url === "") {
+                            popupButton.style.backgroundColor = "#ebebeb";
+                            popupButton.disabled = true;
+                            popupButton.title = 'Drawing editor (No URL)';
+                        }
+                        else {
+                            popupButton.style.backgroundColor = "#ffffff";
+                            popupButton.disabled = false;
+                            popupButton.title = 'Drawing editor';
+                        }
+                    }
                 }
             });
             node.tabs.addTab({
