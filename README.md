@@ -472,7 +472,7 @@ Some remarks:
    ```
 + Currently [DrawSvg](#DrawSvg-drawing-editor) doesn't support the FontAwesome font.  See this [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/34).  
    ```diff
-   This means in the current DrawSvg version you will see "fa-xxx" instead of the FontAwesome icon:
+   ! This means in the current DrawSvg version you will see "fa-xxx" instead of the FontAwesome icon:
 
    ```
 
