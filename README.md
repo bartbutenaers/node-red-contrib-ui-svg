@@ -470,7 +470,11 @@ Some remarks:
    ```
    <text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" font-size="35" text-anchor="middle"  alignment-baseline="middle" stroke-width="1">&#xf03d;</text>
    ```
-+ Currently [DrawSvg](#DrawSvg-drawing-editor) doesn't support the FontAwesome font.  See this [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/34).  This means currently in DrawSvg you will see fa-xxx instead of the FontAwesome icon:
++ Currently [DrawSvg](#DrawSvg-drawing-editor) doesn't support the FontAwesome font.  See this [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/34).  
+   ```diff
+   This means in the current DrawSvg version you will see "fa-xxx" instead of the FontAwesome icon:
+
+   ```
 
    ![DrawSvg FA](https://user-images.githubusercontent.com/14224149/65816859-4317f900-e201-11e9-83e8-0d46d06198ef.png)
 
