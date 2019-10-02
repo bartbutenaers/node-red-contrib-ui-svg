@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "A Node-RED widget node to show interactive SVG (vector graphics) in the dashboard",
     "dependencies": {
+       "mime": "2.4.4"
     },
     "author": {
         "name": "Bart Butenaers"
@@ -22,7 +23,7 @@
         "drawing",
         "floorplan",
         "floor plan"
-    ],
+    ],   
     "bugs": {
         "url": "https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues"
     },
