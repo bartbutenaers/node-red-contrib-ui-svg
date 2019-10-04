@@ -147,6 +147,7 @@ module.exports = function(RED) {
                 var done = ui.addWidget({
                     node: node,
                     group: config.group,
+                    order: config.order,
                     width: config.width,
                     height: config.height,
                     format: html,
