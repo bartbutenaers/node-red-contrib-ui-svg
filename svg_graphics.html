@@ -21,8 +21,8 @@
 </style>
 
 
-<script src="/ui_svg_graphics/lib/jschannel.js"></script>
-<script src="/ui_svg_graphics/lib/beautify-html.js"></script>
+<script src="ui_svg_graphics/lib/jschannel.js"></script>
+<script src="ui_svg_graphics/lib/beautify-html.js"></script>
 
 
 
@@ -356,7 +356,7 @@
                         if (!url || url === "") {
                             popupButton.style.backgroundColor = "#ebebeb";
                             popupButton.disabled = true;
-                            popupButton.title = 'Drawing editor - No URL in Settings tab!';
+                            popupButton.title = 'Drawing editor (No URL in Settings tab!)';
                         }
                         else {
                             popupButton.style.backgroundColor = "#ffffff";
@@ -1109,7 +1109,7 @@
 
                         $.ajax({
                             type: "GET",
-                            url: "/ui_svg_graphics/image/" + node.id + "/" + fileName, 
+                            url: "ui_svg_graphics/image/" + node.id + "/" + fileName, 
                             async: false, // Synchronous call
                             success: function(response, status, xhr){ 
                                 var contentType = xhr.getResponseHeader("content-type") || "";
