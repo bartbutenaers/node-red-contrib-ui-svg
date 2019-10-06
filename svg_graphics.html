@@ -972,13 +972,15 @@
                                         saveSVG(function(){
                                             //onSuccess
                                             window.svgEditorDialog.closeConfirmed = true;
-                                            window.svgEditorDialog.dialog("close"); 
+                                            window.svgEditorDialog.dialog("close");
+                                            window.svgEditorDialog.dialog('destroy');
                                             messageBox.close();
                                         })
                                     },
                                     "No": function(){
                                         window.svgEditorDialog.closeConfirmed = true;
                                         window.svgEditorDialog.dialog("close"); 
+                                        window.svgEditorDialog.dialog('destroy');
                                         messageBox.close();
                                     },
                                     "Cancel": function(){
