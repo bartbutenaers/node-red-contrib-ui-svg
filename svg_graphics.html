@@ -389,22 +389,26 @@
                             console.error(error)
                         }
                     }
-                    else if (tab.id == "node-svg-tab-source") {
+                    else if (tab.id == "node-svg-tab-editor") {
                         var popupButton = $("#node-display-svg-popup")[0];
                         var url = $("#node-input-editorUrl").val();
                         
                         if (!url || url === "") {
                             popupButton.style.backgroundColor = "#ebebeb";
                             popupButton.disabled = true;
-                            popupButton.title = 'Drawing editor (No URL in Settings tab!)';
+                            popupButton.title = 'No editor URL (in Settings tab) !';
                         }
                         else {
                             popupButton.style.backgroundColor = "#ffffff";
                             popupButton.disabled = false;
-                            popupButton.title = 'Drawing editor';
+                            popupButton.title = 'Click to open drawing editor';
                         }
                     }
                 }
+            });
+            node.tabs.addTab({
+                id: "node-svg-tab-editor",
+                label: "Editor"
             });
             node.tabs.addTab({
                 id: "node-svg-tab-source",
@@ -1375,6 +1379,14 @@
     </div>
     <div id="node-svg-tabs-content" style="min-height: 150px">
         <!-- Content of all tabsheets -->
+        <div id="node-svg-tab-editor" class="node-svg-tab-content" style="position: relative;">
+            <button id="node-display-svg-popup" class="node-display-svg-popup" style="background-color: transparent; padding: 30px; text-align: center;
+                    font-size: 35px; text-decoration: none; ; cursor: pointer; border-radius: 50%; position: absolute; top: 50%; left: 50%; margin-right: -50%;
+                    transform: translate(-50%, -50%); border-width:3px; border-style: solid; outline: none; cursor: pointer;"
+                    data-href="http://drawsvg.org/drawsvg.html#jsChannel:" data-title="DrawSVG" data-width="95%" data-height="95%">
+                <i class="fa fa-edit">  Open DrawSvg editor</i>    
+            </button>   
+        </div>        
         <div id="node-svg-tab-source" class="node-svg-tab-content">
             <!-- Ace SVG source editor -->
             <div class="form-row" style="margin-bottom:0px;">
@@ -1387,10 +1399,6 @@
                 </button>
                 <button id="node-format-svg-source" class="node-format-svg-source editor-button editor-button-small" style="margin-top: 4px;" title="Format SVG">
                     <i class="fa fa-code"></i>    
-                </button>
-                <button id="node-display-svg-popup" class="node-display-svg-popup editor-button editor-button-small" style="margin-top: 4px;"  title="Drawing editor" 
-                    data-href="http://drawsvg.org/drawsvg.html#jsChannel:" data-title="DrawSVG" data-width="95%" data-height="95%">
-                    <i class="fa fa-edit"></i>    
                 </button>
             </div>
         </div>
@@ -1466,6 +1474,11 @@
             The name of this node 
         </div>
         <h3><b>Tabs...</b></h3>
+        <h4>Editor</h4>
+        <div style="padding-left: 15px">
+            Click the oval button to open the SVG drawing in the DrawSvg drawing editor. 
+            <p><strong>!!! DrawSvg is free software. Note that DrawSvg and the online service is used as is without warranty of bugs !!!</strong></p>
+        </div>
         <h4>SVG source</h4>
         <div style="padding-left: 15px">
             The raw SVG to be displayed. The SVG source can be edited directly here. 
@@ -1479,12 +1492,7 @@
                         <i class="fa fa-code"></i>    
                     </span> will reformat the SVG source code.
                 </li>
-                <li><span class="editor-button editor-button-small" style="margin-top: 4px;" title="Drawing editor">
-                        <i class="fa fa-edit"></i>    
-                    </span> will open the SVG drawing editor.
-                </li>
             </ul>
-            <p><strong>!!! DrawSvg is free software. Note that DrawSvg and the online service is used as is without warranty of bugs !!!</strong></p>
         </div>
         <h4>Animations</h4>
         <div style="padding-left: 15px">
