@@ -105,10 +105,18 @@ module.exports = function(RED) {
         })
         
         var html = String.raw`
-            <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
-            <div id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
-        `;
-                        
+<style>
+    div.ui-svg svg{
+        color: var(--nr-dashboard-widgetColor);
+        fill: currentColor !important;
+    }
+    div.ui-svg path {
+        fill: inherit !important;
+    }
+</style>
+<div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
+<div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
+`;              
         return html;
     };
 
