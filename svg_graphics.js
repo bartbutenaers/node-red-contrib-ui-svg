@@ -106,12 +106,12 @@ module.exports = function(RED) {
         
         var html = String.raw`
 <style>
-    div.ui-svg svg{
+    .nr-dashboard-theme .nr-dashboard-template div.ui-svg svg{
         color: var(--nr-dashboard-widgetColor);
-        fill: currentColor !important;
+        fill: currentColor;
     }
-    div.ui-svg path {
-        fill: inherit !important;
+    .nr-dashboard-theme .nr-dashboard-template div.ui-svg path {
+        fill: inherit;
     }
 </style>
 <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
