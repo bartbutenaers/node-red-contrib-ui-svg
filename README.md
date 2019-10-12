@@ -46,6 +46,9 @@ But what if you are not familiar with the SVG syntax.  Don't worry, we have inte
 
 The node's config screen consists of a series of tabsheets:
 
+### Editor
+Press the oval button *Open DrawSvg editor* to show the SVG source in the [DrawSvg](#DrawSvg-drawing-editor) drawing editor.  The DrawSvg editor will be be opened in a popup dialog window.
+
 ### SVG source
 
 ![editor](https://user-images.githubusercontent.com/14224149/65357446-5faba400-dbf7-11e9-9824-886238dba228.png)
@@ -64,11 +67,10 @@ However:
       
 At the bottom of the "SVG source" tabsheet, a series of buttons are available:
 
-![buttons](https://user-images.githubusercontent.com/14224149/65372066-55c38880-dc6b-11e9-9dda-cbfa885f0285.png)
+![buttons](https://user-images.githubusercontent.com/14224149/66707892-5621e180-ed48-11e9-8d66-e3add751e7c8.png)
 
 + *Expand source*: show the SVG source in full screen mode.
 + *Format SVG*: by formatting the SVG source, the source will be beatyfied.  This means the empty lines will be removed, each line will get a single SVG element, indents will be corrected ...
-+ *Drawing editor*: show the SVG source in the [DrawSvg](#DrawSvg-drawing-editor) drawing editor as a popup dialog window.
 
 ### Animations
 
