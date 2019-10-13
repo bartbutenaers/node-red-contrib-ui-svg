@@ -1338,7 +1338,10 @@
             
             $("#node-input-restoreUrl").on("click", function (e) {
                 $("#node-input-editorUrl").val("http://drawsvg.org/drawsvg.html");
-            }); 
+            });
+            setTimeout(function() {
+                $("#node-input-name").css({"width":"70%"});    
+            }, 50);//workaround for odd over sizing of name field            
         },
         oneditsave: function() {
             var node = this;
