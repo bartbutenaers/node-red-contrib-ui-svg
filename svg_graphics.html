@@ -42,13 +42,14 @@
         padding: 20px 10px 10px 20px;
         width: 300px; 
     }
-    .svgButtonIcon{
-        padding: 10px 0px 0px 0px;
-        width: 100%;
+    .svgButtonIcon {
+        padding: 4px 0px 0px 0px;
+        width: 40px;
         text-align: center;
+        height: 40px;
     }
-    .svgButtonText{
-        padding: 10px 10px 10px 10px;
+    .svgButtonText {
+        /* padding: 4px 4px 4px 4px; */
         text-align: center;
     }
 
@@ -66,6 +67,7 @@
         padding:10px 13px;
         text-decoration:none;
         text-shadow:0px 1px 0px #263666;
+        text-align: -webkit-center;
     }
     .svgButton:hover {
         background:linear-gradient(to bottom, #415989 5%, #2e466e 100%);
@@ -1418,7 +1420,7 @@
     </div>
     <div id="node-svg-tabs-content" style="min-height: 150px">
         <!-- Content of all tabsheets -->
-        <div id="node-svg-tab-editor" class="node-svg-tab-content" style="position: relative;">           
+        <div id="node-svg-tab-editor" class="node-svg-tab-content" style="position: relative; text-align: center; margin-top: 30px;">           
             <button id="node-display-svg-popup" 
                 style="position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%)"
                 class="svgButton node-display-svg-popup" 
