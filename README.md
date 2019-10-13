@@ -453,7 +453,13 @@ This directory of your local system (where your Node-RED instance is running) ca
 ## Various stuff
 
 ### Fontawesome icons
-Fontawesome icons are used widely in Node-RED, and are in fact little SVG drawings on their own.  They are a very easy way e.g. to represent devices on a floorplan.  Such an icon can easily be added to your SVG drawing, by following these steps:
+Fontawesome icons are used widely in Node-RED, and are in fact little SVG drawings on their own.  They are a very easy way e.g. to represent devices on a floorplan.  Such an icon can easily be added via DrawSvg, as demonstrated in this animation:
+
+![icons via drawsvg](https://user-images.githubusercontent.com/14224149/66722326-17edf600-ee0c-11e9-94b9-225edcc12250.gif)
+
+By specifying an identifier for the icon (like in the above animation), the icon can be updated afterwards via input messages (like any other SVG element).
+
+When you want to enter your SVG source ***manually*** (without using DrawSvg), there is another mechanism provided:
 
 1. Search the [Fontawesome](https://fontawesome.com/v4.7.0/icons/) website for an icon that fits your needs.  For example 'fa-video-camera'.
 
