@@ -47,7 +47,10 @@ But what if you are not familiar with the SVG syntax.  Don't worry, we have inte
 The node's config screen consists of a series of tabsheets:
 
 ### Editor
-Press the oval button *Open DrawSvg editor* to show the SVG source in the [DrawSvg](#DrawSvg-drawing-editor) drawing editor.  The DrawSvg editor will be be opened in a popup dialog window.
+Click the button *Open SVG editor* to show the SVG in the [DrawSvg](#DrawSvg-drawing-editor) drawing editor.  The DrawSvg editor will be be opened in a popup dialog window.
+![launch_editor](https://user-images.githubusercontent.com/44235289/66716981-f40ac000-edcb-11e9-96b5-69e11220b71d.gif)
+
+
 
 ### SVG source
 
