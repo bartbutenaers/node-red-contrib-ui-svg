@@ -1056,22 +1056,30 @@
                     },
                     beforeClose: function(event, ui) { 
                         console.log("SVG editor dialog close button clicked");
-                        if(!isDirty()){
-                            return true;                    
-                        }
                         if(window.svgEditorDialog.closeConfirmed){
                             return true;
-                        } else {
-                            var options = {
+                        }
+                        var fail = function(error, message) { 
+                            console.error(error,message); 
+                            messageBox.show(message,"Error getting SVG!","fa-exclamation-triangle", {buttons:{"OK":function(){messageBox.close();}}});
+                        }
+                        var success = function(v) {
+                            var svgStr = v.stringSVG;
+                            var dirty = v.modified;
+                            if(dirty===false){
+                                window.svgEditorDialog.closeConfirmed = true;
+                                messageBox.close();
+                                closeJsChannel();
+                                window.svgEditorDialog.dialog("close"); 
+                            } else {
+                                var options = {
                                 buttons : {
                                     "Yes":function(){
-                                        saveSVG(function(){
-                                            //onSuccess
-                                            window.svgEditorDialog.closeConfirmed = true;
-                                            messageBox.close();
-                                            closeJsChannel();
-                                            window.svgEditorDialog.dialog("close");
-                                        })
+                                        sendSVGtoSource(svgStr);
+                                        window.svgEditorDialog.closeConfirmed = true;
+                                        messageBox.close();
+                                        closeJsChannel();
+                                        window.svgEditorDialog.dialog("close");
                                     },
                                     "No": function(){
                                         window.svgEditorDialog.closeConfirmed = true;
@@ -1085,8 +1093,10 @@
                                     }
                                 }
                             }
-                            messageBox.show("Do you need to save?", "Confirm", "fa-question", options )
+                            messageBox.show("Save changes?", "Confirm", "fa-question", options )
+                            }
                         }
+                        getSVGData(success, fail);
                         return false;
                      }
                 });
@@ -1132,43 +1142,28 @@
                     }
                 }
                 var success = function(v) {
-                    var svgStr = v;
-                    
-                    // Convert the SVG string (that we received from DrawSvg) into a temporary DOM tree, which allows us to 
-                    // search easily through the SVG.  See https://discourse.nodered.org/t/temporary-dom-elements-somewhere-cached/15520
-                    var svgElement = new DOMParser().parseFromString(svgStr, "image/svg+xml");
-
-                    // When the element contains a data-xlink-href, this means it is referring to a local image.  The xlink:href attribute will
-                    // contain the base64 encoded string of that local image, and the data-xlink-href contains the url (file://...) to that
-                    // local image.  We will replace the base64 string by the local image url.
-                    svgElement.querySelectorAll("[data-xlink-href]").forEach(function (element) {
-                        var xlinkHref = element.getAttribute("data-xlink-href");
-                        element.removeAttribute("data-xlink-href");
-                        element.setAttribute("xlink:href", xlinkHref);
-                    })       
-
-                    // Convert the manipulated DOM tree back into an SVG string
-                    svgStr = new XMLSerializer().serializeToString(svgElement);                        
-                    
-                    if(node.autoFormatAfterEdit){
-                        svgStr = beautifySVG(svgStr);
-                    }
-                    window.node_ace_editor.setValue(svgStr);
+                    var svgStr = v.stringSVG;
+                    var dirty = v.modified;
+                    sendSVGtoSource(svgStr);
                     if(onSuccess){
                         onSuccess(v);
                     } else {
                         messageBox.show("Changes have been sent to the SVG source","Save","fa-thumbs-o-up", {buttons:{"OK":function(){messageBox.close();}}} );
                     }                            
                 }
-                
+                getSVGData(success, fail);
+            }
+
+            function getSVGData(onSuccess, onFail) {
                 console.log("Calling getSVG method...")
                 window.drawSvgCommChannel.call({
-                    method: "getSVG",
+                    method: "getSVGObject",
                     params: {},
-                    error: fail,
-                    success: success
-                });
+                    error: onFail,
+                    success: onSuccess
+                });                
             }
+
             function closeJsChannel(){
                 try {
                     if(window.drawSvgCommChannel){
@@ -1223,11 +1218,33 @@
                 // bind save callback
                 window.drawSvgCommChannel.bind("onSaveSVG", function (trans,params) {
                     console.log("onSaveSVG nameSVG="+params['nameSVG']+" stringSVG="+params['stringSVG']);
-                    window.node_ace_editor.setValue(params['stringSVG']);
-                    //node.editorwindow.node_ace_editor.clearSelection(); // This will remove the highlight over the text
+                    sendSVGtoSource(params['stringSVG'])
                     return "save done";
                 });
             }//end initJsChannel()
+
+            function sendSVGtoSource(svgStr) {
+                // Convert the SVG string (that we received from DrawSvg) into a temporary DOM tree, which allows us to 
+                // search easily through the SVG.  See https://discourse.nodered.org/t/temporary-dom-elements-somewhere-cached/15520
+                var svgElement = new DOMParser().parseFromString(svgStr, "image/svg+xml");
+
+                // When the element contains a data-xlink-href, this means it is referring to a local image.  The xlink:href attribute will
+                // contain the base64 encoded string of that local image, and the data-xlink-href contains the url (file://...) to that
+                // local image.  We will replace the base64 string by the local image url.
+                svgElement.querySelectorAll("[data-xlink-href]").forEach(function (element) {
+                    var xlinkHref = element.getAttribute("data-xlink-href");
+                    element.removeAttribute("data-xlink-href");
+                    element.setAttribute("xlink:href", xlinkHref);
+                })       
+
+                // Convert the manipulated DOM tree back into an SVG string
+                svgStr = new XMLSerializer().serializeToString(svgElement);                        
+                
+                if(node.autoFormatAfterEdit){
+                    svgStr = beautifySVG(svgStr);
+                }
+                window.node_ace_editor.setValue(svgStr);
+            }
 
             function sendSVGtoEditor(){
                 // Since the external cloud editor cannot access local image files, we will load the base64 string (of that image) into the SVG string.
