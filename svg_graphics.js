@@ -199,7 +199,7 @@ module.exports = function(RED) {
                             
                             // When the text contains a FontAwesome icon name, we need to replace it by its unicode value.
                             // This is required when the text content is dynamically changed by a control message.
-                            if (textContent.startsWith("fa-")) {
+                            if (typeof textContent == "string" && textContent.startsWith("fa-")) {
                                 // Try to get the unicode from our faMapping cache
                                 var uniCode = $scope.faMapping[textContent.trim()];
                                 
@@ -696,7 +696,7 @@ module.exports = function(RED) {
                                             elements.forEach(function(element){
                                                 if (op == "update_attribute") {
                                                     if(!element.hasAttribute(payload.attributeName)) {
-                                                        console.log("SVG element with id = " + payload.elementId + " has no attribute with name = " + attributeName);
+                                                        console.log("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"'");
                                                         return
                                                     }
                                                 }
