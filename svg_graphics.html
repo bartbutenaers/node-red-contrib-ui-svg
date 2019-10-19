@@ -1061,7 +1061,24 @@
                         }
                         var fail = function(error, message) { 
                             console.error(error,message); 
-                            messageBox.show(message,"Error getting SVG!","fa-exclamation-triangle", {buttons:{"OK":function(){messageBox.close();}}});
+                            messageBox.show(
+                                "An error occured getting SVG from editor.<br>Error message...<br>" + message + "<br>Press OK to return to the editor or close to return to Node-red (changes may be lost).",
+                                "Error getting SVG!",
+                                "fa-exclamation-triangle", 
+                                {
+                                    buttons:{
+                                        "OK":function(){
+                                            messageBox.close();
+                                        },
+                                        "Close":function(){
+                                            window.svgEditorDialog.closeConfirmed = true;
+                                            messageBox.close();
+                                            closeJsChannel();
+                                            window.svgEditorDialog.dialog("close"); 
+                                        }
+                                    }
+                                }
+                            );
                         }
                         var success = function(v) {
                             var svgStr = v.stringSVG;
