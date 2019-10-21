@@ -247,6 +247,10 @@ module.exports = function(RED) {
                             $scope.faMapping = {};
                             $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
                             $scope.svg = $scope.rootDiv.querySelector("svg");
+                            $scope.isObject = function(obj) {
+                                return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
+                            }
+                            
                             //$scope.svg.style.cursor = "crosshair";
                             
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
@@ -675,6 +679,7 @@ module.exports = function(RED) {
                                     var op = payload.command || payload.topic
                                     switch (op) {
                                         case "update_text":
+                                        case "update_innerHTML"://added to make adding inner HTML more readable/logical
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
@@ -684,6 +689,29 @@ module.exports = function(RED) {
                                             elements.forEach(function(element){
                                                 setTextContent(element, payload.textContent);
                                             });                                                
+                                            break;
+                                        case "update_style":
+                                        case "set_style"://same as update_style
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $(selector);
+                                            if (!elements || !elements.length) {
+                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+                                            var styleType = "";
+                                            if (payload.style && $scope.isObject(payload.style)) {
+                                                styleType = "style";
+                                            } else if(payload.attributeName) {
+                                                styleType = "attribute";
+                                            } else {
+                                                console.log("Cannot update style! style object not valid or attributeName/attributeValue strings not provided (selector '" + selector + "')");
+                                                return;
+                                            }
+                                            if(styleType === "style"){
+                                                elements.css(payload.style);
+                                            } else if(styleType === "attribute"){
+                                                elements.css(payload.attributeName, payload.attributeValue);
+                                            }
                                             break;
                                         case "update_attribute":
                                         case "set_attribute": //fall through 
@@ -700,7 +728,11 @@ module.exports = function(RED) {
                                                         return
                                                     }
                                                 }
-                                                element.setAttribute(payload.attributeName, payload.attributeValue);
+                                                if(!payload.attributeValue){
+                                                    element.removeAttribute(payload.attributeName);
+                                                } else {
+                                                    element.setAttribute(payload.attributeName, payload.attributeValue);
+                                                }
                                             });
                                             elements.forEach(function(element){
                                                 element.setAttribute(payload.attributeName, payload.attributeValue);
