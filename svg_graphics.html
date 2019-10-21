@@ -871,7 +871,11 @@
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
             var clickableShapesList = $("#node-input-clickable-container").css('min-height','150px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML("<div style='width:17%; margin-left:5px; display: inline-grid'><b>Selector</b></div><div style='width:20%; margin-left:5px; display: inline-grid'><b>Action</b></div><div style='width:38%; margin-left:4px; display: inline-grid'><b>Payload</b></div><div style='width:17%; margin-left:-3px; display: inline-grid'><b>Topic</b></div>")),
+                header: $("<div>").append($.parseHTML(
+                   "<div style='width:17%; margin-left:5px; display: inline-grid'><b>Selector</b></div>" +
+                   "<div style='width:20%; margin-left:5px; display: inline-grid'><b>Action</b></div>" +
+                   "<div style='width:38%; margin-left:4px; display: inline-grid' id='node-input-columnPayload'><b>msg.payload</b></div>" +
+                   "<div style='width:17%; margin-left:-3px; display: inline-grid'><b>msg.topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
@@ -950,6 +954,15 @@
                     clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
                 });
             }
+            
+            // Make sure the column name keeps being identical to the selected output message field
+            $('#node-input-outputField').on('change', function() {
+                var outputField = $('#node-input-outputField').val();
+                $('#node-input-columnPayload').css("font-weight","Bold");
+                $('#node-input-columnPayload').text("msg." + outputField);
+            });
+            $('#node-input-outputField').change();
+            
             var bindingList = $("#node-input-binding-container").css('min-height','150px').css('min-width','450px').editableList({
                 header: $("<div>").css({"margin-left":"6px"}).append($.parseHTML(
                     "<div style='width:28%; margin-left:5px; display: inline-grid'><b>Binding Source</b></div>" +
