@@ -233,8 +233,18 @@ A number of properties need to be entered:
 
 ## Control via messages
 Most of the SVG information can be manipulated by sending input messages to this node.  
+Supported commands include...
 
-Some general guidelines:
+* update_text
+* update_innerHTML
+* update_attribute
+* set_attribute
+* update_style
+* set_style
+
+*Refer to the nodes built-in help for full details and examples.*
+
+### Some general guidelines:
 + To define on which SVG element(s) the control message needs to be applied, the element needs to be identified via a [css selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
    ```
    "payload": {
@@ -255,14 +265,12 @@ Some general guidelines:
    ```
    "payload": [
         {
-           "elementId": "camera_living",
-           "selector": "#cam_living",
+           "elementId": "cam_kitchen", /*use elementId or selector*/
            "attributeName": "fill",
            "attributeValue": "orange"
         },
         {
-           "elementId": "camera_kitchen",
-           "selector": "#cam_kitchen",
+           "selector": "#cam_living", /*use elementId or selector*/
            "attributeName": "fill",
            "attributeValue": "red"
         },        
@@ -302,6 +310,12 @@ Some general guidelines:
          "attributeValue": "red"
      },
      {
+         "command": "update_style",
+         "selector": "#faultMessage",
+         "attributeName": "rotate",
+         "attributeValue": "transform(180deg)"
+     },
+     {
          "command": "trigger_animation",
          "selector": "#faultMessage_blink",
          "action": "start"
@@ -309,7 +323,7 @@ Some general guidelines:
    ```
 + In all examples below, the selector also can be part of the topic
 
-### Updating/setting element attribute values
+### Example updating/setting element attribute values
 The SVG elements have attributes, whose values can be specified in the SVG editor.  Any of these attribute values can be changed via an input message. 
 
 For example the camera is visualized by a text, which has multiple attributes (x, y, fill ...):
@@ -354,6 +368,35 @@ The input message should have following format:
 + ```msg.payload.attributeValue``` should contain the new value of the specified attribute.
 
 
+### Updating/setting element style values
+The SVG elements' style values can be added/changed/removed via an input message. They can be addressed in 2 ways...
+
+Named style attribute change...
+```
+{ 
+   "command": "update_style", 
+   "selector": ".camera", 
+   "attributeName": "fill", 
+   "attributeValue": "purple" 
+}
+```
+Style object attribute(s) change...
+```
+{ 
+   "command": "update_style", 
+   "selector": ".camera", 
+   "style": { "fill": "blue", "transform": "rotate(5deg)" } 
+}
+```
+Additionally both `update_style` / `set_style` also support removing any styles e.g. 
+```
+{
+   "command":"update_style", 
+   "selector":".camera", 
+   "style":{"fill":"","transform":""}
+}
+```
+
 ### Set text content
 There are 2 methods for updating text...
 
@@ -366,10 +409,10 @@ The Command method is similar to the `update_atttribute` and `set_atttribute` co
 
 Example Topic Method...
 
+```
  // send a msg with topic formatted as...   
  //  update_text|selector  
  // and the payload with the text to display
- ```
  var msg = {
     "topic": "update_text|#myRect > .faultMessage",
     "payload": "hello"

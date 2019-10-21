@@ -1638,7 +1638,7 @@
     <h3>Inputs - Commands <i>(Advanced Usage)</i></h3>
     <dl class="message-properties">
         <dt><i>payload</i> <span class="property-type">string|object|Array</span></dt>
-        <dd>It is possible to dynamically trigger animations, update and set element attributes, update text elements via a <code>msg</code></dd>
+        <dd>It is possible to dynamically trigger animations, set/update/remove element attributes, set/update/remove style attributes, update text and innerHTML via a <code>msg</code></dd>
         <dd>
             <p><b>Triggering an animation command - payload object</b><br>Example...<br>
                 <pre style="white-space: pre">[
@@ -1683,8 +1683,52 @@
                         <li>attributeValue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
                     </ul>
                 </p>
+                <p><i>Notes...</i><br>
+                    An attribute can be removed by sending an empty string for the attributeValue.<br> 
+                    <code>set_attribute</code> can be used in place of <code>update_attribute</code>.<br> 
+                    <code>update_attribute</code> will only change an existing attribute.<br> 
+                    <code>set_attribute</code> will add the attribute if it does not already exist.
+                </p>
             </p>
 
+
+
+            <p><b>Setting a style value command - payload object</b><br>Example...<br>
+                <pre style="white-space: pre">[
+ {
+    "command": "update_style",
+    "selector": "#myRect > .statusBar",
+    "attributeName": "fill",
+    "attributeValue": "red"
+ },
+ {
+    "command": "update_style",
+    "selector": "#myRect > .faultMessage",
+    "style": {"display": "inline", "fill": "blue", "transform": "rotate(5deg)"} 
+ }
+]</pre>
+                                
+                <p><i>Details...</i><br>
+                    Named style attribute change...
+                    <ul>
+                        <li>command: (string|required) The operation to perform</li>
+                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>attributeName: (string|required) This attribute be updated</li>
+                        <li>attributeValue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
+                    </ul>
+                    Style object attribute(s) change...
+                    <ul>
+                        <li>command: (string|required) The operation to perform</li>
+                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>style: (object|required) The style(s) to be updated</li>
+                    </ul>
+                </p>                
+                <p><i>Notes...</i><br>
+                    A style value can be reset by sending an empty string for the attributeValue or style object property value. <br>
+                    <code>set_style</code> can be used in place of <code>update_style</code> *(These are operationally the same command)*.
+                </p>
+            </p>
+            
 
             <p><b>Setting text content command</b><br>Example...<br>
                 <P>Topic Method</P>
@@ -1703,13 +1747,13 @@
  {
     "command": "update_text",
     "selector": "#myRect > .faultMessage",
-    "textContent": "Hello from a command message"
+    "text": "Hello from a command message"
  }
 ]</pre>
                 
                 <p><i>Topic Method Details...</i><br>
                     <ul>
-                        <li>topic: (string|required) The format must adhere to "update_topic|selector"</li>
+                        <li>topic: (string|required) The format must adhere to "update_text|selector"</li>
                         <li>payload: (string|required) The text to set</li>
                     </ul>
                 </p>
@@ -1717,12 +1761,31 @@
                 <p><i>Command Method Details...</i><br>
                     <ul>
                         <li>selector: (string|required) A query selector to select the animations</li>
-                        <li>textContent: (string|required) This attribute be updated</li>
+                        <li>text: (string|required) The text to set</li>
                     </ul>
+                    NOTE: <code>text</code> can contain SVG markup.
                 </p>
             </p>
 
-                            
+
+            <p><b>Setting inner HTML command</b><br>Example...<br>
+                <P>Command - payload object</P>
+                <pre style="white-space: pre">[
+ {
+    "command": "update_innerHTML",
+    "selector": "#myRect > .faultMessage",
+    "html": "<b>Hello</b> <i>from a command message</i>"
+ }
+]</pre>
+
+                <p><i>Details...</i><br>
+                    <ul>
+                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>html: (string|required) The html/SVG markup to be set</li>
+                    </ul>
+                </p>
+            </p>            
+
         </dd>
 
         <h3>Inputs - databind <i>(Advanced Usage)</i></h3>

@@ -686,8 +686,9 @@ module.exports = function(RED) {
                                                 console.log("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
+                                            var innerContent = payload.text || payload.html || payload.textContent;
                                             elements.forEach(function(element){
-                                                setTextContent(element, payload.textContent);
+                                                setTextContent(element, innerContent);
                                             });                                                
                                             break;
                                         case "update_style":
