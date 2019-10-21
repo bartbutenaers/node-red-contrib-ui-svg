@@ -650,11 +650,11 @@ module.exports = function(RED) {
                                             }
                                             
                                         } else {
-                                            //additional method of updating a text update_text|selector
-                                            //e.g. @update_text|.graphtitle  or  update_text|#myText
+                                            //additional method of updating a text update_text|selector or  update_innerHTML|selector
+                                            //e.g. @update_text|.graphtitle  or  update_text|#myText or  update_innerHTML|#myText
                                             var topicParts = msg.topic.split("|");
                                             if (topicParts.length > 1) {
-                                                if (topicParts[0] == "update_text") {
+                                                if (topicParts[0] == "update_text" || topicParts[0] == "update_innerHTML") {
                                                     selector = topicParts[1];
                                                     elements = $scope.rootDiv.querySelectorAll(selector);
                                                     if (!elements || !elements.length) {
