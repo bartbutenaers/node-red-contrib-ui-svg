@@ -1145,9 +1145,6 @@
                     })
                 }                 
             }
-            function isDirty(){
-                return true;//TODO: once DrawSVG can provide "isDirty", replace this method
-            }
             function saveSVG(onSuccess, onError){
                 console.log("saveSVG called")
                 var fail = function(error, message) { 
@@ -1521,10 +1518,6 @@
                 <input type="checkbox" id="node-input-showCoordinates" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-showCoordinates" style="width:70%;"> Show mouse coordinates (as tooltip)</label>
             </div>
-            <!--<div class="form-row">-->
-            <!--    <input type="checkbox" id="node-input-showMouseLines" style="display: inline-block; width: auto; vertical-align: top;">-->
-            <!--    <label for="node-input-showMouseLines" style="width:50%;"> Show vertical/horizontal mouse tracking lines</label>-->
-            <!--</div>-->
             <div class="form-row">
                 <input type="checkbox" id="node-input-autoFormatAfterEdit" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-autoFormatAfterEdit" style="width:70%;"> Auto format SVG Source after saving edits in SVG Editor</label>

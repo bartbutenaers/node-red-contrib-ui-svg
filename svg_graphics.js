@@ -354,79 +354,8 @@ module.exports = function(RED) {
                                     // By appending the animation as a child of the SVG element, that parent SVG element will be animated.
                                     // So there is no need to specify explicit the xlink:href attribute on the animation element.
                                     element.appendChild(animationElement);
-                                    
-                                    /* TODO...
-                                    // if this element is a <text> then calling update_text will wipe out the inner <animation>
-                                    // element so we add the xlink:href and place the new animation element higher up the tree
-
-                                    // PROBLEM: Adding the xlink:href <animate> AFTER dom is created doesnt work. It doesnt trigger!
-
-                                    // possible solution: Use a DOMParser (server side - e.g. jsdom package) in the HTML() function 
-                                    // and add the xlink:href <animate> elements into the SVG before its added to scope/dom
-
-                                    //below is a proof that the <animate> element gets nicely added to the DOM but it doesnt trigger.
-                                    // The <animate> element IS CORRECT - e.g. use DEVTOOLS, cut the <animate> element. then re-add 
-                                    // the element - suddenly it works!  
-                                    if(element.tagName == "text"){
-                                        animationElement.setAttribute("xlink:href", "#" + smilAnimation.targetId);
-                                        element.insertAdjacentElement("beforebegin", animationElement);
-                                    } else {
-                                        element.appendChild(animationElement);
-                                    }
-
-                                    //two other possibilities...
-                                    // when textContent is updated, perhaps check to see if it has an element inside
-                                    // and perhaps using regex or dom? replace only the text - however - text might be intertwined!
-                                    // OR
-                                    // Rebuild the text elements animation after textContent is updated ?
-                                    //
-                                    //  what to do?!?!?
-                                    */
                                 }
-                            });
-
-                            // // Add data-bind attributes to selected elements
-                            // config.bindings.forEach(function (binding) {
-                            //     if (!binding.selector) {
-                            //         return;
-                            //     }
-                            //     var elements = $scope.rootDiv.querySelectorAll(binding.selector);
-                            //     var bindingType = binding.bindingType;
-                            //     var attributeName = binding.attribute;
-                            //     var bindSource = binding.bindSource;
-                            //     elements.forEach(function (element) {
-                            //         console.log("initController.init > config.bindings.forEach > element ok, adding binding ")
-
-                            //         $(element).on(action, function (evt) {
-                            //             // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                            //             console.log(`$(element).on('${action}', function(evt) {...`)
-                            //             var msg = {
-                            //                 event: action,
-                            //                 selector: binding.selector,
-                            //                 payload: binding.payload,
-                            //                 payloadType: binding.payloadType,
-                            //                 topic: binding.topic
-                            //             }
-                            //             if (evt.pageX !== undefined && evt.pageY !== undefined) {
-                            //                 var pt = $scope.svg.createSVGPoint();
-                            //                 pt.x = evt.pageX;
-                            //                 pt.y = evt.pageY;
-                            //                 pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
-                            //                 //relative position on svg
-                            //                 msg.coordinates = {
-                            //                     x: pt.x,
-                            //                     y: pt.y
-                            //                 }
-                            //                 //absolute position on page - usefull for sending to popup menu
-                            //                 msg.position = {
-                            //                     x: evt.pageX,
-                            //                     y: evt.pageY
-                            //                 }
-                            //             }
-                            //             $scope.send(msg);
-                            //         });
-                            //     })
-                            // });                            
+                            });                  
 
                             // Remark: it is not possible to show the coordinates when there is no svg element
                             if (config.showCoordinates && $scope.svg) {
@@ -484,69 +413,6 @@ module.exports = function(RED) {
                                     $scope.tooltip.style.display = "none";
                                 }, false);
                             }
-                            
-                            /* TODO When drawing the lines, they (and also the tooltip) becomes invisible quite frequently.
-                               Seems that the 'mouseout' event is triggered, even when we are INSIDE the svg ...
-                               Perhaps it has to do with this:  https://stackoverflow.com/questions/24636602/mouseout-mouseleave-gets-fired-when-mouse-moves-inside-the-svg-path-element
-                            
-                            if (config.showMouseLines) {                                
-                                if (!$scope.horizontalMouseLine) {
-                                    // Create a horizontal mouse line only once
-                                    $scope.horizontalMouseLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                                    $scope.horizontalMouseLine.setAttribute('id', 'horizontalMouseLine');
-                                    $scope.horizontalMouseLine.setAttribute('x1', -Number.MAX_SAFE_INTEGER);
-                                    $scope.horizontalMouseLine.setAttribute('y1', '0');
-                                    $scope.horizontalMouseLine.setAttribute('x2', Number.MAX_SAFE_INTEGER);
-                                    $scope.horizontalMouseLine.setAttribute('y2', '0');
-                                    $scope.horizontalMouseLine.setAttribute("stroke", "black");
-                                    $scope.horizontalMouseLine.setAttribute("stroke-width", "2");
-                                    $scope.horizontalMouseLine.setAttribute("display", "none");
-                                    
-                                    // Insert this line as last shape in the SVG, to make sure it is drawn on top of all other shapes
-                                    $scope.svg.appendChild($scope.horizontalMouseLine); 
-                                }
-                                
-                                if (!$scope.verticalMouseLine) {
-                                    // Create a horizontal mouse line only once
-                                    $scope.verticalMouseLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                                    $scope.verticalMouseLine.setAttribute('id', 'verticalMouseLine');
-                                    $scope.verticalMouseLine.setAttribute('x1', '0');
-                                    $scope.verticalMouseLine.setAttribute('y1', -Number.MAX_SAFE_INTEGER);
-                                    $scope.verticalMouseLine.setAttribute('x2', '0');
-                                    $scope.verticalMouseLine.setAttribute('y2', Number.MAX_SAFE_INTEGER);
-                                    $scope.verticalMouseLine.setAttribute("stroke", "black");
-                                    $scope.verticalMouseLine.setAttribute("stroke-width", "2");
-                                    $scope.verticalMouseLine.setAttribute("display", "none");
-                                    
-                                    // Insert this line as last shape in the SVG, to make sure it is drawn on top of all other shapes
-                                    $scope.svg.appendChild($scope.verticalMouseLine); 
-                                }
-                                
-                                $scope.svg.addEventListener("mousemove", function(evt) {
-                                    // Make both lines becomes visible, when inside the SVG drawing
-                                    $scope.horizontalMouseLine.style.display = "block";
-                                    $scope.verticalMouseLine.style.display = "block";
-                                    
-                                    // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                                    var pt = $scope.svg.createSVGPoint();
-                                    pt.x = evt.pageX;
-                                    pt.y = evt.pageY;
-                                    pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
-                                    
-                                    // Draw the horizontal mouse line through the current mouse location
-                                    $scope.horizontalMouseLine.setAttribute('y1', pt.y);
-                                    $scope.horizontalMouseLine.setAttribute('y2', pt.y);
-                                    
-                                    // Draw the vertical mouse line through the current mouse location
-                                    $scope.verticalMouseLine.setAttribute('x1', pt.x);
-                                    $scope.verticalMouseLine.setAttribute('x2', pt.x);
-                                }, false);
-                                $scope.svg.addEventListener("mouseout", function(evt) {
-                                    // Both mouse lines should be invisible, when leaving the SVG drawing
-                                    $scope.horizontalMouseLine.style.display = "none";
-                                    $scope.verticalMouseLine.style.display = "none";
-                                }, false);
-                            }*/
                         }
 
                         $scope.$watch('msg', function(msg) {
