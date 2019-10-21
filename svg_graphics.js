@@ -699,19 +699,13 @@ module.exports = function(RED) {
                                                 console.log("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
-                                            var styleType = "";
                                             if (payload.style && $scope.isObject(payload.style)) {
-                                                styleType = "style";
+                                                elements.css(payload.style);
                                             } else if(payload.attributeName) {
-                                                styleType = "attribute";
+                                                elements.css(payload.attributeName, payload.attributeValue);
                                             } else {
                                                 console.log("Cannot update style! style object not valid or attributeName/attributeValue strings not provided (selector '" + selector + "')");
                                                 return;
-                                            }
-                                            if(styleType === "style"){
-                                                elements.css(payload.style);
-                                            } else if(styleType === "attribute"){
-                                                elements.css(payload.attributeName, payload.attributeValue);
                                             }
                                             break;
                                         case "update_attribute":
