@@ -90,7 +90,7 @@ Adding animations to your SVG graphics can be done in different ways:
 + But to keep the drawing and the animations separated, the animations can also be added via the node's config screen.  Click the *'add'* button to create a new animation record, where following properties need to be entered:
    + ***Animation id***: The id of this SVG animate element (in this example *"myanimation"*).
    + ***Target element id***: The id of the SVG element that you want to animate (in this example *"mycircle"*).
-   + ***Class***: TODO Should this be removed (and replaced by selector) ????????????
+   + ***Class***: By setting a value in class, you can use a selector to start or stop multiple animations. 
    + ***Attribute name***: The name of the element's attribute that you want to animate (in this example *"r"*).
    + ***From***: The attribute value at the start of the animation (in this example *"10"*).
    + ***To***: The attribute value at the end of the animation (in this example *"40"*).
