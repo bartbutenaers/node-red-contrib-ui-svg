@@ -28,6 +28,8 @@ Each of those SVG elements has attributes (fill color, ...), can respond to even
 
 ## Node usage
 
+See our [wiki](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki) for step-by-step examples.
+
 This node can be used to visualize all kind of graphical stuff in the Node-RED dashboard.  This can range from simple graphics (e.g. a round button, ...) to very complex graphics (floorplans, industrial processes, piping, wiring, ...).  But even those complex graphics will consist out of a number of simple graphical shapes.  For example a ***floorplan*** is in fact a simple image of your floor, and a series of other SVG elements (e.g. Fontawesome icons) drawn on top of that (background) image.
 
 Simply deploy your SVG string in the config screen, and the Node-RED dashboard will render your vector graphics:
