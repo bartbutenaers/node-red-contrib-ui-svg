@@ -10,6 +10,7 @@ Run the following npm command in your Node-RED user directory (typically ~/.node
 ```
 npm install node-red-contrib-ui-svg
 ```
+It is advised to use ***Dashboard version 2.16.3 or above***, to avoid that every context menu uses *(empty) space* in the dashboard!  See this [discussion](https://discourse.nodered.org/t/custom-dashboard-node-without-md-card-possible/14919/20?u=bartbutenaers) for more detailed information.
 
 ## Introduction to SVG
 Scalable Vector Graphics (SVG) is an XML-based vector image format for two-dimensional graphics with support for interactivity and animation. We won't explain here how it works, because the internet is full of information about it. 
