@@ -336,6 +336,11 @@
             editorUrl: {value: "http://drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
             directory: {value: ""},
+            panEnabled: {value: false},
+            zoomEnabled: {value: false},
+            controlIconsEnabled: {value: false},
+            dblClickZoomEnabled: {value: false},
+            mouseWheelZoomEnabled: {value: false},
             name: {value: ''}
         },
         inputs:1,
@@ -1544,6 +1549,27 @@
                 <label for="node-input-directory"><i class="fa fa-folder"></i> Directory</label>
                 <input type="text" id="node-input-directory" placeholder="Select directory">
             </div>
+            </br>
+            <div class="form-row">
+                <input type="checkbox" id="node-input-panEnabled" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-panEnabled" style="width:70%;"> Enable panning</label>
+            </div>    
+            <div class="form-row">
+                <input type="checkbox" id="node-input-zoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-zoomEnabled" style="width:70%;"> Enable zooming</label>
+            </div>   
+            <div class="form-row">
+                <input type="checkbox" id="node-input-controlIconsEnabled" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-controlIconsEnabled" style="width:70%;"> Enable control icons</label>
+            </div>   
+            <div class="form-row">
+                <input type="checkbox" id="node-input-dblClickZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-dblClickZoomEnabled" style="width:70%;"> Enable double-click zooming</label>
+            </div>   
+            <div class="form-row">
+                <input type="checkbox" id="node-input-mouseWheelZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-mouseWheelZoomEnabled" style="width:70%;"> Enable mouse-wheel zooming</label>
+            </div>              
         </div>
     </div>
 </script>
