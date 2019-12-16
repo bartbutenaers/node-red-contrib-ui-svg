@@ -103,7 +103,7 @@ module.exports = function(RED) {
                 return $1 + $2 + $3;
             }
         })
-        
+      
         var html = String.raw`
 <style>
     .nr-dashboard-theme .nr-dashboard-template div.ui-svg svg{
@@ -114,6 +114,7 @@ module.exports = function(RED) {
         fill: inherit;
     }
 </style>
+<script src= "ui_svg_graphics/library/svg-pan-zoom.min.js"></script>
 <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
@@ -252,6 +253,19 @@ module.exports = function(RED) {
                             }
                             
                             //$scope.svg.style.cursor = "crosshair";
+                            
+                            if (config.panEnabled || config.zoomEnabled || config.controlIconsEnabled || config.dblClickZoomEnabled || config.mouseWheelZoomEnabled) {
+                                var panZoomOptions = {
+                                    panEnabled: config.panEnabled,
+                                    zoomEnabled: config.zoomEnabled,
+                                    controlIconsEnabled: config.controlIconsEnabled,
+                                    dblClickZoomEnabled: config.dblClickZoomEnabled,
+                                    dblClickZoomEnabled: config.mouseWheelZoomEnabled
+                                }
+                                
+                                // Apply the svg-pan-zoom library to the svg element (see https://github.com/ariutta/svg-pan-zoom)
+                                $scope.panZoomTiger = svgPanZoom($scope.svg, panZoomOptions);
+                            }
                             
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
                             config.clickableShapes.forEach(function(clickableShape) {
@@ -757,17 +771,31 @@ module.exports = function(RED) {
     RED.httpNode.get(uiPath + "/:cmd/:value", function(req, res){
         var result = {};
         
-        if (req.params.cmd === "famapping") {
-            result.cssClass = req.params.value.trim();
-            
-            result.uniCode = faMapping.get(result.cssClass);
-            
-            if (result.uniCode) {
-                result.uniCode = "&#x" + result.uniCode + ";";
-            }
-        }
+        switch (req.params.cmd) {
+            case "famapping":
+                result.cssClass = req.params.value.trim();
+                
+                result.uniCode = faMapping.get(result.cssClass);
+                
+                if (result.uniCode) {
+                    result.uniCode = "&#x" + result.uniCode + ";";
+                }
+                
+                // Return a json object (containing the unicode value) to the dashboard
+                res.json(result);
+                break;
+            case "library":
+                var options = {
+                    root: __dirname + '/lib/',
+                    dotfiles: 'deny'
+                };
        
-        // Return a json object (containing the unicode value) to the dashboard
-        res.json(result);
+                // Send the requested file to the client (in this case it will be svg-pan-zoom.min.js)
+                res.sendFile(req.params.value, options)
+                break;
+            default:
+                console.log("Unknown command " + req.params.cmd);
+                res.status(404).json('Unknown command');
+        }
     });
 }
