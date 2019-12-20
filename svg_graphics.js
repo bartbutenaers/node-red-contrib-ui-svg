@@ -761,11 +761,17 @@ module.exports = function(RED) {
     //     ui: { path: "mypath" },
     var uiPath = ((RED.settings.ui || {}).path) || 'ui';
 	
+console.log("===> uiPath (1) = " + uiPath);
+	
     // Create the complete server-side path
     uiPath = '/' + uiPath + '/ui_svg_graphics';
+	
+console.log("===> uiPath (2) = " + uiPath);
     
     // Replace a sequence of multiple slashes (e.g. // or ///) by a single one
     uiPath = uiPath.replace(/\/+/g, '/');
+	
+console.log("===> uiPath (3) = " + uiPath);
 	
     // Make the unicode conversion available (to the DASHBOARD).
     RED.httpNode.get(uiPath + "/:cmd/:value", function(req, res){
@@ -789,7 +795,10 @@ module.exports = function(RED) {
                     root: __dirname + '/lib/',
                     dotfiles: 'deny'
                 };
-       
+			
+console.log("===> directory = " + __dirname + "/lib/");
+console.log("===> filename = " + req.params.value);
+			
                 // Send the requested file to the client (in this case it will be svg-pan-zoom.min.js)
                 res.sendFile(req.params.value, options)
                 break;
