@@ -141,6 +141,8 @@ module.exports = function(RED) {
 
     var ui = undefined;
     
+    console.log("===> Line 144 reached");
+    
     function SvgGraphicsNode(config) {
          try {
             var node = this;
@@ -744,8 +746,11 @@ module.exports = function(RED) {
             }
         }
         catch (e) {
+            console.log("===> Line 749 reached");
             console.log(e);
         }
+        
+        console.log("===> Line 753 reached");
 		
         node.on("close", function() {
             if (done) {
@@ -753,8 +758,12 @@ module.exports = function(RED) {
             }
         });
     }
+    
+    console.log("===> Line 762 reached");
 
     RED.nodes.registerType("ui_svg_graphics", SvgGraphicsNode);
+    
+    console.log("===> Line 766 reached");
    
     // Make some static resources from this node public available (to be used in the FLOW EDITOR).
     RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){ 
@@ -823,6 +832,8 @@ module.exports = function(RED) {
             return;
         }
     });
+    
+    console.log("===> Line 836 reached");
     
     // By default the UI path in the settings.js file will be in comment:
     //     //ui: { path: "ui" },
