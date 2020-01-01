@@ -115,6 +115,7 @@ module.exports = function(RED) {
     }
 </style>
 <script src= "ui_svg_graphics/library/svg-pan-zoom.min.js"></script>
+<script src= "ui_svg_graphics/library/hammer.js"></script>
 <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
@@ -260,9 +261,77 @@ module.exports = function(RED) {
                                     zoomEnabled: config.zoomEnabled,
                                     controlIconsEnabled: config.controlIconsEnabled,
                                     dblClickZoomEnabled: config.dblClickZoomEnabled,
-                                    dblClickZoomEnabled: config.mouseWheelZoomEnabled
+                                    mouseWheelZoomEnabled: config.mouseWheelZoomEnabled,
+                                    fit: 1,
+                                    center: 1
                                 }
                                 
+                                var isTouchDevice = 'ontouchstart' in document.documentElement;
+                                
+                                if (isTouchDevice) {
+                                    console.log("Touch device functionality has been detected");
+                                    
+                                    // Based on the panzoom library's mobile demo (https://github.com/ariutta/svg-pan-zoom/blob/master/demo/mobile.html)
+                                    panZoomOptions.customEventsHandler = {
+                                        haltEventListeners: ['touchstart', 'touchend', 'touchmove', 'touchleave', 'touchcancel'],
+                                        init: function(options) {
+                                            var instance = options.instance;
+                                            var initialScale = 1;
+                                            var pannedX = 0;
+                                            var pannedY = 0;
+                                            
+                                            // Init Hammer...
+                                            
+                                            // Listen only for pointer and touch events
+                                            this.hammer = Hammer(options.svgElement, {
+                                                inputClass: Hammer.SUPPORT_POINTER_EVENTS ? Hammer.PointerEventInput : Hammer.TouchInput
+                                            })
+                                            
+                                            // Enable pinch
+                                            this.hammer.get('pinch').set({enable: true});
+                                            
+                                            // Handle double tap
+                                            this.hammer.on('doubletap', function(ev){
+                                                instance.zoomIn();
+                                            })
+                                            
+                                            // Handle pan
+                                            this.hammer.on('panstart panmove', function(ev){
+                                                // On pan start reset panned variables
+                                                if (ev.type === 'panstart') {
+                                                    pannedX = 0;
+                                                    pannedY = 0;
+                                                }
+                                                
+                                                // Pan only the difference
+                                                instance.panBy({x: ev.deltaX - pannedX, y: ev.deltaY - pannedY});
+                                                pannedX = ev.deltaX;
+                                                pannedY = ev.deltaY;
+                                            })
+                                            
+                                            // Handle pinch
+                                            this.hammer.on('pinchstart pinchmove', function(ev){
+                                                // On pinch start remember initial zoom
+                                                if (ev.type === 'pinchstart') {
+                                                    initialScale = instance.getZoom();
+                                                    instance.zoomAtPoint(initialScale * ev.scale, {x: ev.center.x, y: ev.center.y});
+                                                }
+                                          
+                                                instance.zoomAtPoint(initialScale * ev.scale, {x: ev.center.x, y: ev.center.y});
+                                            })
+                                            
+                                            // Prevent moving the page on some devices when panning over SVG
+                                            options.svgElement.addEventListener('touchmove', function(e){ e.preventDefault(); });
+                                        },
+                                        destroy: function(){
+                                            this.hammer.destroy();
+                                        }
+                                    }
+                                }
+                                else {
+                                    console.log("No touch device functionality has been detected");
+                                }
+                                                           
                                 // Apply the svg-pan-zoom library to the svg element (see https://github.com/ariutta/svg-pan-zoom)
                                 $scope.panZoomTiger = svgPanZoom($scope.svg, panZoomOptions);
                             }
