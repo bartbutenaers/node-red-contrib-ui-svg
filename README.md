@@ -493,7 +493,7 @@ A series of options are available to allow panning and zooming, which is useful 
 
 When a touch device has been detected, panning and zoom through touch events is also supported.  Thanks to [tkirchm](https://github.com/tkirchm) for supporting us with these features!  The following hand gestures are currently supported:
 
-![gestures](https://user-images.githubusercontent.com/14224149/71647109-14bf2380-2cf2-11ea-8570-076ebc4f8974.png)
+![gestures](https://user-images.githubusercontent.com/14224149/71647175-f6a5f300-2cf2-11ea-9389-ae1ab84ec18c.png)
 
 ## Various stuff
 
