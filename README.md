@@ -488,6 +488,11 @@ This is the URL where the [DrawSvg](#DrawSvg-drawing-editor) editor instance is 
 ### Directory
 This directory of your local system (where your Node-RED instance is running) can be used to make your local images available, to both your dashboard and your flow editor.
 
+### Pan and zoom
+A series of options are available to allow panning and zooming, which is useful for large drawings (like buildings, process flows, ...).
+
+When a touch device has been detected, panning and zoom through touch events is also supported.  Thanks to [tkirchm](https://github.com/tkirchm) for supporting us with these features!
+
 ## Various stuff
 
 ### Fontawesome icons
