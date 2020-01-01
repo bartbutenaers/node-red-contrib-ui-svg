@@ -491,7 +491,9 @@ This directory of your local system (where your Node-RED instance is running) ca
 ### Pan and zoom
 A series of options are available to allow panning and zooming, which is useful for large drawings (like buildings, process flows, ...).
 
-When a touch device has been detected, panning and zoom through touch events is also supported.  Thanks to [tkirchm](https://github.com/tkirchm) for supporting us with these features!
+When a touch device has been detected, panning and zoom through touch events is also supported.  Thanks to [tkirchm](https://github.com/tkirchm) for supporting us with these features!  The following hand gestures are currently supported:
+
+![gestures](https://user-images.githubusercontent.com/14224149/71647109-14bf2380-2cf2-11ea-8570-076ebc4f8974.png)
 
 ## Various stuff
 
