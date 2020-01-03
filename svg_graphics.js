@@ -114,8 +114,8 @@ module.exports = function(RED) {
         fill: inherit;
     }
 </style>
-<script src= "ui_svg_graphics/library/svg-pan-zoom.min.js"></script>
-<script src= "ui_svg_graphics/library/hammer.js"></script>
+<script src= "ui_svg_graphics/lib/svg-pan-zoom.min.js"></script>
+<script src= "ui_svg_graphics/lib/hammer.js"></script>
 <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
@@ -140,8 +140,6 @@ module.exports = function(RED) {
     };
 
     var ui = undefined;
-    
-    console.log("===> Line 144 reached");
     
     function SvgGraphicsNode(config) {
          try {
@@ -245,7 +243,6 @@ module.exports = function(RED) {
                         }
                         
                         $scope.flag = true;
-                        console.log("initController")
                         $scope.init = function (config) {
                             $scope.config = config;
                             $scope.faMapping = {};
@@ -346,7 +343,6 @@ module.exports = function(RED) {
                                 var elements = $scope.rootDiv.querySelectorAll(clickableShape.targetId);
                                 var action = clickableShape.action || "click" ;
                                 elements.forEach(function(element){
-                                    console.log("initController.init > config.clickableShapes.forEach > element ok, adding action ")
                                     // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
                                     // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
                                     // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
@@ -361,7 +357,6 @@ module.exports = function(RED) {
                                     
                                     $(element).on(action, function(evt) {
                                         // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                                        console.log( `$(element).on('${action}', function(evt) {...` )
                                         var msg = {
                                             event: action,
                                             elementId: clickableShape.targetId,
@@ -746,11 +741,8 @@ module.exports = function(RED) {
             }
         }
         catch (e) {
-            console.log("===> Line 749 reached");
             console.log(e);
         }
-        
-        console.log("===> Line 753 reached");
 		
         node.on("close", function() {
             if (done) {
@@ -758,12 +750,8 @@ module.exports = function(RED) {
             }
         });
     }
-    
-    console.log("===> Line 762 reached");
 
     RED.nodes.registerType("ui_svg_graphics", SvgGraphicsNode);
-    
-    console.log("===> Line 766 reached");
    
     // Make some static resources from this node public available (to be used in the FLOW EDITOR).
     RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){ 
@@ -833,25 +821,17 @@ module.exports = function(RED) {
         }
     });
     
-    console.log("===> Line 836 reached");
-    
     // By default the UI path in the settings.js file will be in comment:
     //     //ui: { path: "ui" },
     // But as soon as the user has specified a custom UI path there, we will need to use that path:
     //     ui: { path: "mypath" },
     var uiPath = ((RED.settings.ui || {}).path) || 'ui';
 	
-console.log("===> uiPath (1) = " + uiPath);
-	
     // Create the complete server-side path
     uiPath = '/' + uiPath + '/ui_svg_graphics';
-	
-console.log("===> uiPath (2) = " + uiPath);
-    
+
     // Replace a sequence of multiple slashes (e.g. // or ///) by a single one
     uiPath = uiPath.replace(/\/+/g, '/');
-	
-console.log("===> uiPath (3) = " + uiPath);
 	
     // Make the unicode conversion available (to the DASHBOARD).
     RED.httpNode.get(uiPath + "/:cmd/:value", function(req, res){
@@ -870,14 +850,11 @@ console.log("===> uiPath (3) = " + uiPath);
                 // Return a json object (containing the unicode value) to the dashboard
                 res.json(result);
                 break;
-            case "library":
+            case "lib":
                 var options = {
                     root: __dirname + '/lib/',
                     dotfiles: 'deny'
                 };
-			
-console.log("===> directory = " + __dirname + "/lib/");
-console.log("===> filename = " + req.params.value);
 			
                 // Send the requested file to the client (in this case it will be svg-pan-zoom.min.js)
                 res.sendFile(req.params.value, options)
