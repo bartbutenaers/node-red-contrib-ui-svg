@@ -286,6 +286,7 @@
         var targetId      = row.find(".node-input-animation-targetId").val();
         var classValue    = row.find(".node-input-animation-classValue").val();
         var attributeName = row.find(".node-input-animation-attributeName").val();
+        var transformType = row.find(".node-input-animation-transformType").val();
         var fromValue     = row.find(".node-input-animation-fromValue").val();
         var toValue       = row.find(".node-input-animation-toValue").val();
         var trigger       = row.find(".node-input-animation-trigger").val();
@@ -297,7 +298,7 @@
         var delayUnit     = row.find(".node-input-animation-delayUnit").val();
         var otherId       = row.find(".node-input-animation-otherId").val();
         var custom        = row.find(".node-input-animation-custom").val();        
-        return {id:id, targetId:targetId, classValue:classValue, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, end:end, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
+        return {id:id, targetId:targetId, classValue:classValue, attributeName:attributeName, transformType:transformType, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, end:end, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
     }
     function getBindingFromFormRow(ele){
         var row = $(ele);
@@ -559,6 +560,7 @@
                             id            : "", 
                             targetId      : "",
                             attributeName : "",
+                            transformType : "rotate",
                             classValue    : "",
                             fromValue     : "",
                             duration      : 1,
@@ -601,7 +603,7 @@
                     // The COMMON ROWS contain the common animation properties:
                     // - Animation id
                     // - Target id
-                    // - Attribute name
+                    // - Attribute name + (optional) transformType
                     // - From value
                     // - To value
                     // - Duration + DurationUnit
@@ -646,16 +648,35 @@
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
-                    attributeNameField.val(animation.attributeName);
                     attributeNameField.autocomplete({
                         source: function(req, add){     
                             add($.ui.autocomplete.filter(node.attrList || [], req.term));
                         }
                     });
                     attributeNameField.on("change", function(){
-                        updateTitle(titleField, this)
+                        updateTitle(titleField, this);
+                        
+                        // Only show the transform type dropdown when the attribute name is 'transform'
+                        if (this.value === "transform") {
+                            transformTypeField.show();
+                        }
+                        else {
+                            transformTypeField.hide();
+                        }
                     });
-                    $('<span/>').text('%').appendTo(attributeNameField); 
+                    attributeNameField.val(animation.attributeName);
+                    $('<span/>').text('%').appendTo(attributeNameField);
+                    // Add a transform 'type' (after the attribute name)
+                    var transformTypeField = $('<select/>', {class: "node-input-animation-transformType", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
+                    transformTypeField.append($('<option>', {value: "rotate"    , text: 'Rotate'}));
+                    transformTypeField.append($('<option>', {value: "scale"     , text: 'Scale'}));
+                    transformTypeField.append($('<option>', {value: "translate" , text: 'Translate'}));
+                    transformTypeField.append($('<option>', {value: "skewX"     , text: 'Skew X'}));
+                    transformTypeField.append($('<option>', {value: "skewY"     , text: 'Skew Y'}));
+                    transformTypeField.val(animation.transformType || "rotate");
+                    $('<span/>').text('%').appendTo(transformTypeField);                   
+                    // Trigger the attribute name change event handler, to make sure the transform type is shown or hided at startup
+                    attributeNameField.change();
                     
                     // Add a 'from / to value' property row
                     var fromToValueRow = addPropertyRow(container, "From / To");
@@ -885,10 +906,10 @@
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
-                    // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on 
-                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    targetIdField.val(clickableShape.targetId);
-                    targetIdField.autocomplete({
+                    // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on.
+                    var selectorField = $('<input/>',{class:"node-input-clickable-selector",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    selectorField.val(clickableShape.selector);
+                    selectorField.autocomplete({
                         source: function(req, add){  
                             var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
                             add($.ui.autocomplete.filter(list , req.term));
@@ -939,7 +960,7 @@
                     topicField.val(clickableShape.topic);
                     
                     // When there is not yet a topic or payload, the target Id should be cloned (when complete) to the topic and payload (as a default value).
-                    targetIdField.on("change", function(){
+                    selectorField.on("change", function(){
                         
                         if (payloadType === "str" && !payloadField.typedInput("value")) {
                             payloadField.typedInput('value',$(this).val());
@@ -956,7 +977,10 @@
             // Show all the clickable shapes (stored in this node) into the editableList
             if (this.clickableShapes) {
                 this.clickableShapes.forEach(function (clickableShape, index) {
-                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
+                    // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                    //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                    //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
+                    clickableShapesList.editableList('addItem', {selector:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
                 });
             }
             
@@ -1422,13 +1446,16 @@
             var clickableShapesList = $("#node-input-clickable-container").editableList('items');
             clickableShapesList.each(function(i) {
                 var clickableShape = $(this);
-                var targetId = clickableShape.find(".node-input-clickable-targetId").val();
+                var selector = clickableShape.find(".node-input-clickable-selector").val();
                 var action = clickableShape.find(".node-input-clickable-action").val();
                 var payload  = clickableShape.find(".node-input-clickable-payload").val();
                 var payloadType  = clickableShape.find(".node-input-clickable-payloadType").val();
                 var topic    = clickableShape.find(".node-input-clickable-topic").val();
                 
-                node.clickableShapes.push({targetId:targetId, action:action, payload:payload, payloadType:payloadType, topic:topic});
+                // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
+                node.clickableShapes.push({targetId:selector, action:action, payload:payload, payloadType:payloadType, topic:topic});
             });
             // Copy all the bindings from the editableList to this node
             node.bindings = [];
@@ -1636,11 +1663,15 @@
                     </ul>
                 </li>
             </ul>
+            <p><i><strong>CAUTION</strong>: it is not possible to use CSS selectors here, but only a single SVG shape (via the Target Element Id field)!</i> It is only possible (in the input messages) to select multiple animations at once via CSS selectors (as explained below).</p>
         </div>        
         <h4>Events</h4>
         <div style="padding-left: 15px">
             A customisable list of events. Each event targets an element where you can specify what action (e.g. click, mouseover, focus, etc) and a payload/topic to send upon the specified action.
             Additionally, <code>Output to</code> permits you to specify what part of the <code>msg</code> to send the payload to.
+        </div>
+        <div style="padding-left: 15px">
+            <i>Note that (in the "Selector" field) it is possible to specify the id of a single SVG shape, or multiple SVG shapes via a <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a>!</i>  In the latter case, all the SVG shapes - that match the CSS selector - will respond to the specified event.
         </div>
         <h4>Input Bind</h4>
         <div style="padding-left: 15px">
@@ -1648,7 +1679,7 @@
             e.g. it is possible to send a <code>msg</code> object with nested objects/properties to animate an elements' text and attributes as specified in this list.
             <ul>
                 <li><b>Source</b> - What properties in the <code>msg</code> you wish to use as the value in this binding</li>
-                <li><b>Selector</b> - What elements this binding should work on (e.g. <code>.indicators</code> would affect all elements in the SVG with class="indicators")</li>
+                <li><b>Selector</b> - What elements this binding should work on (e.g. <code>.indicators</code> would affect all elements in the SVG with class="indicators").  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
                 <li><b>Destination</b> - 
                     <ul>
                         <li>If <code>Text</code> is selected, the inner text content of the element will be updated with the value of the binding source.</li>
@@ -1684,7 +1715,7 @@
                 <p><i>Details...</i><br>
                     <ul>
                         <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>selector: (string|required) A query selector to select the animations.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple animations.</li>
                         <li>action: (string|required) This must be <code>start</code>or <code>stop</code></li>
                     </ul>
                 </p>
@@ -1710,7 +1741,7 @@
                 <p><i>Details...</i><br>
                     <ul>
                         <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>selector: (string|required) A query selector to select the SVG shapes.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
                         <li>attributeName: (string|required) This attribute be updated</li>
                         <li>attributeValue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
                     </ul>
@@ -1744,14 +1775,14 @@
                     Named style attribute change...
                     <ul>
                         <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>selector: (string|required) A query selector to select the SVG shapes.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
                         <li>attributeName: (string|required) This attribute be updated</li>
                         <li>attributeValue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
                     </ul>
                     Style object attribute(s) change...
                     <ul>
                         <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>selector: (string|required) A query selector to select the SVG shapes.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
                         <li>style: (object|required) The style(s) to be updated</li>
                     </ul>
                 </p>                
@@ -1792,7 +1823,7 @@
                 
                 <p><i>Command Method Details...</i><br>
                     <ul>
-                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>selector: (string|required) A query selector to select the animations.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple animations.</li>
                         <li>text: (string|required) The text to set</li>
                     </ul>
                     NOTE: <code>text</code> can contain SVG markup.
@@ -1812,7 +1843,7 @@
 
                 <p><i>Details...</i><br>
                     <ul>
-                        <li>selector: (string|required) A query selector to select the animations</li>
+                        <li>selector: (string|required) A query selector to select the animations.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
                         <li>html: (string|required) The html/SVG markup to be set</li>
                     </ul>
                 </p>
