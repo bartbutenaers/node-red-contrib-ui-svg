@@ -111,6 +111,10 @@ Adding animations to your SVG graphics can be done in different ways:
       ```
    
    Creating animations via this tabsheet has the advantage that the SVG source and the animations are being kept separate.  More specifically when the SVG is being created in a third-party SVG editor (which most of the time don't support animations), your manullay inserted animation elements would be overwritten each time you need to update your SVG...
+   
+Remark: it is also possible to animate transformations.  Indeed when the attribute name is *"transform"* an extra "animation type" dropdown will appear:
+
+![demo_config_screen](https://user-images.githubusercontent.com/14224149/73695310-23766d00-46da-11ea-9960-065dc1bf7004.gif)
 
 ### Events
 
