@@ -337,10 +337,13 @@ module.exports = function(RED) {
                             
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
                             config.clickableShapes.forEach(function(clickableShape) {
+                                // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                                //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                                //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
                                 if (!clickableShape.targetId) {
                                     return;
                                 }
-                                var elements = $scope.rootDiv.querySelectorAll(clickableShape.targetId);
+                                var elements = $scope.rootDiv.querySelectorAll(clickableShape.targetId); // The "targetId" now contains the CSS selector!
                                 var action = clickableShape.action || "click" ;
                                 elements.forEach(function(element){
                                     // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
@@ -356,11 +359,12 @@ module.exports = function(RED) {
                                     }
                                     
                                     $(element).on(action, function(evt) {
+                                        debugger;
                                         // Get the mouse coordinates (with origin at left top of the SVG drawing)
                                         var msg = {
                                             event: action,
-                                            elementId: clickableShape.targetId,
-                                            selector: clickableShape.selector,
+                                            elementId: element.id, // The real html element id
+                                            selector: clickableShape.targetId, // The "targetId" now contains the CSS selector! 
                                             payload: clickableShape.payload, 
                                             payloadType: clickableShape.payloadType, 
                                             topic: clickableShape.topic
@@ -394,7 +398,17 @@ module.exports = function(RED) {
                                 
                                 var element = $scope.rootDiv.querySelector("#" + smilAnimation.targetId);
                                 if (element) {
-                                    var animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animate');
+                                    var animationElement;
+
+                                    // For attribute "transform" an animateTransform element should be created
+                                    if (smilAnimation.attributeName === "transform") {
+                                        animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animateTransform');
+                                        animationElement.setAttribute("type"     , smilAnimation.transformType); 
+                                    }
+                                    else {
+                                        animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animate');
+                                    }
+                                    
                                     animationElement.setAttribute("id"           , smilAnimation.id); 
                                     animationElement.setAttribute("attributeType", "XML");  // TODO what is this used for ???
                                     animationElement.setAttribute("class", smilAnimation.classValue); 
