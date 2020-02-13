@@ -165,6 +165,9 @@ module.exports = function(RED) {
                     emitOnlyNewValues: false,
                     forwardInputMessages: false,
                     storeFrontEndInputAsState: false,
+                    // Avoid contextmenu to appear automatically after deploy.
+                    // (see https://github.com/node-red/node-red-dashboard/pull/558)
+                    persistantFrontEndValue: false,
                     convertBack: function (value) {
                         return value;
                     },
