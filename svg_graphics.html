@@ -336,6 +336,8 @@
             editorUrl: {value: "http://drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
             directory: {value: ""},
+            autocompletesDisabled: {value: false},
+            typedInputsDisabled: {value: false},
             name: {value: ''}
         },
         inputs:1,
@@ -616,37 +618,42 @@
                     // Add a 'target id' property row
                     var targetIdRow = addPropertyRow(container, "Target Element Id");
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
-                    targetIdField.val(animation.targetId);
-                    targetIdField.autocomplete({
-                        source: function(req, add){    
-                            add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
-                        }
-                    });
+                    if (node._config.autocompletesDisabled !== "true") {
+                        targetIdField.autocomplete({
+                            source: function(req, add){
+                                add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
+                            }
+                        });
+                    }
                     targetIdField.on("change", function(){
                         updateTitle(titleField, this)
                     });
                     $('<span/>').text('%').appendTo(targetIdField);
-                    
+
                     // Add a 'class' property row
                     var classValueRow = addPropertyRow(container, "Class");
                     var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:180px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
                     classValueField.val(animation.classValue);
-                    classValueField.autocomplete({
-                        source: function(req, add){        
-                            add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
-                        }
-                    });
+                    if (node._config.autocompletesDisabled !== "true") {
+                        classValueField.autocomplete({
+                            source: function(req, add){
+                                add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
+                            }
+                        });
+                    }
                     $('<span/>').text('%').appendTo(classValueField);
-                    
+
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
                     attributeNameField.val(animation.attributeName);
-                    attributeNameField.autocomplete({
-                        source: function(req, add){     
-                            add($.ui.autocomplete.filter(node.attrList || [], req.term));
-                        }
-                    });
+                    if (node._config.autocompletesDisabled !== "true") {
+                        attributeNameField.autocomplete({
+                            source: function (req, add) {
+                                add($.ui.autocomplete.filter(node.attrList || [], req.term));
+                            }
+                        });
+                    }
                     attributeNameField.on("change", function(){
                         updateTitle(titleField, this)
                     });
@@ -883,13 +890,16 @@
                     // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on 
                     var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     targetIdField.val(clickableShape.targetId);
-                    targetIdField.autocomplete({
-                        source: function(req, add){  
-                            var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
-                            add($.ui.autocomplete.filter(list , req.term));
-                        }
-                    });
-                    
+                    if (node._config.autocompletesDisabled !== "true") {
+                        targetIdField.autocomplete({
+                            source: function(req, add){
+                                var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                add($.ui.autocomplete.filter(list , req.term));
+                            }
+                        });
+                    }
+
+
                     // Column 2 : Add an input field (type option) to the new row, that represents the action type 
                     var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var actionOptions = {
@@ -922,13 +932,19 @@
                     var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
                     var payloadType = supportedPayloadTypes.includes(clickableShape.payloadType) ? clickableShape.payloadType : defaultPayloadType;
-                    payloadField.typedInput({
-                        default: defaultPayloadType,
-                        typeField: payloadTypeField,
-                        types: supportedPayloadTypes
-                    });
-                    payloadField.typedInput("type", payloadType);              
-                    payloadField.typedInput("value", clickableShape.payload);  
+
+                    if (node._config.typedInputsDisabled === "true") {
+                        payloadTypeField.val(payloadType);
+                        payloadField.val(clickableShape.payload);
+                    } else {
+                        payloadField.typedInput({
+                            default: defaultPayloadType,
+                            typeField: payloadTypeField,
+                            types: supportedPayloadTypes
+                        });
+                        payloadField.typedInput("type", payloadType);
+                        payloadField.typedInput("value", clickableShape.payload);
+                    }
                     // Column 4 : Add an input field (type string) to the new row, that represents the msg.topic content
                     var topicField = $('<input/>',{class:"node-input-clickable-topic",type:"text",placeholder:"Topic"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     topicField.val(clickableShape.topic);
@@ -985,12 +1001,14 @@
                     var targetSelectorFieldId = "node-input-binding-selector" + i
                     targetSelectorField.attr("id",targetSelectorFieldId);
                     targetSelectorField.val(binding.selector);
-                    targetSelectorField.autocomplete({
-                        source: function(req, add){  
-                            var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
-                            add($.ui.autocomplete.filter(list, req.term));
-                        }
-                    });
+                    if (node._config.autocompletesDisabled !== "true") {
+                        targetSelectorField.autocomplete({
+                            source: function(req, add){
+                                var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                add($.ui.autocomplete.filter(list, req.term));
+                            }
+                        });
+                    }
            
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
                     var bindingTypeField = $('<select/>',{class:"node-input-binding-type",type:"text",placeholder:"click"})
@@ -1004,13 +1022,14 @@
                         .css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var attributeFieldId = "node-input-binding-attribute" + i
                     attributeField.attr("id",attributeFieldId);
-                    attributeField.val(binding.attribute);  
-                    attributeField.autocomplete({
-                        source: function(req, add){        
-                            add($.ui.autocomplete.filter(node.attrList, req.term));
-
-                        }
-                    });
+                    attributeField.val(binding.attribute);
+                    if (node._config.autocompletesDisabled !== "true") {
+                        attributeField.autocomplete({
+                            source: function(req, add){
+                                add($.ui.autocomplete.filter(node.attrList, req.term));
+                            }
+                        });
+                    }
                     bindingTypeField.change(function () {
                         if (bindingTypeField.val() === "attr") {
                             attributeField.show();
@@ -1538,11 +1557,22 @@
             <div class="form-row" id="div-editorUrl">
                 <label for="node-input-editorUrl"><i class="fa fa-globe"></i> Editor URL</label>
                 <input type="text" id="node-input-editorUrl">
-                <button id="node-input-restoreUrl" class="editor-button" title="Restore default URL""><i class="fa fa-undo"></i></button>
+                <button id="node-input-restoreUrl" class="editor-button" title="Restore default URL"><i class="fa fa-undo"></i></button>
             </div>
             <div class="form-row">
                 <label for="node-input-directory"><i class="fa fa-folder"></i> Directory</label>
                 <input type="text" id="node-input-directory" placeholder="Select directory">
+            </div>
+            <div class="form-tips">
+                <b>Experimental:</b> this can speed up "edit/save node" operations.<br>Needs page reload after change and deploy.<br><br>
+                <div class="form-row">
+                    <input type="checkbox" id="node-input-autocompletesDisabled" style="display: inline-block; width: auto; vertical-align: top;">
+                    <label for="node-input-autocompletesDisabled" style="width:70%;"> Disable autocompletes</label>
+                </div>
+                <div class="form-row">
+                    <input type="checkbox" id="node-input-typedInputsDisabled" style="display: inline-block; width: auto; vertical-align: top;">
+                    <label for="node-input-typedInputsDisabled" style="width:70%;"> Disable typed inputs</label>
+                </div>
             </div>
         </div>
     </div>
