@@ -624,10 +624,12 @@
                     var targetIdRow = addPropertyRow(container, "Target Element Id");
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
                     targetIdField.val(animation.targetId);
-                    targetIdField.autocomplete({
-                        source: function(req, add){    
-                            add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
-                        }
+                    targetIdField.click(function() { // Lazy load autocomplete for performance reasons
+                        targetIdField.autocomplete({
+                            source: function(req, add){
+                                add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
+                            }
+                        });
                     });
                     targetIdField.on("change", function(){
                         updateTitle(titleField, this)
@@ -638,20 +640,24 @@
                     var classValueRow = addPropertyRow(container, "Class");
                     var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:180px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
                     classValueField.val(animation.classValue);
-                    classValueField.autocomplete({
-                        source: function(req, add){        
-                            add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
-                        }
+                    classValueField.click(function() { // Lazy load autocomplete for performance reasons
+                        classValueField.autocomplete({
+                            source: function(req, add){                     
+                                add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
+                            }
+                        });
                     });
                     $('<span/>').text('%').appendTo(classValueField);
                     
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
-                    attributeNameField.autocomplete({
-                        source: function(req, add){     
-                            add($.ui.autocomplete.filter(node.attrList || [], req.term));
-                        }
+                    attributeNameField.click(function() { // Lazy load autocomplete for performance reasons
+                        attributeNameField.autocomplete({
+                            source: function(req, add){
+                                add($.ui.autocomplete.filter(node.attrList || [], req.term));
+                            }
+                        });
                     });
                     attributeNameField.on("change", function(){
                         updateTitle(titleField, this);
@@ -786,39 +792,39 @@
                             }
                         }
                     })
-                    .on("click", function (event) {
-                        //show dropdown on click (disabled/annoying/problematic)
-                        //$( this ).autocomplete( "search", "" )
-                    })
-                    .autocomplete({
-                        minLength: 0,
-                        source: function (request, response) {
-                            //TODO: Consider how to handle editing in middle of string
-                            //currently, the last tag (after last ;) is used.
-                            let list;
-                            let lastTag = extractLastTag(request.term);
-                            if(lastTag.includes(".")){
-                                list = [...node.nonAnimationIdsAndActions,...node.animationIdsAndActions]; 
-                            } else {
-                                list = [...node.nonAnimationIds, ...node.animationIds]; 
+                    customField.click(function() { // Lazy load autocomplete for performance reasons
+                        customField.autocomplete({
+                            minLength: 0,
+                            source: function (request, response) {
+                             debugger;
+                                //TODO: Consider how to handle editing in middle of string
+                                //currently, the last tag (after last ;) is used.
+                                let list;
+                                let lastTag = extractLastTag(request.term);
+                                if(lastTag.includes(".")){
+                                    list = [...node.nonAnimationIdsAndActions,...node.animationIdsAndActions]; 
+                                } else {
+                                    list = [...node.nonAnimationIds, ...node.animationIds]; 
+                                }
+                                // delegate back to autocomplete, but extract the last term
+                                response($.ui.autocomplete.filter(list, lastTag));
+                            },
+                            focus: function () {
+                                // prevent value inserted on focus
+                                return false;
+                            },
+                            select: function (event, ui) {
+                             debugger;
+                                var terms = tagSplit(this.value);
+                                terms.pop();// remove the current input 
+                                terms.push(ui.item.value); // add the selected item
+                                // add placeholder to get the comma-and-space at the end
+                                terms.push("");
+                                this.value = terms.join("; ");
+                                return false;
                             }
-                            // delegate back to autocomplete, but extract the last term
-                            response($.ui.autocomplete.filter(list, lastTag));
-                        },
-                        focus: function () {
-                            // prevent value inserted on focus
-                            return false;
-                        },
-                        select: function (event, ui) {
-                            var terms = tagSplit(this.value);
-                            terms.pop();// remove the current input 
-                            terms.push(ui.item.value); // add the selected item
-                            // add placeholder to get the comma-and-space at the end
-                            terms.push("");
-                            this.value = terms.join("; ");
-                            return false;
-                        }
-                    });                 
+                        });
+                    });                        
                     $('<span/>').text('%').appendTo(customField);
                     customRow.append($("<i />", {class:"fa fa-question", title:"Press down to select, right to accept, dot to access properties, semicolon/enter/tab to complete the entry."}));
                     
@@ -909,11 +915,13 @@
                     // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on.
                     var selectorField = $('<input/>',{class:"node-input-clickable-selector",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     selectorField.val(clickableShape.selector);
-                    selectorField.autocomplete({
-                        source: function(req, add){  
-                            var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
-                            add($.ui.autocomplete.filter(list , req.term));
-                        }
+                    selectorField.click(function() { // Lazy load autocomplete for performance reasons
+                        selectorField.autocomplete({
+                            source: function(req, add){
+                                var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                add($.ui.autocomplete.filter(list , req.term));
+                            }
+                        });
                     });
                     
                     // Column 2 : Add an input field (type option) to the new row, that represents the action type 
@@ -1014,11 +1022,13 @@
                     var targetSelectorFieldId = "node-input-binding-selector" + i
                     targetSelectorField.attr("id",targetSelectorFieldId);
                     targetSelectorField.val(binding.selector);
-                    targetSelectorField.autocomplete({
-                        source: function(req, add){  
-                            var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
-                            add($.ui.autocomplete.filter(list, req.term));
-                        }
+                    targetSelectorField.click(function() { // Lazy load autocomplete for performance reasons
+                        targetSelectorField.autocomplete({
+                            source: function(req, add){  
+                                var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                add($.ui.autocomplete.filter(list, req.term));
+                            }
+                        });
                     });
            
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
@@ -1033,12 +1043,13 @@
                         .css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var attributeFieldId = "node-input-binding-attribute" + i
                     attributeField.attr("id",attributeFieldId);
-                    attributeField.val(binding.attribute);  
-                    attributeField.autocomplete({
-                        source: function(req, add){        
-                            add($.ui.autocomplete.filter(node.attrList, req.term));
-
-                        }
+                    attributeField.val(binding.attribute); 
+                    attributeField.click(function() { // Lazy load autocomplete for performance reasons
+                        attributeField.autocomplete({
+                            source: function(req, add){                        
+                                add($.ui.autocomplete.filter(node.attrList, req.term));
+                            }
+                        });
                     });
                     bindingTypeField.change(function () {
                         if (bindingTypeField.val() === "attr") {
