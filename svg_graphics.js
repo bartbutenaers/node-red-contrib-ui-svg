@@ -103,6 +103,10 @@ module.exports = function(RED) {
                 return $1 + $2 + $3;
             }
         })
+        
+        // Seems that the SVG string sometimes contains "&quot;" instead of normal quotes.
+        // Those need to be removed, otherwise AngularJs will throw a parse error
+        svgString = svgString.replace(/&quot;/g, '\\"');
       
         var html = String.raw`
 <style>
@@ -245,6 +249,46 @@ module.exports = function(RED) {
                             }                           
                         }
                         
+                        function handleEvent(evt) {
+                            var userData = this.getAttribute("data-event_" + evt.type);
+                                        
+                            if (!userData) {
+                                console.log("No user data available for this " + evt.type + " event");
+                                return;
+                            }
+                            
+                            userData = JSON.parse(userData);
+                            
+                            var msg = {
+                                event      : evt.type,
+                                elementId  : userData.elementId,
+                                selector   : userData.selector,
+                                payload    : userData.payload,
+                                payloadType: userData.payloadType,
+                                topic      : userData.topic
+                            }
+                            
+                            // Get the mouse coordinates (with origin at left top of the SVG drawing)
+                            if(evt.pageX !== undefined && evt.pageY !== undefined){
+                                var pt = $scope.svg.createSVGPoint();
+                                pt.x = evt.pageX;
+                                pt.y = evt.pageY;
+                                pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                //relative position on svg
+                                msg.coordinates = {
+                                    x: pt.x,
+                                    y: pt.y
+                                }
+                                //absolute position on page - usefull for sending to popup menu
+                                msg.position = {
+                                    x: evt.pageX,
+                                    y: evt.pageY
+                                }
+                            }
+                            
+                            $scope.send(msg);
+                        }
+                        
                         $scope.flag = true;
                         $scope.init = function (config) {
                             $scope.config = config;
@@ -254,6 +298,8 @@ module.exports = function(RED) {
                             $scope.isObject = function(obj) {
                                 return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
                             }
+                            $scope.events = ["click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", 
+                                             "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"];
                             
                             //$scope.svg.style.cursor = "crosshair";
                             
@@ -337,7 +383,7 @@ module.exports = function(RED) {
                                 // Apply the svg-pan-zoom library to the svg element (see https://github.com/ariutta/svg-pan-zoom)
                                 $scope.panZoomTiger = svgPanZoom($scope.svg, panZoomOptions);
                             }
-                            
+
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
                             config.clickableShapes.forEach(function(clickableShape) {
                                 // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
@@ -361,35 +407,19 @@ module.exports = function(RED) {
                                         element.style.cursor = "pointer";
                                     }
                                     
-                                    $(element).on(action, function(evt) {
-                                        debugger;
-                                        // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                                        var msg = {
-                                            event: action,
-                                            elementId: element.id, // The real html element id
-                                            selector: clickableShape.targetId, // The "targetId" now contains the CSS selector! 
-                                            payload: clickableShape.payload, 
-                                            payloadType: clickableShape.payloadType, 
-                                            topic: clickableShape.topic
-                                        }
-                                        if(evt.pageX !== undefined && evt.pageY !== undefined){
-                                            var pt = $scope.svg.createSVGPoint();
-                                            pt.x = evt.pageX;
-                                            pt.y = evt.pageY;
-                                            pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
-                                            //relative position on svg
-                                            msg.coordinates = {
-                                                x: pt.x,
-                                                y: pt.y
-                                            }
-                                            //absolute position on page - usefull for sending to popup menu
-                                            msg.position = {
-                                                x: evt.pageX,
-                                                y: evt.pageY
-                                            }
-                                        }
-                                        $scope.send(msg); 
-                                    });
+                                    // Store all the user data in a "data-<event>" element attribute, to have it available in the handleEvent function
+                                    element.setAttribute("data-event_" + action,  JSON.stringify({
+                                        elementId  : element.id,
+                                        selector   : clickableShape.targetId, // The "targetId" now contains the CSS selector! 
+                                        payload    : clickableShape.payload, 
+                                        payloadType: clickableShape.payloadType, 
+                                        topic      : clickableShape.topic
+                                    }));
+                                    
+                                    // Make sure we don't end up with multiple handlers for the same event
+                                    element.removeEventListener(action, handleEvent, false);
+                                    
+                                    element.addEventListener(action, handleEvent, false);
                                 })
                             });                            
                             
@@ -641,6 +671,26 @@ module.exports = function(RED) {
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
                                     switch (op) {
+                                        case "get_text":
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+                                            
+                                            var elementArray = [];
+                                            elements.forEach(function(element){
+                                                elementArray.push({
+                                                    id: element.id,
+                                                    text: element.textContent
+                                                });
+                                            });  
+
+                                            $scope.send({
+                                                payload: elementArray
+                                            });                                             
+                                            break;
                                         case "update_text":
                                         case "update_innerHTML"://added to make adding inner HTML more readable/logical
                                             selector = payload.selector || "#" + payload.elementId;
@@ -730,7 +780,68 @@ module.exports = function(RED) {
                                                     }
                                                 }
 
-                                            });                                                
+                                            });
+                                            break;    
+                                        case "add_event":// add the specified event(s) to the specified element(s)
+                                        case "remove_event":// remove the specified event(s) from the specified element(s)
+
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+
+                                            if (!elements || !elements.length) {
+                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+
+                                            if (!payload.event) {
+                                                console.log("No msg.payload.event has been specified");
+                                                return;
+                                            }
+
+                                            if (!$scope.events.includes(payload.event)) {
+                                                console.log("The msg.payload.event contains an unsupported event name");
+                                                return;
+                                            }
+
+                                            elements.forEach(function(element) {
+                                                // Get all the user data in a "data-<event>" element attribute
+                                                var userData = element.getAttribute("data-event_" + payload.event);
+                                            
+                                                if (op === "add_event") {
+                                                    if (userData) {
+                                                        console("The event " + payload.event + " already has been registered");
+                                                    }
+                                                    else {
+                                                        // Seems the event has been registered yet for this element, so let's do that now ...
+                                                        element.addEventListener(payload.event, handleEvent, false);
+                                                        
+                                                        // Store all the user data in a "data-event_<event>" element attribute, to have it available in the handleEvent function
+                                                        element.setAttribute("data-event_" + payload.event, JSON.stringify({
+                                                            elementId  : element.id,
+                                                            selector   : selector, 
+                                                            payload    : payload.payload, 
+                                                            payloadType: payload.payloadType, 
+                                                            topic      : payload.topic
+                                                        }));
+                                                        
+                                                        element.style.cursor = "pointer";
+                                                    }
+                                                }
+                                                else { // "remove_event"
+                                                    if (!userData) {
+                                                        console("The event " + payload.event + " was not registered yet");
+                                                    }
+                                                    else {
+                                                        element.removeEventListener(payload.event, handleEvent, false);
+                                                        
+                                                        // Remove all the user data in a "data-<event>" element attribute
+                                                        element.removeAttribute("data-event_" + payload.event);
+                                                        
+                                                        element.style.cursor = "";
+                                                    }
+                                                }
+                                            });                                               
+                                            break;
                                     }
                                     
                                 } catch (error) {
