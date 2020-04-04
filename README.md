@@ -183,6 +183,21 @@ Two things will happen when an event occurs on such an SVG element:
 
 ![image](https://user-images.githubusercontent.com/44235289/65388020-54fe2580-dd43-11e9-8194-82304b2e7461.png)
 
+While permanently clickable shapes are being enumerated in the config screen, it is also possible to make shapes (un)clickable via input messages.  Example content of the ```msg.payload``` to make 'circle_1' unclickable and 'circle_2' clickable:
+```
+[{
+  command  : "remove_event",
+  event    : "click",
+  selector : "#circle_1"
+},
+{
+  command  : "add_event",
+  event    : "click",
+  selector : "#circle_2", 
+  payload  : "circle 2 has been clicked",
+  topic    : "CIRCLE_CLICKED"
+}]
+```
 
 ### Input bind
 As explained in the section "Control via messages" (TODO link), this node can be controlled via input messages.  For example to change the fill color of circle with id "mycircle" to green.  However this means that a lot of information needs to be passed via that input message (element id, attribute name, attribute value ...), to let this node know what you want it to do.  As a result the flow might become quite complex, since you need extra nodes to put all that information in the message.
