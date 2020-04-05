@@ -5,6 +5,8 @@ Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner
 
 And also lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawing-editor) for his assistance!
 
+:warning: ***Version 2.0.0 contains a breaking change for events!!!  See [here](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Breaking-change-version-2.0.0) for more information.***
+
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
 ```
