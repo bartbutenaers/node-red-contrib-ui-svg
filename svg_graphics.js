@@ -106,7 +106,7 @@ module.exports = function(RED) {
         
         // Seems that the SVG string sometimes contains "&quot;" instead of normal quotes.
         // Those need to be removed, otherwise AngularJs will throw a parse error
-        svgString = svgString.replace(/&quot;/g, '\\"');
+        //svgString = svgString.replace(/&quot;/g, "'");
       
         var html = String.raw`
 <style>
@@ -261,11 +261,21 @@ module.exports = function(RED) {
                             
                             var msg = {
                                 event      : evt.type,
-                                elementId  : userData.elementId,
                                 selector   : userData.selector,
                                 payload    : userData.payload,
                                 payloadType: userData.payloadType,
                                 topic      : userData.topic
+                            }
+                            
+                            debugger;
+                            // In version 1.x.x there was a bug (msg.elementId contained the selector instead of the elementId).
+                            // This was fixed in version 2.0.0, but (since it was a breaking change) by default for old nodes
+                            // we still will send the selector instead of the elementId (to avoid breaking existing flows).
+                            if ($scope.config.selectorAsElementId === undefined || $scope.config.selectorAsElementId === true) {
+                                msg.elementId = userData.selector;
+                            }
+                            else {
+                                msg.elementId = userData.elementId;
                             }
                             
                             // Get the mouse coordinates (with origin at left top of the SVG drawing)
