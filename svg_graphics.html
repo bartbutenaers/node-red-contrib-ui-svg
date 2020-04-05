@@ -333,6 +333,7 @@
             bindings: {value: []},
             showCoordinates: {value: false},
             autoFormatAfterEdit: {value: false},
+            selectorAsElementId: {value: false},
             outputField: {value: "payload"},
             editorUrl: {value: "http://drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
@@ -354,6 +355,12 @@
         },
         oneditprepare: function() {
             var node = this;
+          
+            // In version 1.x.x there was a bug (msg.elementId of output message contained the selector instead of the elementId).
+            // This was fixed in version 2.0.0, but to avoid breaking changes we will the checkbox automatically (to get the same behaviour as before).
+            if (node.selectorAsElementId === undefined) {
+                $('#node-input-selectorAsElementId').prop('checked', true);
+            }
             
             // Make sure the autocomplete fields at least refer to Iterable node fields...
             // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/33
@@ -1616,7 +1623,11 @@
                 <label>&nbsp;</label>
                 <input type="checkbox" id="node-input-mouseWheelZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-mouseWheelZoomEnabled" style="width:70%;"> Enable mouse-wheel zooming</label>
-            </div>             
+            </div>
+            <div class="form-row">
+                <input type="checkbox" id="node-input-selectorAsElementId" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-selectorAsElementId" style="width:70%;color: #ff9500;"> Enable legacy mode: CSS selector in msg.elementId (deprecated)</label>
+            </div> 
         </div>
     </div>
 </script>
