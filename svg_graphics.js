@@ -672,16 +672,16 @@ module.exports = function(RED) {
                                         }
                                         return;
                                     }
-
-                                    if (!payload.elementId && !payload.selector) {
-                                        console.log("Invalid payload. A property named .elementId or .selector is not specified");
-                                        return;
-                                    }          
-                                    
+                                 
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
                                     switch (op) {
                                         case "get_text":
+                                            if (!payload.elementId && !payload.selector) {
+                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                    
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
@@ -703,6 +703,11 @@ module.exports = function(RED) {
                                             break;
                                         case "update_text":
                                         case "update_innerHTML"://added to make adding inner HTML more readable/logical
+                                            if (!payload.elementId && !payload.selector) {
+                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
@@ -716,6 +721,11 @@ module.exports = function(RED) {
                                             break;
                                         case "update_style":
                                         case "set_style"://same as update_style
+                                            if (!payload.elementId && !payload.selector) {
+                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $(selector);
                                             if (!elements || !elements.length) {
@@ -733,6 +743,11 @@ module.exports = function(RED) {
                                             break;
                                         case "update_attribute":
                                         case "set_attribute": //fall through 
+                                            if (!payload.elementId && !payload.selector) {
+                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
@@ -757,7 +772,11 @@ module.exports = function(RED) {
                                             });
                                             break;
                                         case "trigger_animation":
-                                                
+                                            if (!payload.elementId && !payload.selector) {
+                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
                                             selector = payload.selector || ("#" + payload.elementId);
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
@@ -794,7 +813,11 @@ module.exports = function(RED) {
                                             break;    
                                         case "add_event":// add the specified event(s) to the specified element(s)
                                         case "remove_event":// remove the specified event(s) from the specified element(s)
-
+                                            if (!payload.elementId && !payload.selector) {
+                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
 
@@ -852,6 +875,111 @@ module.exports = function(RED) {
                                                 }
                                             });                                               
                                             break;
+                                        case "zoom_in":
+                                            if (!$scope.panZoomTiger) {
+                                                console.log("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                return;
+                                            }
+                                        
+                                            $scope.panZoomTiger.zoomIn();
+                                            break;
+                                        case "zoom_out":
+                                            if (!$scope.panZoomTiger) {
+                                                console.log("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            $scope.panZoomTiger.zoomOut();
+                                            break;
+                                        case "zoom_by_percentage":
+                                            if (!$scope.panZoomTiger) {
+                                                console.log("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            if (!payload.percentage) {
+                                                console.log("No msg.payload.percentage has been specified");
+                                                return;
+                                            }
+                                            
+                                            // Convert e.g. 130% to a factor 1.3
+                                            var factor = payload.percentage / 100;
+                                            
+                                            // Optionally point coordinates can be specified in the input message
+                                            if (payload.x && payload.y) {
+                                                // When a point has been specified, zoom by the specified percentage at the specified point
+                                                $scope.panZoomTiger.zoomAtPointBy(factor, {x: payload.x, y: payload.y});
+                                            }
+                                            else {
+                                                // No point has been specified, so zoom by the specified percentage
+                                                $scope.panZoomTiger.zoomBy(factor);
+                                            }
+                                            break;
+                                        case "zoom_to_level":
+                                            if (!$scope.panZoomTiger) {
+                                                console.log("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            if (!payload.level) {
+                                                console.log("No msg.payload.level has been specified");
+                                                return;
+                                            }
+                                            
+                                            // Optionally point coordinates can be specified in the input message
+                                            if (payload.x && payload.y) {
+                                                // Zoom to the specified level at the specified point
+                                                $scope.panZoomTiger.zoomAtPoint(2, {x: 50, y: 50})
+                                            }
+                                            else {
+                                                // Zoom to the specified level
+                                                $scope.panZoomTiger.zoom(payload.level);
+                                            }
+                                            break;
+                                        case "pan_to_point":    
+                                            if (!$scope.panZoomTiger) {
+                                                console.log("Cannot pan via input message, when panning is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            if (!payload.x || !payload.y) {
+                                                console.log("No point coordinates (msg.payload.x msg.payload.y) have been specified");
+                                                return;
+                                            }
+    
+                                            // Pan (absolute) to rendered point
+                                            $scope.panZoomTiger.pan({x: msg.payload.x, y: msg.payload.y});
+                                            break;
+                                        case "pan_to_direction":    
+                                            if (!$scope.panZoomTiger) {
+                                                console.log("Cannot pan via input message, when panning is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            if (!payload.x || !payload.y) {
+                                                console.log("No direction coordinates (msg.payload.x msg.payload.y) have been specified");
+                                                return;
+                                            }
+    
+                                            // Pan (relative) by x/y of rendered pixels into a direction
+                                            $scope.panZoomTiger.panBy({x: msg.payload.x, y: msg.payload.y});
+                                            break;  
+                                        case "fit":
+                                            if (!$scope.panZoomTiger) {
+                                                console.log("Cannot fit via input message, when zooming is not enabled in the settings");
+                                                return;
+                                            }
+                                        
+                                            $scope.panZoomTiger.fit();
+                                            break;
+                                        case "center":
+                                            if (!$scope.panZoomTiger) {
+                                                console.log("Cannot center via input message, when panning is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            $scope.panZoomTiger.center();
+                                            break;                                            
                                     }
                                     
                                 } catch (error) {
