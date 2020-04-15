@@ -12,13 +12,13 @@
 -->
 
 <style>
-    .ui-autocomplete {
+    .ui-svg-ui-autocomplete {
         max-height: 100px;
         overflow-y: auto;
         overflow-x: hidden; /* prevent horizontal scrollbar */
         /*padding-right: 20px;/* add padding to account for vertical scrollbar */
     } 
-    .ui-dialog .ui-dialog-content {
+    #svg-dialog-div {
         padding: 0px 0px 0px 0px;
     }
     .msgboxOuter {
@@ -633,6 +633,9 @@
                     targetIdField.val(animation.targetId);
                     targetIdField.click(function() { // Lazy load autocomplete for performance reasons
                         targetIdField.autocomplete({
+                            classes: {
+                                "ui-autocomplete": "ui-svg-ui-autocomplete",
+                            },
                             source: function(req, add){
                                 add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
                             }
@@ -649,6 +652,9 @@
                     classValueField.val(animation.classValue);
                     classValueField.click(function() { // Lazy load autocomplete for performance reasons
                         classValueField.autocomplete({
+                            classes: {
+                                "ui-autocomplete": "ui-svg-ui-autocomplete",
+                            },
                             source: function(req, add){                     
                                 add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
                             }
@@ -661,6 +667,9 @@
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
                     attributeNameField.click(function() { // Lazy load autocomplete for performance reasons
                         attributeNameField.autocomplete({
+                            classes: {
+                                "ui-autocomplete": "ui-svg-ui-autocomplete",
+                            },
                             source: function(req, add){
                                 add($.ui.autocomplete.filter(node.attrList || [], req.term));
                             }
@@ -924,6 +933,9 @@
                     selectorField.val(clickableShape.selector);
                     selectorField.click(function() { // Lazy load autocomplete for performance reasons
                         selectorField.autocomplete({
+                            classes: {
+                                "ui-autocomplete": "ui-svg-ui-autocomplete",
+                            },
                             source: function(req, add){
                                 var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
                                 add($.ui.autocomplete.filter(list , req.term));
@@ -1031,6 +1043,9 @@
                     targetSelectorField.val(binding.selector);
                     targetSelectorField.click(function() { // Lazy load autocomplete for performance reasons
                         targetSelectorField.autocomplete({
+                            classes: {
+                                "ui-autocomplete": "ui-svg-ui-autocomplete",
+                            },
                             source: function(req, add){  
                                 var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
                                 add($.ui.autocomplete.filter(list, req.term));
@@ -1053,6 +1068,9 @@
                     attributeField.val(binding.attribute); 
                     attributeField.click(function() { // Lazy load autocomplete for performance reasons
                         attributeField.autocomplete({
+                            classes: {
+                                "ui-autocomplete": "ui-svg-ui-autocomplete",
+                            },
                             source: function(req, add){                        
                                 add($.ui.autocomplete.filter(node.attrList, req.term));
                             }
