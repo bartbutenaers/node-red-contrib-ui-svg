@@ -630,17 +630,18 @@
                     // Add a 'target id' property row
                     var targetIdRow = addPropertyRow(container, "Target Element Id");
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
-                    targetIdField.val(animation.targetId);
-                    targetIdField.click(function() { // Lazy load autocomplete for performance reasons
-                        targetIdField.autocomplete({
-                            classes: {
-                                "ui-autocomplete": "ui-svg-ui-autocomplete",
-                            },
-                            source: function(req, add){
-                                add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
-                            }
-                        });
-                    });
+                    targetIdField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(targetIdField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            targetIdField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
+                                }
+                            });
+                        }
+                    });                     
                     targetIdField.on("change", function(){
                         updateTitle(titleField, this)
                     });
@@ -650,31 +651,35 @@
                     var classValueRow = addPropertyRow(container, "Class");
                     var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:180px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
                     classValueField.val(animation.classValue);
-                    classValueField.click(function() { // Lazy load autocomplete for performance reasons
-                        classValueField.autocomplete({
-                            classes: {
-                                "ui-autocomplete": "ui-svg-ui-autocomplete",
-                            },
-                            source: function(req, add){                     
-                                add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
-                            }
-                        });
-                    });
+                    classValueField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(classValueField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            classValueField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
+                                }
+                            });
+                        }
+                    });                    
                     $('<span/>').text('%').appendTo(classValueField);
                     
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
-                    attributeNameField.click(function() { // Lazy load autocomplete for performance reasons
-                        attributeNameField.autocomplete({
-                            classes: {
-                                "ui-autocomplete": "ui-svg-ui-autocomplete",
-                            },
-                            source: function(req, add){
-                                add($.ui.autocomplete.filter(node.attrList || [], req.term));
-                            }
-                        });
-                    });
+                    attributeNameField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(attributeNameField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            attributeNameField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    add($.ui.autocomplete.filter(node.attrList || [], req.term));
+                                }
+                            });
+                        }
+                    });                      
                     attributeNameField.on("change", function(){
                         updateTitle(titleField, this);
                         
@@ -808,38 +813,42 @@
                             }
                         }
                     })
-                    customField.click(function() { // Lazy load autocomplete for performance reasons
-                        customField.autocomplete({
-                            minLength: 0,
-                            source: function (request, response) {
-                             debugger;
-                                //TODO: Consider how to handle editing in middle of string
-                                //currently, the last tag (after last ;) is used.
-                                let list;
-                                let lastTag = extractLastTag(request.term);
-                                if(lastTag.includes(".")){
-                                    list = [...node.nonAnimationIdsAndActions,...node.animationIdsAndActions]; 
-                                } else {
-                                    list = [...node.nonAnimationIds, ...node.animationIds]; 
+                    customField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(customField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            customField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                },
+                                minLength: 0,
+                                source: function (request, response) {
+                                    //TODO: Consider how to handle editing in middle of string
+                                    //currently, the last tag (after last ;) is used.
+                                    let list;
+                                    let lastTag = extractLastTag(request.term);
+                                    if(lastTag.includes(".")){
+                                        list = [...node.nonAnimationIdsAndActions,...node.animationIdsAndActions]; 
+                                    } else {
+                                        list = [...node.nonAnimationIds, ...node.animationIds]; 
+                                    }
+                                    // delegate back to autocomplete, but extract the last term
+                                    response($.ui.autocomplete.filter(list, lastTag));
+                                },
+                                focus: function () {
+                                    // prevent value inserted on focus
+                                    return false;
+                                },
+                                select: function (event, ui) {
+                                debugger;
+                                    var terms = tagSplit(this.value);
+                                    terms.pop();// remove the current input 
+                                    terms.push(ui.item.value); // add the selected item
+                                    // add placeholder to get the comma-and-space at the end
+                                    terms.push("");
+                                    this.value = terms.join("; ");
+                                    return false;
                                 }
-                                // delegate back to autocomplete, but extract the last term
-                                response($.ui.autocomplete.filter(list, lastTag));
-                            },
-                            focus: function () {
-                                // prevent value inserted on focus
-                                return false;
-                            },
-                            select: function (event, ui) {
-                             debugger;
-                                var terms = tagSplit(this.value);
-                                terms.pop();// remove the current input 
-                                terms.push(ui.item.value); // add the selected item
-                                // add placeholder to get the comma-and-space at the end
-                                terms.push("");
-                                this.value = terms.join("; ");
-                                return false;
-                            }
-                        });
+                            });
+                        }
                     });                        
                     $('<span/>').text('%').appendTo(customField);
                     customRow.append($("<i />", {class:"fa fa-question", title:"Press down to select, right to accept, dot to access properties, semicolon/enter/tab to complete the entry."}));
@@ -931,17 +940,19 @@
                     // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on.
                     var selectorField = $('<input/>',{class:"node-input-clickable-selector",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     selectorField.val(clickableShape.selector);
-                    selectorField.click(function() { // Lazy load autocomplete for performance reasons
-                        selectorField.autocomplete({
-                            classes: {
-                                "ui-autocomplete": "ui-svg-ui-autocomplete",
-                            },
-                            source: function(req, add){
-                                var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
-                                add($.ui.autocomplete.filter(list , req.term));
-                            }
-                        });
-                    });
+                    selectorField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(selectorField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            selectorField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                    add($.ui.autocomplete.filter(list , req.term));
+                                }
+                            });
+                        }
+                    });                     
                     
                     // Column 2 : Add an input field (type option) to the new row, that represents the action type 
                     var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
@@ -1041,17 +1052,20 @@
                     var targetSelectorFieldId = "node-input-binding-selector" + i
                     targetSelectorField.attr("id",targetSelectorFieldId);
                     targetSelectorField.val(binding.selector);
-                    targetSelectorField.click(function() { // Lazy load autocomplete for performance reasons
-                        targetSelectorField.autocomplete({
-                            classes: {
-                                "ui-autocomplete": "ui-svg-ui-autocomplete",
-                            },
-                            source: function(req, add){  
-                                var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
-                                add($.ui.autocomplete.filter(list, req.term));
-                            }
-                        });
-                    });
+                    targetSelectorField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(targetSelectorField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            targetSelectorField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                    add($.ui.autocomplete.filter(list, req.term));
+                                }
+                            });
+                        }
+                    });                      
+
            
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
                     var bindingTypeField = $('<select/>',{class:"node-input-binding-type",type:"text",placeholder:"click"})
@@ -1065,17 +1079,19 @@
                         .css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var attributeFieldId = "node-input-binding-attribute" + i
                     attributeField.attr("id",attributeFieldId);
-                    attributeField.val(binding.attribute); 
-                    attributeField.click(function() { // Lazy load autocomplete for performance reasons
-                        attributeField.autocomplete({
-                            classes: {
-                                "ui-autocomplete": "ui-svg-ui-autocomplete",
-                            },
-                            source: function(req, add){                        
-                                add($.ui.autocomplete.filter(node.attrList, req.term));
-                            }
-                        });
-                    });
+                    attributeField.val(binding.attribute);
+                    attributeField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(attributeField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            attributeField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    add($.ui.autocomplete.filter(node.attrList, req.term));
+                                }
+                            });
+                        }
+                    });  
                     bindingTypeField.change(function () {
                         if (bindingTypeField.val() === "attr") {
                             attributeField.show();
