@@ -634,7 +634,7 @@
                         if(targetIdField.data('ui-autocomplete') == undefined){ //only load if not already loaded
                             targetIdField.autocomplete({
                                 classes: {
-                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
                                 },
                                 source: function(req, add){
                                     add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
@@ -655,7 +655,7 @@
                         if(classValueField.data('ui-autocomplete') == undefined){ //only load if not already loaded
                             classValueField.autocomplete({
                                 classes: {
-                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
                                 },
                                 source: function(req, add){
                                     add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
@@ -672,7 +672,7 @@
                         if(attributeNameField.data('ui-autocomplete') == undefined){ //only load if not already loaded
                             attributeNameField.autocomplete({
                                 classes: {
-                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
                                 },
                                 source: function(req, add){
                                     add($.ui.autocomplete.filter(node.attrList || [], req.term));
@@ -817,7 +817,7 @@
                         if(customField.data('ui-autocomplete') == undefined){ //only load if not already loaded
                             customField.autocomplete({
                                 classes: {
-                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
                                 },
                                 minLength: 0,
                                 source: function (request, response) {
@@ -944,7 +944,7 @@
                         if(selectorField.data('ui-autocomplete') == undefined){ //only load if not already loaded
                             selectorField.autocomplete({
                                 classes: {
-                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
                                 },
                                 source: function(req, add){
                                     var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
@@ -1056,7 +1056,7 @@
                         if(targetSelectorField.data('ui-autocomplete') == undefined){ //only load if not already loaded
                             targetSelectorField.autocomplete({
                                 classes: {
-                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
                                 },
                                 source: function(req, add){
                                     var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
@@ -1084,7 +1084,7 @@
                         if(attributeField.data('ui-autocomplete') == undefined){ //only load if not already loaded
                             attributeField.autocomplete({
                                 classes: {
-                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom calls for styling the dropdown
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
                                 },
                                 source: function(req, add){
                                     add($.ui.autocomplete.filter(node.attrList, req.term));
