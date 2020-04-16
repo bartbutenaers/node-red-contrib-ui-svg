@@ -630,6 +630,7 @@
                     // Add a 'target id' property row
                     var targetIdRow = addPropertyRow(container, "Target Element Id");
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
+                    targetIdField.val(animation.targetId);
                     targetIdField.focusin(function() { // Only load autocomplete on selection (performance reasons)
                         if(targetIdField.data('ui-autocomplete') == undefined){ //only load if not already loaded
                             targetIdField.autocomplete({
