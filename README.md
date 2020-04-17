@@ -31,7 +31,7 @@ Each of those SVG elements has attributes (fill color, ...), can respond to even
 
 ## Node usage
 
-See our [wiki](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki) for step-by-step examples.
+:white_check_mark: ***!!!!! SEE OUR [WIKI](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki) FOR STEP-BY-STEP TUTORIALS !!!!!***
 
 This node can be used to visualize all kind of graphical stuff in the Node-RED dashboard.  This can range from simple graphics (e.g. a round button, ...) to very complex graphics (floorplans, industrial processes, piping, wiring, ...).  But even those complex graphics will consist out of a number of simple graphical shapes.  For example a ***floorplan*** is in fact a simple image of your floor, and a series of other SVG elements (e.g. Fontawesome icons) drawn on top of that (background) image.
 
@@ -613,3 +613,13 @@ SVG offers an image element, that can be used to display an image inside an SVG 
    Since both DrawSvg and the Node-RED dashboard cannot access this local path, this node will automatically convert the image  to a base64 encoded url.  That way DrawSvg and the dasbhoard can both display the image, and in the flow file only the local path is being stored.  The disadvantage is that you have to enter the path manually in the SVG Source tabsheet.
    
 4. In the next version of DrawSvg it should be possible to work with local files.  See [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/35).
+
+## Troubleshooting
+Some tips and tricks to solve known problems:
+
+1. When all shapes of the original drawing have disappeared, and have received the same color as the dashboard theme:
+
+   ![Dashboard color](https://user-images.githubusercontent.com/14224149/79540632-c2c7c100-8088-11ea-9ba7-6c5dd4f0a842.png)
+   
+   + Seems this is not the case with DrawSvg drawings, since DrawSvg sets the fill color as a ```style``` attribute (e.g. <element style="fill:red" ... />).  
+   + But some third party editors use the ```fill``` attribute fill (e.g. <element fill="red" ... />), which seems to be overwritten by the dashboard theme color.  Until we find a solution, you will have to change this manually ...
