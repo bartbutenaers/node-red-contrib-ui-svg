@@ -623,3 +623,11 @@ Some tips and tricks to solve known problems:
    
    + Seems this is not the case with DrawSvg drawings, since DrawSvg sets the fill color as a ```style``` attribute (e.g. <element style="fill:red" ... />).  
    + But some third party editors use the ```fill``` attribute fill (e.g. <element fill="red" ... />), which seems to be overwritten by the dashboard theme color.  Until we find a solution, you will have to change this manually ...
+
+2. The input messages are being validated (in the server side flow), and validation errors will be showed in the debug sidepanel.
+
+3. Not all input can be validated on the server side flow, e.g. it is impossible to determine on the server whether a specified shape id exists in the dashboard (i.e. in your browser).  Such errors will be displayed in your browser console log (where the dashboard is running).  However since it is sometimes very difficult to investigate that log (e.g. on smartphones), it is also possible to transfer those errors to your Node-RED debug sidebar by activating the *"Show browser errors on the server"* checkbox (in the 'Settings' panel).
+
+   Remark: when N drawings are visible at the moment (e.g. running in N dashboards simultaneously), then N duplicate messages will be displayed (where N can be 0 is no dashboards are open...).
+
+
