@@ -142,6 +142,22 @@ module.exports = function(RED) {
         const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, msg); 
         lastObj[lastKey] = value;
     };
+    
+    function getNestedProperty(obj, key) {
+        // Get property array from key string
+        var properties = key.split(".");
+
+        // Iterate through properties, returning undefined if object is null or property doesn't exist
+        for (var i = 0; i < properties.length; i++) {
+            if (!obj || !obj.hasOwnProperty(properties[i])) {
+                return;
+            }
+            obj = obj[properties[i]];
+        }
+
+        // Nested property found, so return the value
+        return obj;
+    }
 
     var ui = undefined;
     
@@ -153,9 +169,14 @@ module.exports = function(RED) {
             }
             RED.nodes.createNode(this, config);
             node.outputField = config.outputField;
+            node.bindings = config.bindings;
             // Store the directory property, so it is available in the endpoint below
             node.directory = config.directory;
             
+            node.availableCommands = ["get_text", "update_text", "update_innerHTML", "update_style", "set_style", "update_attribute", "set_attribute",
+                                      "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
+                                      "pan_to_point", "pan_to_direction", "fit", "center"];
+
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
                 var done = ui.addWidget({
@@ -176,6 +197,84 @@ module.exports = function(RED) {
                         return value;
                     },
                     beforeEmit: function(msg, value) {                    
+                        // ******************************************************************************************
+                        // Server side validation of input messages.
+                        // ******************************************************************************************
+
+                        // Would like to ignore invalid input messages, but that seems not to possible in UI nodes:
+                        // See https://discourse.nodered.org/t/custom-ui-node-not-visible-in-dashboard-sidebar/9666
+                        // We will workaround it by sending a 'null' payload to the dashboard.
+
+                        if (!msg.payload) {
+                            node.error("A msg.payload is required");
+                            msg.payload = null;
+                        }
+                        else {
+                            // TODO Does are not blocking in version 1.0.  Nu wel of toch naar ui sturen?
+                            if(msg.topic == "databind") {                                                                                                                   
+                                if (node.bindings.length === 0) {
+                                    node.error("Useless to send msg.topic 'databinding' since no bindings have been specified in the config screen.");
+                                    msg.payload = null;
+                                }
+                                else {
+                                    var counter = 0;
+
+                                    node.bindings.forEach(function (binding, index) {
+                                        if (getNestedProperty(msg, binding.bindSource)) {
+                                            counter++;
+                                        }
+                                    });
+
+                                    if (counter === 0) {
+                                        node.error("Useless to send msg.topic 'databinding' since none of the bindings fields are available in this message.");
+                                        msg.payload = null;
+                                    }
+                                }
+                            }
+                            else {
+                                if (msg.topic && (typeof payload == "string" || typeof payload == "number")) {
+                                    var topicParts = msg.topic.split("|");
+
+                                    if (topicParts[0] !== "update_text" || topicParts[0] !== "update_innerHTML") {
+                                        node.error("Only msg.topic 'update_text' or 'update_innerHTML' is supported");
+                                        msg.payload = null;
+                                    }
+                                }
+                                else {                                                                                          
+                                    if (msg.topic) {
+                                        node.warn("The specified msg.topic is not supported");
+                                    }
+                                    
+                                    if(Array.isArray(msg.payload)){
+                                        for (var i = 0; i < 10; i++) {
+                                            var part = msg.payload[i];
+
+                                            if(typeof part != "object" || !part.command) {
+                                                node.error("The msg.payload array should contain objects which all have a 'command' property.");
+                                                msg.payload = null;
+                                                break;
+                                            }
+                                            if(!node.availableCommands.includes(part.command)) {
+                                                node.error("The msg.payload array contains an object that has an unsupported command property '" + part.command + "'");
+                                                msg.payload = null;
+                                                break;  
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        if(typeof msg.payload != "object" || !msg.payload.command) {
+                                            node.error("The msg.payload should contain an object which has a 'command' property.");
+                                            msg.payload = null;
+                                        }
+                                        else if(!node.availableCommands.includes(msg.payload.command)) {
+                                            node.error("The msg.payload contains an object that has an unsupported command property '" + msg.payload.command + "'");
+                                            msg.payload = null;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
@@ -219,8 +318,10 @@ module.exports = function(RED) {
                             // Log the error on the client-side in the browser console log
                             console.log(error);
                             
-                            // Send the error to the server-side to log it there
-                            $scope.send({error: error});
+                            // Send the error to the server-side to log it there, if requested
+                            if ($scope.config.showBrowserErrors) {
+                                $scope.send({error: error});
+                            }
                         }
                      
                         function setTextContent(element, textContent) {
@@ -422,6 +523,11 @@ module.exports = function(RED) {
                                     return;
                                 }
                                 var elements = $scope.rootDiv.querySelectorAll(clickableShape.targetId); // The "targetId" now contains the CSS selector!
+                                
+                                if (elements.length === 0) {
+                                    logError("No clickable elements found for selector '" + clickableShape.targetId + "'");
+                                }
+                                
                                 var action = clickableShape.action || "click" ;
                                 elements.forEach(function(element){
                                     // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
@@ -459,6 +565,7 @@ module.exports = function(RED) {
                                 }
                                 
                                 var element = $scope.rootDiv.querySelector("#" + smilAnimation.targetId);
+                                
                                 if (element) {
                                     var animationElement;
 
@@ -510,6 +617,9 @@ module.exports = function(RED) {
                                     // By appending the animation as a child of the SVG element, that parent SVG element will be animated.
                                     // So there is no need to specify explicit the xlink:href attribute on the animation element.
                                     element.appendChild(animationElement);
+                                }
+                                else {
+                                    logError("No animatable element found for selector '" + smilAnimation.targetId + "'");
                                 }
                             });                  
 
