@@ -182,6 +182,18 @@ module.exports = function(RED) {
                         if (!orig || !orig.msg) {
                            return;//TODO: what to do if empty? Currently, halt flow by returning nothing
                         }
+                        
+                        // When an error message is being send from the client-side, just log the error
+                        if (orig.msg.hasOwnProperty("error")) {
+                            node.error(orig.msg.error);
+                            
+                            // Dirty hack to avoid that the error message is being send on the output of this node
+                            orig["_fromInput"] = true; // Legacy code for older dashboard versions
+                            orig["_dontSend"] = true; 
+                            return;
+                        }
+                            
+                        // Compose the output message    
                         let newMsg = {
                             topic: orig.msg.topic,
                             elementId: orig.msg.elementId,
@@ -202,6 +214,14 @@ module.exports = function(RED) {
                     initController: function($scope, events) {
                         // Remark: all client-side functions should be added here!  
                         // If added above, it will be server-side functions which are not available at the client-side ...
+                        
+                        function logError(error) {
+                            // Log the error on the client-side in the browser console log
+                            console.log(error);
+                            
+                            // Send the error to the server-side to log it there
+                            $scope.send({error: error});
+                        }
                      
                         function setTextContent(element, textContent) {
                             var children = [];
@@ -253,7 +273,7 @@ module.exports = function(RED) {
                             var userData = this.getAttribute("data-event_" + evt.type);
                                         
                             if (!userData) {
-                                console.log("No user data available for this " + evt.type + " event");
+                                logError("No user data available for this " + evt.type + " event");
                                 return;
                             }
                             
@@ -267,7 +287,6 @@ module.exports = function(RED) {
                                 topic      : userData.topic
                             }
                             
-                            debugger;
                             // In version 1.x.x there was a bug (msg.elementId contained the selector instead of the elementId).
                             // This was fixed in version 2.0.0, but (since it was a breaking change) by default for old nodes
                             // we still will send the selector instead of the elementId (to avoid breaking existing flows).
@@ -557,6 +576,7 @@ module.exports = function(RED) {
                             if (!msg) {
                                 return;
                             }
+                                
                             function getValueByName(obj, path, def) {
                                 path = path.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
                                 path = path.replace(/^\./, '');           // strip a leading dot
@@ -661,7 +681,7 @@ module.exports = function(RED) {
                                                     selector = topicParts[1];
                                                     elements = $scope.rootDiv.querySelectorAll(selector);
                                                     if (!elements || !elements.length) {
-                                                        console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                        logError("Invalid selector. No SVG elements found for selector " + selector);
                                                         return;
                                                     }
                                                     elements.forEach(function (element) {
@@ -678,14 +698,14 @@ module.exports = function(RED) {
                                     switch (op) {
                                         case "get_text":
                                             if (!payload.elementId && !payload.selector) {
-                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
                                             }  
                                     
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             
@@ -704,14 +724,14 @@ module.exports = function(RED) {
                                         case "update_text":
                                         case "update_innerHTML"://added to make adding inner HTML more readable/logical
                                             if (!payload.elementId && !payload.selector) {
-                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
                                             }  
 
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             var innerContent = payload.text || payload.html || payload.textContent;
@@ -722,14 +742,14 @@ module.exports = function(RED) {
                                         case "update_style":
                                         case "set_style"://same as update_style
                                             if (!payload.elementId && !payload.selector) {
-                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
                                             }  
                                             
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             if (payload.style && $scope.isObject(payload.style)) {
@@ -737,27 +757,27 @@ module.exports = function(RED) {
                                             } else if(payload.attributeName) {
                                                 elements.css(payload.attributeName, payload.attributeValue);
                                             } else {
-                                                console.log("Cannot update style! style object not valid or attributeName/attributeValue strings not provided (selector '" + selector + "')");
+                                                logError("Cannot update style! style object not valid or attributeName/attributeValue strings not provided (selector '" + selector + "')");
                                                 return;
                                             }
                                             break;
                                         case "update_attribute":
                                         case "set_attribute": //fall through 
                                             if (!payload.elementId && !payload.selector) {
-                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
                                             }  
                                             
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             elements.forEach(function(element){
                                                 if (op == "update_attribute") {
                                                     if(!element.hasAttribute(payload.attributeName)) {
-                                                        console.log("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"'");
+                                                        logError("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"'");
                                                         return
                                                     }
                                                 }
@@ -773,18 +793,18 @@ module.exports = function(RED) {
                                             break;
                                         case "trigger_animation":
                                             if (!payload.elementId && !payload.selector) {
-                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
                                             }  
                                             
                                             selector = payload.selector || ("#" + payload.elementId);
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             if (!payload.action) {
-                                                console.log("When triggering an animation, there should be a .action field");
+                                                logError("When triggering an animation, there should be a .action field");
                                                 return;
                                             }
                                             let animations = ["set","animate","animatemotion","animatecolor","animatetransform"]
@@ -803,7 +823,7 @@ module.exports = function(RED) {
                                                             try {
                                                                 element[payload.action]();
                                                             } catch (error) {
-                                                                throw new Error(`Error calling ${payload.elementId}.${payload.action}()`);
+                                                                logError(`Error calling ${payload.elementId}.${payload.action}()`);
                                                             }
                                                             break;
                                                     }
@@ -814,7 +834,7 @@ module.exports = function(RED) {
                                         case "add_event":// add the specified event(s) to the specified element(s)
                                         case "remove_event":// remove the specified event(s) from the specified element(s)
                                             if (!payload.elementId && !payload.selector) {
-                                                console.log("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
                                             }  
                                             
@@ -822,17 +842,17 @@ module.exports = function(RED) {
                                             elements = $scope.rootDiv.querySelectorAll(selector);
 
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
 
                                             if (!payload.event) {
-                                                console.log("No msg.payload.event has been specified");
+                                                logError("No msg.payload.event has been specified");
                                                 return;
                                             }
 
                                             if (!$scope.events.includes(payload.event)) {
-                                                console.log("The msg.payload.event contains an unsupported event name");
+                                                logError("The msg.payload.event contains an unsupported event name");
                                                 return;
                                             }
 
@@ -842,7 +862,7 @@ module.exports = function(RED) {
                                             
                                                 if (op === "add_event") {
                                                     if (userData) {
-                                                        console("The event " + payload.event + " already has been registered");
+                                                        logError("The event " + payload.event + " already has been registered");
                                                     }
                                                     else {
                                                         // Seems the event has been registered yet for this element, so let's do that now ...
@@ -862,7 +882,7 @@ module.exports = function(RED) {
                                                 }
                                                 else { // "remove_event"
                                                     if (!userData) {
-                                                        console("The event " + payload.event + " was not registered yet");
+                                                        logError("The event " + payload.event + " was not registered yet");
                                                     }
                                                     else {
                                                         element.removeEventListener(payload.event, handleEvent, false);
@@ -877,7 +897,7 @@ module.exports = function(RED) {
                                             break;
                                         case "zoom_in":
                                             if (!$scope.panZoomTiger) {
-                                                console.log("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
                                                 return;
                                             }
                                         
@@ -885,7 +905,7 @@ module.exports = function(RED) {
                                             break;
                                         case "zoom_out":
                                             if (!$scope.panZoomTiger) {
-                                                console.log("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
                                                 return;
                                             }
 
@@ -893,12 +913,12 @@ module.exports = function(RED) {
                                             break;
                                         case "zoom_by_percentage":
                                             if (!$scope.panZoomTiger) {
-                                                console.log("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
                                                 return;
                                             }
 
                                             if (!payload.percentage) {
-                                                console.log("No msg.payload.percentage has been specified");
+                                                logError("No msg.payload.percentage has been specified");
                                                 return;
                                             }
                                             
@@ -917,12 +937,12 @@ module.exports = function(RED) {
                                             break;
                                         case "zoom_to_level":
                                             if (!$scope.panZoomTiger) {
-                                                console.log("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
                                                 return;
                                             }
 
                                             if (!payload.level) {
-                                                console.log("No msg.payload.level has been specified");
+                                                logError("No msg.payload.level has been specified");
                                                 return;
                                             }
                                             
@@ -938,12 +958,12 @@ module.exports = function(RED) {
                                             break;
                                         case "pan_to_point":    
                                             if (!$scope.panZoomTiger) {
-                                                console.log("Cannot pan via input message, when panning is not enabled in the settings");
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
                                                 return;
                                             }
 
                                             if (!payload.x || !payload.y) {
-                                                console.log("No point coordinates (msg.payload.x msg.payload.y) have been specified");
+                                                logError("No point coordinates (msg.payload.x msg.payload.y) have been specified");
                                                 return;
                                             }
     
@@ -952,12 +972,12 @@ module.exports = function(RED) {
                                             break;
                                         case "pan_to_direction":    
                                             if (!$scope.panZoomTiger) {
-                                                console.log("Cannot pan via input message, when panning is not enabled in the settings");
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
                                                 return;
                                             }
 
                                             if (!payload.x || !payload.y) {
-                                                console.log("No direction coordinates (msg.payload.x msg.payload.y) have been specified");
+                                                logError("No direction coordinates (msg.payload.x msg.payload.y) have been specified");
                                                 return;
                                             }
     
@@ -966,7 +986,7 @@ module.exports = function(RED) {
                                             break;  
                                         case "fit":
                                             if (!$scope.panZoomTiger) {
-                                                console.log("Cannot fit via input message, when zooming is not enabled in the settings");
+                                                logError("Cannot fit via input message, when zooming is not enabled in the settings");
                                                 return;
                                             }
                                         
@@ -974,21 +994,35 @@ module.exports = function(RED) {
                                             break;
                                         case "center":
                                             if (!$scope.panZoomTiger) {
-                                                console.log("Cannot center via input message, when panning is not enabled in the settings");
+                                                logError("Cannot center via input message, when panning is not enabled in the settings");
                                                 return;
                                             }
 
                                             $scope.panZoomTiger.center();
-                                            break;                                            
+                                            break;
+                                        default:
+                                            if (msg.topic) {
+                                                logError("Unsupported msg.topic '" + msg.topic + "'");
+                                            }
+                                            else {
+                                                logError("Unsupported command '" + payload.command + "'");
+                                            }
                                     }
                                     
-                                } catch (error) {
-                                    console.error(error);
+                                } 
+                                catch (error) {
+                                    logError("Unexpected error when processing input message: " + error); 
                                 }
                             }
 
                             var payload = msg.payload;
                             var topic = msg.topic;
+                            
+                            if (!payload || payload === "") {
+                                logError("Missing msg.payload");
+                                return;
+                            }
+                            
                             if(topic == "databind" || ((typeof payload == "string" || typeof payload == "number") && topic)){
                                 processCommand(payload, topic);
                             } else {
@@ -996,8 +1030,12 @@ module.exports = function(RED) {
                                     payload = [payload];
                                 }
                                 payload.forEach(function(val,idx){
-                                    if(typeof val == "object" && val.command)
-                                        processCommand(val);
+                                    if(typeof val != "object" || !val.command) {
+                                        logError("The msg.payload should contain an object (or an array of objects) which have a 'command' property.");
+                                        continue;
+                                    }
+                                        
+                                    processCommand(val);
                                 });
                             }   
                                                         
