@@ -246,10 +246,10 @@ module.exports = function(RED) {
                                     }
                                     
                                     if(Array.isArray(msg.payload)){
-                                        for (var i = 0; i < 10; i++) {
+                                        for (var i = 0; i < msg.payload.length; i++) {
                                             var part = msg.payload[i];
 
-                                            if(typeof part != "object" || !part.command) {
+                                            if(typeof part != "object" && !part.command) {
                                                 node.error("The msg.payload array should contain objects which all have a 'command' property.");
                                                 msg.payload = null;
                                                 break;
@@ -262,7 +262,7 @@ module.exports = function(RED) {
                                         }
                                     }
                                     else {
-                                        if(typeof msg.payload != "object" || !msg.payload.command) {
+                                        if(typeof msg.payload != "object" && !msg.payload.command) {
                                             node.error("The msg.payload should contain an object which has a 'command' property.");
                                             msg.payload = null;
                                         }
