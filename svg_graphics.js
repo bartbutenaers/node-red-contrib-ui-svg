@@ -1142,10 +1142,10 @@ module.exports = function(RED) {
                                 payload.forEach(function(val,idx){
                                     if(typeof val != "object" || !val.command) {
                                         logError("The msg.payload should contain an object (or an array of objects) which have a 'command' property.");
-                                        continue;
                                     }
-                                        
-                                    processCommand(val);
+                                    else {   
+                                        processCommand(val);
+				    }
                                 });
                             }   
                                                         
