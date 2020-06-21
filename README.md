@@ -5,7 +5,14 @@ Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner
 
 And also lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawing-editor) for his assistance!
 
-:warning: ***Version 2.0.0 contains a breaking change for events!!!  However to have no impact on existing flows, legacy mode is enabled automatically for old nodes (to have the same behaviour as version 1.x.x).  But it is advised to turn of legacy mode, and fix your flow.  See [here](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Breaking-change-version-2.0.0) for more information.***  
+:warning: ***Version 2.0.0 contains a breaking change for events!!!  However to have no impact on existing flows, legacy mode is enabled automatically for old nodes (to have the same behaviour as version 1.x.x).  But it is advised to turn of legacy mode, and fix your flow.  See [here](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Breaking-change-version-2.0.0) for more information.*** 
+
+:warning: ***Moreover - for consistency with other UI nodes - we had to move some fields in the output message (when an event occurs):***
++ `msg.event` has become `msg.event.type`
++ `msg.coordinates.x` has become `msg.event.svgX`
++ `msg.coordinates.y` has become `msg.event.svgY`
++ `msg.position.x` has become `msg.event.pageX`
++ `msg.position.y` has become `msg.event.pageY`
 
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
@@ -153,21 +160,31 @@ Two things will happen when an event occurs on such an SVG element:
 1. The mouse ***cursor*** will change when hoovering above the element, to visualize that an element responds to events.
 1. An ***output message*** will be send as soon as the element is clicked:
    ```
-   "coordinates": {
-      x: 195.3749237060547,
-      y: 201.20571899414062
-   }
    "elementId": "circle"
-   "event": "click"
+   "event": {
+      "svgX":28.02083396911621,
+      "svgY":78.66666412353516,
+      "pageX":1105,
+      "pageY":310,
+      "screenX":829,
+      "screenY":304,
+      "clientX":1105,
+      "clientY":310,
+      "bbox": [
+         1076.979248046875,
+         311.3333435058594,
+         1136.979248046875,
+         251.33334350585938
+      ]
+   }
    "payload": {
       elementId: "cam3spin",
       status: "start"
    }
-   "position": {x: 854, y: 284}
    "selector": undefined
    "topic": "circle"
    ```
-   Note that the coordinates (where the event occurs) are also available in the output message.  This allows the next nodes in the flow to display information at that location.  For example we have developed the [node-red-contrib-ui-contextmenu](https://github.com/bartbutenaers/node-red-contrib-ui-contextmenu) to show a popup context menu in the dashboard above the SVG drawing, at the location where a shape has been clicked.
+   The coordinates (where the event occurs) in the output message allow the next nodes in the flow to display information at that location.  For example we have developed the [node-red-contrib-ui-contextmenu](https://github.com/bartbutenaers/node-red-contrib-ui-contextmenu) to show a popup context menu in the dashboard above the SVG drawing, at the location where a shape has been clicked.
 
 
 *Demo...*
