@@ -301,6 +301,9 @@ module.exports = function(RED) {
                             coordinates: orig.msg.coordinates,
                             position: orig.msg.position,
                         };
+                        
+                        // In the editableList of the clickable shapes, the content of the node.outputField property has been specified.
+                        // Apply that content to the node.outputField property in the output message
                         RED.util.evaluateNodeProperty(orig.msg.payload,orig.msg.payloadType,node,orig.msg,(err,value) => {
                             if (err) {
                                 return;//TODO: what to do on error? Currently, halt flow by returning nothing
@@ -404,16 +407,65 @@ module.exports = function(RED) {
                                 pt.x = evt.pageX;
                                 pt.y = evt.pageY;
                                 pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                
+                                // ----------------------------------------------------------------------------------
+                                // Obsolete fields
+                                // See https://discourse.nodered.org/t/contextmenu-location/22780/71?u=bartbutenaers
+                                // ----------------------------------------------------------------------------------
+                                
                                 //relative position on svg
                                 msg.coordinates = {
                                     x: pt.x,
                                     y: pt.y
                                 }
+
                                 //absolute position on page - usefull for sending to popup menu
                                 msg.position = {
                                     x: evt.pageX,
                                     y: evt.pageY
                                 }
+                                
+                                // ----------------------------------------------------------------------------------
+                                // New fields (to have a standard behaviour for all UI nodes
+                                // ----------------------------------------------------------------------------------
+                                
+                                msg.event = {
+                                    svgX    : pt.x,
+                                    svgY    : pt.y,
+                                    pageX   : evt.pageX,
+                                    pageY   : evt.pageY,
+                                    screenX : evt.screenX,
+                                    screenY : evt.screenY,
+                                    clientX : evt.clientX,
+                                    clientY : evt.clientY
+                                }
+                                
+                                // Get the SVG element where the event has occured (e.g. which has been clicked)
+                                var svgElement = $(event.target)[0];
+                                
+                                if (!svgElement) {
+                                    logError("No SVG element has been found for this " + evt.type + " event");
+                                    return;
+                                }
+                                
+                                var bbox;
+                                
+                                try {
+                                    // Use getBoundingClientRect instead of getBBox to have an array like [left, bottom, right, top].
+                                    // See https://discourse.nodered.org/t/contextmenu-location/22780/64?u=bartbutenaers
+                                    bbox = svgElement.getBoundingClientRect();
+                                }
+                                catch (err) {
+                                    logError("No bounding client rect has been found for this " + evt.type + " event");
+                                    return;  
+                                }
+                                
+                                msg.event.bbox = [
+                                    bbox.left,
+                                    bbox.bottom,
+                                    bbox.right,
+                                    bbox.top
+                                ]
                             }
                             
                             $scope.send(msg);
