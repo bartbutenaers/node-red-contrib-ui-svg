@@ -147,22 +147,33 @@ Two things will happen when an event occurs on such an SVG element:
 1. The mouse ***cursor*** will change when hoovering above the element, to visualize that an element responds to events.
 1. An ***output message*** will be send as soon as the element is clicked:
    ```
-   "coordinates": {
-      x: 195.3749237060547,
-      y: 201.20571899414062
-   }
    "elementId": "circle"
-   "event": "click"
+      "event":{
+      "type":"click",
+      "svgX":33.02083206176758,
+      "svgY":78.66666412353516,
+      "pageX":1110,
+      "pageY":310,"screenX":833,
+      "screenY":304,"clientX":1110,
+      "clientY":310,
+      "bbox":[1076.979248046875,311.3333435058594,1136.979248046875,251.33334350585938]}
    "payload": {
       elementId: "cam3spin",
       status: "start"
    }
-   "position": {x: 854, y: 284}
    "selector": undefined
    "topic": "circle"
    ```
-   Note that the coordinates (where the event occurs) are also available in the output message.  This allows the next nodes in the flow to display information at that location.  For example we have developed the [node-red-contrib-ui-contextmenu](https://github.com/bartbutenaers/node-red-contrib-ui-contextmenu) to show a popup context menu in the dashboard above the SVG drawing, at the location where a shape has been clicked.
+   The coordinates (where the event occurs) in the output message, allows the next nodes in the flow to display information at that location.  For example we have developed the [node-red-contrib-ui-contextmenu](https://github.com/bartbutenaers/node-red-contrib-ui-contextmenu) to show a popup context menu in the dashboard above the SVG drawing, at the location where a shape has been clicked.
 
+The event object contains a number of different coordinate systems:
+
+![Coordinate systems](https://user-images.githubusercontent.com/14224149/85235300-3fbe4080-b414-11ea-931d-acceb28a7789.png)
+
++ *SVG* coordinates to the borders of the SVG editor, i.e. relative to the origin of the SVG drawing.
++ *Client* coordinqtes to the borders of the Browser's visible window.
++ *Page* coordinates to the top of the current of the dashboard page, (which will only become visible after scrolling, since it is too short to show in the browser window).
++ *Screen* coordinates to the border of your monitor screen.
 
 *Demo...*
 
