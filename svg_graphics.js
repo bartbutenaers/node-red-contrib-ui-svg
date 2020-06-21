@@ -298,8 +298,6 @@ module.exports = function(RED) {
                             elementId: orig.msg.elementId,
                             selector: orig.msg.selector,
                             event: orig.msg.event,
-                            coordinates: orig.msg.coordinates,
-                            position: orig.msg.position,
                         };
                         
                         // In the editableList of the clickable shapes, the content of the node.outputField property has been specified.
@@ -384,7 +382,6 @@ module.exports = function(RED) {
                             userData = JSON.parse(userData);
                             
                             var msg = {
-                                event      : evt.type,
                                 selector   : userData.selector,
                                 payload    : userData.payload,
                                 payloadType: userData.payloadType,
@@ -408,28 +405,8 @@ module.exports = function(RED) {
                                 pt.y = evt.pageY;
                                 pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
                                 
-                                // ----------------------------------------------------------------------------------
-                                // Obsolete fields
-                                // See https://discourse.nodered.org/t/contextmenu-location/22780/71?u=bartbutenaers
-                                // ----------------------------------------------------------------------------------
-                                
-                                //relative position on svg
-                                msg.coordinates = {
-                                    x: pt.x,
-                                    y: pt.y
-                                }
-
-                                //absolute position on page - usefull for sending to popup menu
-                                msg.position = {
-                                    x: evt.pageX,
-                                    y: evt.pageY
-                                }
-                                
-                                // ----------------------------------------------------------------------------------
-                                // New fields (to have a standard behaviour for all UI nodes
-                                // ----------------------------------------------------------------------------------
-                                
                                 msg.event = {
+                                    type    : evt.type,
                                     svgX    : pt.x,
                                     svgY    : pt.y,
                                     pageX   : evt.pageX,
