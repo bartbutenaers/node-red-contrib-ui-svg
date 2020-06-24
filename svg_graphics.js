@@ -175,7 +175,7 @@ module.exports = function(RED) {
             
             node.availableCommands = ["get_text", "update_text", "update_innerHTML", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
-                                      "pan_to_point", "pan_to_direction", "fit", "center"];
+                                      "pan_to_point", "pan_to_direction", "fit", "center", "add_element", "remove_element"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -834,7 +834,84 @@ module.exports = function(RED) {
                                  
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
+
                                     switch (op) {
+                                        case "add_element": // Add elements, or replace them if they already exist
+                                            if (!payload.elementType) {
+                                                logError("Invalid payload. A property named .elementType is not specified");
+                                                return;
+                                            }
+                                            
+                                            var parentElements = null;
+
+                                            if (payload.parentSelector || payload.parentElementId) {
+                                                selector = payload.parentSelector || "#" + payload.parentElementId;
+                                                parentElements = $scope.rootDiv.querySelectorAll(selector);
+                                            }
+                                            
+                                            if (!parentElements || !parentElements.length) {
+                                                // When no parent elements have been specified, add the SVG element directly under the SVG element
+                                                parentElements = [$scope.svg];
+                                            }
+                                            
+                                            // It is not possible to add elements with the same id to multiple parent elements
+                                            if (parentElements.length > 1 && payload.elementId) {
+                                                logError("When multiple parent SVG elements are specified, it is not allowed to specify an .elementId");
+                                                return;
+                                            }
+                                        
+                                            // Create a new SVG element (of the specified type) to every specified parent SVG element
+                                            parentElements.forEach(function(parentElement){
+                                                var newElement = document.createElementNS("http://www.w3.org/2000/svg", payload.elementType);
+                                                
+                                                if (payload.elementId) {
+                                                    newElement.setAttribute("id", payload.elementId);
+                                                }
+                                                
+                                                if (payload.elementAttributes) {
+                                                    for (const [key, value] of Object.entries(payload.elementAttributes)) {
+                                                        newElement.setAttribute(key, value);
+                                                    }
+                                                }
+                                                
+                                                if (payload.elementStyleAttributes) {
+                                                    var style = "";
+                                                    // Convert the Javascript object to a style formatted string
+                                                    for (const [key, value] of Object.entries(payload.elementStyleAttributes)) {
+                                                        style += key;
+                                                        style += ":";
+                                                        style += value;
+                                                        style += "; ";
+                                                    }
+                                                    newElement.setAttribute("style", style);
+                                                }
+                                                
+                                                if (payload.textContent) {
+                                                    setTextContent(newElement, payload.textContent);
+                                                }
+                                                
+                                                parentElement.appendChild(newElement);
+                                            })
+                                            
+                                            break;
+                                        case "remove_element":
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+
+                                            elements.forEach(function(element){
+                                                var parent = element.parentNode;
+                                                parent.removeChild(element);
+                                            })
+                                            break;
                                         case "get_text":
                                             if (!payload.elementId && !payload.selector) {
                                                 logError("Invalid payload. A property named .elementId or .selector is not specified");
@@ -976,7 +1053,7 @@ module.exports = function(RED) {
                                                 logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
                                             }  
-                                            
+
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
 
@@ -1156,7 +1233,7 @@ module.exports = function(RED) {
 
                             var payload = msg.payload;
                             var topic = msg.topic;
-                            
+
                             if (!payload || payload === "") {
                                 logError("Missing msg.payload");
                                 return;
