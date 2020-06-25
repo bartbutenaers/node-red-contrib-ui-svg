@@ -840,7 +840,6 @@
                                     return false;
                                 },
                                 select: function (event, ui) {
-                                debugger;
                                     var terms = tagSplit(this.value);
                                     terms.pop();// remove the current input 
                                     terms.push(ui.item.value); // add the selected item
@@ -1157,6 +1156,12 @@
                         }
                         var fail = function(error, message) { 
                             console.error(error,message); 
+                            
+                            // Simplify the timeout message
+                            if (error === "timeout_error") {
+                                message = "No response from the editor";
+                            }
+                            
                             messageBox.show(
                                 "An error occured getting SVG from editor.<br>Error message...<br>" + message + "<br>Press OK to return to the editor or close to return to Node-red (changes may be lost).",
                                 "Error getting SVG!",
@@ -1266,9 +1271,13 @@
 
             function getSVGData(onSuccess, onFail) {
                 console.log("Calling getSVG method...")
+                
+                // Try to get an SVG object from the SVG editor.  However when the editor doesn't respond (e.g. because we
+                // used an incorrect url) then we should give an error after a timeout of 2 seconds
                 window.drawSvgCommChannel.call({
                     method: "getSVGObject",
                     params: {},
+                    timeout: 2000,
                     error: onFail,
                     success: onSuccess
                 });                
