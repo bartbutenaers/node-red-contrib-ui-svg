@@ -448,6 +448,51 @@ module.exports = function(RED) {
                             $scope.send(msg);
                         }
                         
+                        function applyEventHandlers(rootElement) {
+                            $scope.config.clickableShapes.forEach(function(clickableShape) {
+                                // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                                //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                                //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
+                                if (!clickableShape.targetId) {
+                                    return;
+                                }
+                                var elements = rootElement.querySelectorAll(clickableShape.targetId); // The "targetId" now contains the CSS selector!
+                                
+                                if (elements.length === 0) {
+                                    logError("No clickable elements found for selector '" + clickableShape.targetId + "'");
+                                }
+                                
+                                var action = clickableShape.action || "click" ;
+                                elements.forEach(function(element){
+                                    // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
+                                    // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
+                                    // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
+                                    //if (!config.showMouseLines) {
+                                        //element.style.cursor = "pointer";
+                                    //}
+                                    
+                                    //if the cursor is NOT set and the action is click, set cursor
+                                    if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
+                                        element.style.cursor = "pointer";
+                                    }
+                                    
+                                    // Store all the user data in a "data-<event>" element attribute, to have it available in the handleEvent function
+                                    element.setAttribute("data-event_" + action,  JSON.stringify({
+                                        elementId  : element.id,
+                                        selector   : clickableShape.targetId, // The "targetId" now contains the CSS selector! 
+                                        payload    : clickableShape.payload, 
+                                        payloadType: clickableShape.payloadType, 
+                                        topic      : clickableShape.topic
+                                    }));
+                                    
+                                    // Make sure we don't end up with multiple handlers for the same event
+                                    element.removeEventListener(action, handleEvent, false);
+                                    
+                                    element.addEventListener(action, handleEvent, false);
+                                })
+                            }); 
+                        }
+                        
                         $scope.flag = true;
                         $scope.init = function (config) {
                             $scope.config = config;
@@ -543,49 +588,9 @@ module.exports = function(RED) {
                                 $scope.panZoomTiger = svgPanZoom($scope.svg, panZoomOptions);
                             }
 
-                            // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
-                            config.clickableShapes.forEach(function(clickableShape) {
-                                // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
-                                //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
-                                //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
-                                if (!clickableShape.targetId) {
-                                    return;
-                                }
-                                var elements = $scope.rootDiv.querySelectorAll(clickableShape.targetId); // The "targetId" now contains the CSS selector!
-                                
-                                if (elements.length === 0) {
-                                    logError("No clickable elements found for selector '" + clickableShape.targetId + "'");
-                                }
-                                
-                                var action = clickableShape.action || "click" ;
-                                elements.forEach(function(element){
-                                    // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
-                                    // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
-                                    // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
-                                    //if (!config.showMouseLines) {
-                                        //element.style.cursor = "pointer";
-                                    //}
-                                    
-                                    //if the cursor is NOT set and the action is click, set cursor
-                                    if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
-                                        element.style.cursor = "pointer";
-                                    }
-                                    
-                                    // Store all the user data in a "data-<event>" element attribute, to have it available in the handleEvent function
-                                    element.setAttribute("data-event_" + action,  JSON.stringify({
-                                        elementId  : element.id,
-                                        selector   : clickableShape.targetId, // The "targetId" now contains the CSS selector! 
-                                        payload    : clickableShape.payload, 
-                                        payloadType: clickableShape.payloadType, 
-                                        topic      : clickableShape.topic
-                                    }));
-                                    
-                                    // Make sure we don't end up with multiple handlers for the same event
-                                    element.removeEventListener(action, handleEvent, false);
-                                    
-                                    element.addEventListener(action, handleEvent, false);
-                                })
-                            });                            
+                            // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
+                            // the SVG elements that match the specified CSS selectors.
+                            applyEventHandlers($scope.rootDiv);                           
                             
                             // Apply the animations to the SVG elements (i.e. in the DIV subtree), by adding <animation> elements
                             config.smilAnimations.forEach(function(smilAnimation) {
@@ -889,6 +894,13 @@ module.exports = function(RED) {
                                                 if (payload.textContent) {
                                                     setTextContent(newElement, payload.textContent);
                                                 }
+                                                
+                                                // In the "Events" tabsheet might be a CSS selector that matches this new element. This means that the 
+                                                // new element might need to get event handlers automatically.  To make sure we ONLY apply those handlers 
+                                                // to this new element, we add the element to a dummy parent which only has one child (i.e. this new element).
+                                                var dummyParent = document.createElement("div");
+                                                dummyParent.appendChild(newElement);
+                                                applyEventHandlers(dummyParent);
                                                 
                                                 parentElement.appendChild(newElement);
                                             })
@@ -1233,7 +1245,7 @@ module.exports = function(RED) {
 
                             var payload = msg.payload;
                             var topic = msg.topic;
-
+           
                             if (!payload || payload === "") {
                                 logError("Missing msg.payload");
                                 return;
