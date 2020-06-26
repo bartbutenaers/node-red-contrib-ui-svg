@@ -175,7 +175,7 @@ module.exports = function(RED) {
             
             node.availableCommands = ["get_text", "update_text", "update_innerHTML", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
-                                      "pan_to_point", "pan_to_direction", "fit", "center", "add_element", "remove_element"];
+                                      "pan_to_point", "pan_to_direction", "fit", "center", "add_element", "remove_element", "remove_attribute"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -1017,6 +1017,24 @@ module.exports = function(RED) {
                                             });
                                             elements.forEach(function(element){
                                                 element.setAttribute(payload.attributeName, payload.attributeValue);
+                                            });
+                                            break;
+                                        case "remove_attribute":
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+                                            elements.forEach(function(element){
+                                                if(element.hasAttribute(payload.attributeName)) {
+                                                    element.removeAttribute(payload.attributeName);
+                                                }
                                             });
                                             break;
                                         case "trigger_animation":
