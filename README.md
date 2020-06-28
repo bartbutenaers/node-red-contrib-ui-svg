@@ -556,6 +556,15 @@ Which results in this dashboard behaviour:
 
 ![svg_panzoom_demo](https://user-images.githubusercontent.com/14224149/85945042-4b8d9380-b93b-11ea-9724-8ee04e3d442c.gif)
 
+Notice the different behaviour between the two types of buttons in this flow:
++ The dashboard buttons will trigger a message that contains the ***socketid***:
+
+   ![socketid](https://user-images.githubusercontent.com/14224149/85958547-925ca700-b996-11ea-911d-d60778d7a933.png)
+   
+   Based on that socketid, only that client - where the button has been pressed - will receive the pan/zoom command (which is exactly what we want).
+   
++ The Inject node buttons will trigger a message that contains no socketid (since there is no specific client involved here), so ALL clients will receive the same pan/zoom command (which is most of the time not useful).
+
 Caution: make sure the panning and zooming is enabled in the Settings tabsheet, otherwise it won't be possible to control panning and zooming via input messages!
 
 ## Various stuff
