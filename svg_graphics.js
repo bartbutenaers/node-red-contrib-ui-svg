@@ -36,6 +36,21 @@ module.exports = function(RED) {
         console.log("Javascript file " + panzoomPath + " does not exist");
         panzoomPath = null;
     }
+    
+    // -------------------------------------------------------------------------------------------------
+    // Determining the path to the files in the dependent hammerjs module once.
+    // See https://discourse.nodered.org/t/use-files-from-dependent-npm-module/17978/5?u=bartbutenaers
+    // -------------------------------------------------------------------------------------------------
+    var hammerPath = require.resolve("hammerjs");
+    
+    // For example suppose the require.resolved results in panzoomPath = /home/pi/.node-red/node_modules/hammerjs/hammer.js
+    // Then we need to load the minified version
+    hammerPath = hammerPath.replace("hammer.js", "hammer.min.js");
+
+    if (!fs.existsSync(hammerPath)) {
+        console.log("Javascript file " + hammerPath + " does not exist");
+        hammerPath = null;
+    }
 
     function HTML(config) {       
         // The configuration is a Javascript object, which needs to be converted to a JSON string
@@ -133,7 +148,8 @@ module.exports = function(RED) {
         fill: inherit;
     }
 </style>
-<script src= "ui_svg_graphics/lib/panzoom.min.js"></script>
+<script src= "ui_svg_graphics/lib/panzoom"></script>
+<script src= "ui_svg_graphics/lib/hammer"></script>
 <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
@@ -548,13 +564,29 @@ module.exports = function(RED) {
                                     $scope.svg.parentElement.addEventListener('wheel', $scope.panZoomModule.zoomWithWheel);
                                 }
                                 
-                                // Zoom in when double clicked, or zoom out when shift key down during double click
                                 if (config.doubleClickZoomEnabled) {
+                                    // Zoom in when double clicked, or zoom out when shift key down during double click
                                     $scope.svg.parentElement.addEventListener('dblclick', function() {
                                         if (event.shiftKey) {
                                             $scope.panZoomModule.zoomOut();
                                         } else {
                                             $scope.panZoomModule.zoomIn();
+                                        }
+                                    });
+                                   
+                                    // Zoom in when tapped twice on a touch screen.  Next time zoom out, and so on ...
+                                    // We will need to use hammer.js for this (see https://github.com/timmywil/panzoom/issues/275).
+                                    // Make sure to pass the SVG element, instead of the parent DIV element (see https://github.com/hammerjs/hammer.js/issues/1119).
+                                    var mc = new Hammer.Manager($scope.svg);
+                                    mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
+                                    mc.on('doubletap', function (ev) {
+                                        if ($scope.previousTouchEvent === "zoomOut") {
+                                            $scope.panZoomModule.zoomIn();
+                                            $scope.previousTouchEvent = "zoomIn";
+                                        }
+                                        else {
+                                            $scope.panZoomModule.zoomOut();
+                                            $scope.previousTouchEvent = "zoomOut";
                                         }
                                     });
                                 }
@@ -1345,9 +1377,16 @@ module.exports = function(RED) {
                 res.json(result);
                 break;
             case "lib":
-                // Send the requested file to the client (in this case it will be panzoom.js)
-                res.sendFile(panzoomPath)
-                break;
+                // Send the requested JS library file to the client
+                switch (req.params.value) {
+                    case "panzoom":
+                        res.sendFile(panzoomPath);
+                        break;
+                    case "hammer":
+                        res.sendFile(hammerPath);
+                        break;
+                }
+                break
             default:
                 console.log("Unknown command " + req.params.cmd);
                 res.status(404).json('Unknown command');
