@@ -339,11 +339,11 @@
             editorUrl: {value: "//drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
             directory: {value: ""},
-            panEnabled: {value: false},
-            zoomEnabled: {value: false},
-            controlIconsEnabled: {value: false},
-            dblClickZoomEnabled: {value: false},
-            mouseWheelZoomEnabled: {value: false},
+            panning: {value: "disabled"},
+            zooming: {value: "disabled"},
+            panOnlyWhenZoomed: {value: false},
+            doubleClickZoomEnabled: {value: false}, 
+            mouseWheelZoomEnabled: {value: false}, 
             name: {value: ''}
         },
         inputs:1,
@@ -1400,6 +1400,9 @@
                     method: "loadStringSVG",
                     params: {
                         'stringSVG' : svgString,
+                        //'backgroundImageURL' : '/tmp/acme_logon_screen.png', This is NOT ok!
+                        //'backgroundImageURL' : 'https://homespy2.duckdns.org:1880/ui_svg_graphics/image/2399b014.7c6ad/acme_logon_screen.png', This is ok!
+                        //'backgroundImageURL' : 'ui_svg_graphics/image/2399b014.7c6ad/acme_logon_screen.png', This is ok!
                         'nameSVG' : 'node-red',// svg name
                         // The name of the service which to be called 
                         // when user clicks on the save button of drawsvg
@@ -1434,8 +1437,9 @@
                 var height = winhei - ((winhei/100)*5);//window height less 5%
 
                 // When the "#jsChannel:" postfix is not available in the URL, then the onDrawSVGReady will never be executed!
-                if(!src.endsWith("#jsChannel:")) {
-                    src += "#jsChannel:";
+                // We will send our key in the url, so Joseph sees in his logs how many people are drawing via Node-RED.
+                if(!src.endsWith("#jsChannel:?key=487a80da-f75a-4ab7-975f-055ff24ac400")) {
+                    src += "#jsChannel:?key=487a80da-f75a-4ab7-975f-055ff24ac400";
                 }
                 showDrawSVG(src,title,width,height);
             });
@@ -1477,7 +1481,68 @@
             });
             setTimeout(function() {
                 $("#node-input-name").css({"width":"70%"});    
-            }, 50);//workaround for odd over sizing of name field            
+            }, 50);//workaround for odd over sizing of name field       
+
+            // Migrate old nodes which don't have pan/zoom functionality yet
+            $('#node-input-panning').val(this.panning || "disabled");
+            $('#node-input-zooming').val(this.zooming || "disabled");
+            
+            $("#node-input-panning").on("change", function(){
+                var panAndZoomEnabled = $(this).val() !== "disabled" && $("#node-input-zooming").val() !== "disabled";
+                
+                var panOnlyWhenZoomedElement = $("#node-input-panOnlyWhenZoomed")[0];
+                
+                // The checkbox panOnlyWhenZoomed is only enabled when both panning and zooming are enabled
+                if (panAndZoomEnabled) {
+                    panOnlyWhenZoomedElement.nextElementSibling.style.color= "black"; // on label
+                    panOnlyWhenZoomedElement.disabled = false;
+                }
+                else {
+                    panOnlyWhenZoomedElement.nextElementSibling.style.color= "darkgrey"; // on label
+                    panOnlyWhenZoomedElement.checked = false;
+                    panOnlyWhenZoomedElement.disabled = true;
+                }
+            });
+            $("#node-input-panning").change();
+
+            $("#node-input-zooming").on("change", function(){
+                var panAndZoomEnabled = $(this).val() !== "disabled" && $("#node-input-zooming").val() !== "disabled";
+                
+                var panOnlyWhenZoomedElement = $("#node-input-panOnlyWhenZoomed")[0];
+                
+                // The checkbox panOnlyWhenZoomed is only enabled when both panning and zooming are enabled
+                if (panAndZoomEnabled) {
+                    panOnlyWhenZoomedElement.nextElementSibling.style.color= "black";
+                    panOnlyWhenZoomedElement.disabled = false;
+                }
+                else {
+                    panOnlyWhenZoomedElement.nextElementSibling.style.color= "darkgrey"; // on label
+                    panOnlyWhenZoomedElement.checked = false;
+                    panOnlyWhenZoomedElement.disabled = true;
+                }
+                
+                var zoomEnabled = $(this).val() !== "disabled";
+     
+                var mouseWheelZoomEnabledElement = $("#node-input-mouseWheelZoomEnabled")[0];
+                var doubleClickZoomEnabledElement = $("#node-input-doubleClickZoomEnabled")[0];
+                
+                // The checkboxes mouseWheelZoomEnabled and doubleClickZoomEnabled are only enabled when zooming are enabled
+                if (panAndZoomEnabled) {
+                    mouseWheelZoomEnabledElement.nextElementSibling.style.color= "black"; // on label
+                    doubleClickZoomEnabledElement.nextElementSibling.style.color= "black"; // on label
+                    mouseWheelZoomEnabledElement.disabled = false;
+                    doubleClickZoomEnabledElement.disabled = false;
+                }
+                else {
+                    mouseWheelZoomEnabledElement.nextElementSibling.style.color= "darkgrey"; // on label
+                    doubleClickZoomEnabledElement.nextElementSibling.style.color= "darkgrey"; // on label
+                    mouseWheelZoomEnabledElement.disabled = true;
+                    doubleClickZoomEnabledElement.disabled = true;
+                    mouseWheelZoomEnabledElement.checked = false;
+                    doubleClickZoomEnabledElement.checked = false;
+                }
+            });
+            $("#node-input-zooming").change();
         },
         oneditsave: function() {
             var node = this;
@@ -1644,35 +1709,38 @@
                 <input type="text" id="node-input-directory" placeholder="Select directory">
             </div>
             </br>
-            <div class="form-row" style="margin-bottom: 0px;">
-                <label for="node-input-func"><i class="fa fa-hand-pointer-o"></i> Pan/zoom</label>
-                <input type="hidden" id="node-input-func">
+            <div class="form-row">
+                <label for="node-input-panning"><i class="fa fa-arrows"></i> Panning</label>
+                <select id="node-input-panning">
+                    <option value="disabled">Disabled</option> 
+                    <option value="both">Pan both X and Y</option>
+                    <option value="x">Pan only X</option>
+                    <option value="y">Pan only Y</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-zooming"><i class="fa fa-search-plus"></i> Zooming</label>
+                <select id="node-input-zooming">
+                    <option value="disabled">Disabled</option> 
+                    <option value="enabled">Enabled</option>
+                </select>
             </div>
             <div class="form-row">
                 <label>&nbsp;</label>
-                <input type="checkbox" id="node-input-panEnabled" style="display: inline-block; width: auto; vertical-align: top;">
-                <label for="node-input-panEnabled" style="width:70%;"> Enable panning</label>
-            </div>    
-            <div class="form-row">
-                <label>&nbsp;</label>
-                <input type="checkbox" id="node-input-zoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
-                <label for="node-input-zoomEnabled" style="width:70%;"> Enable zooming</label>
-            </div>   
-            <div class="form-row">
-                <label>&nbsp;</label>
-                <input type="checkbox" id="node-input-controlIconsEnabled" style="display: inline-block; width: auto; vertical-align: top;">
-                <label for="node-input-controlIconsEnabled" style="width:70%;"> Enable control icons</label>
-            </div>   
-            <div class="form-row">
-                <label>&nbsp;</label>
-                <input type="checkbox" id="node-input-dblClickZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
-                <label for="node-input-dblClickZoomEnabled" style="width:70%;"> Enable double-click zooming</label>
-            </div>   
+                <input type="checkbox" id="node-input-panOnlyWhenZoomed" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-panOnlyWhenZoomed" style="width:70%;"> Pan only when zoomed</label>
+            </div>      
             <div class="form-row">
                 <label>&nbsp;</label>
                 <input type="checkbox" id="node-input-mouseWheelZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-mouseWheelZoomEnabled" style="width:70%;"> Enable mouse-wheel zooming</label>
             </div>
+            <div class="form-row">
+                <label>&nbsp;</label>
+                <input type="checkbox" id="node-input-doubleClickZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-doubleClickZoomEnabled" style="width:70%;"> Enable double click zooming</label>
+            </div>            
             <div class="form-row">
                 <input type="checkbox" id="node-input-selectorAsElementId" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-selectorAsElementId" style="width:70%;"> Enable legacy mode: CSS selector in msg.elementId (deprecated)</label>
