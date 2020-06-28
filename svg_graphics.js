@@ -133,6 +133,7 @@ module.exports = function(RED) {
         fill: inherit;
     }
 </style>
+<script src= "ui_svg_graphics/lib/panzoom.min.js"></script>
 <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
@@ -188,7 +189,7 @@ module.exports = function(RED) {
             
             node.availableCommands = ["get_text", "update_text", "update_innerHTML", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
-                                      "pan_to_point", "pan_to_direction", "fit", "center", "add_element", "remove_element", "remove_attribute"];
+                                      "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -537,7 +538,7 @@ module.exports = function(RED) {
                                 if (!isTouchDevice) {
                                     console.log("No touch device functionality has been detected");
                                 }*/
-                                                           
+                                                    
                                 // Apply the @panzoom/panzoom library to the svg element (see https://github.com/timmywil/panzoom).
                                 $scope.panZoomModule = Panzoom($scope.svg, panZoomOptions);
 
@@ -811,6 +812,7 @@ module.exports = function(RED) {
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
 
+                                    // !!!!!!!!!!!!! When adding a case statement, add the option also to node.availableCommands above !!!!!!!!!!!!!
                                     switch (op) {
                                         case "add_element": // Add elements, or replace them if they already exist
                                             if (!payload.elementType) {
@@ -1178,7 +1180,7 @@ module.exports = function(RED) {
                                             }
     
                                             // Pan (relative) by x/y of rendered pixels into a direction
-                                            $scope.panZoomModule.panBy(msg.payload.x, msg.payload.y, { relative: true });
+                                            $scope.panZoomModule.pan(msg.payload.x, msg.payload.y, { relative: true });
                                             break;
                                         case "reset_panzoom":
                                             if (!$scope.panZoomModule) {
