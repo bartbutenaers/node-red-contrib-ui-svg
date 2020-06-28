@@ -4,7 +4,8 @@
     "description": "A Node-RED widget node to show interactive SVG (vector graphics) in the dashboard",
     "dependencies": {
        "mime": "^2.4.4",
-       "@panzoom/panzoom: "^4.1.0"
+       "@panzoom/panzoom": "^4.1.0",
+       "hammerjs": "^2.0.8"
     },
     "author": {
         "name": "Bart Butenaers"
