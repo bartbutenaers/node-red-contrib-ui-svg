@@ -21,6 +21,21 @@ module.exports = function(RED) {
     const mime = require('mime');
     // Shared object between N instances of this node (caching for performance)
     var faMapping;
+    
+    // -------------------------------------------------------------------------------------------------
+    // Determining the path to the files in the dependent panzoom module once.
+    // See https://discourse.nodered.org/t/use-files-from-dependent-npm-module/17978/5?u=bartbutenaers
+    // -------------------------------------------------------------------------------------------------
+    var panzoomPath = require.resolve("@panzoom/panzoom");
+    
+    // For example suppose the require.resolved results in panzoomPath = /home/pi/.node-red/node_modules/@panzoom/panzoom/dist/panzoom.js
+    // Then we need to load the minified version
+    panzoomPath = panzoomPath.replace("panzoom.js", "panzoom.min.js");
+
+    if (!fs.existsSync(panzoomPath)) {
+        console.log("Javascript file " + panzoomPath + " does not exist");
+        panzoomPath = null;
+    }
 
     function HTML(config) {       
         // The configuration is a Javascript object, which needs to be converted to a JSON string
@@ -118,8 +133,6 @@ module.exports = function(RED) {
         fill: inherit;
     }
 </style>
-<script src= "ui_svg_graphics/lib/svg-pan-zoom.min.js"></script>
-<script src= "ui_svg_graphics/lib/hammer.js"></script>
 <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
@@ -506,87 +519,45 @@ module.exports = function(RED) {
                                              "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"];
                             
                             //$scope.svg.style.cursor = "crosshair";
-                            
-                            if (config.panEnabled || config.zoomEnabled || config.controlIconsEnabled || config.dblClickZoomEnabled || config.mouseWheelZoomEnabled) {
+
+                            // Migrate old nodes which don't have pan/zoom functionality yet
+                            var panning = config.panning || "disabled";
+                            var zooming = config.zooming || "disabled";
+
+                            if (panning !== "disabled" || zooming !== "disabled") {
                                 var panZoomOptions = {
-                                    panEnabled: config.panEnabled,
-                                    zoomEnabled: config.zoomEnabled,
-                                    controlIconsEnabled: config.controlIconsEnabled,
-                                    dblClickZoomEnabled: config.dblClickZoomEnabled,
-                                    mouseWheelZoomEnabled: config.mouseWheelZoomEnabled,
-                                    fit: 1,
-                                    center: 1
+                                    disablePan        : panning === "disabled",
+                                    disableXAxis      : panning === "y",
+                                    disableYAxis      : panning === "x",
+                                    disableZoom       : zooming === "disabled",
+                                    panOnlyWhenZoomed : config.panOnlyWhenZoomed
                                 }
                                 
-                                var isTouchDevice = 'ontouchstart' in document.documentElement;
-                                
-                                if (isTouchDevice) {
-                                    console.log("Touch device functionality has been detected");
-                                    
-                                    // Based on the panzoom library's mobile demo (https://github.com/ariutta/svg-pan-zoom/blob/master/demo/mobile.html)
-                                    panZoomOptions.customEventsHandler = {
-                                        haltEventListeners: ['touchstart', 'touchend', 'touchmove', 'touchleave', 'touchcancel'],
-                                        init: function(options) {
-                                            var instance = options.instance;
-                                            var initialScale = 1;
-                                            var pannedX = 0;
-                                            var pannedY = 0;
-                                            
-                                            // Init Hammer...
-                                            
-                                            // Listen only for pointer and touch events
-                                            this.hammer = Hammer(options.svgElement, {
-                                                inputClass: Hammer.SUPPORT_POINTER_EVENTS ? Hammer.PointerEventInput : Hammer.TouchInput
-                                            })
-                                            
-                                            // Enable pinch
-                                            this.hammer.get('pinch').set({enable: true});
-                                            
-                                            // Handle double tap
-                                            this.hammer.on('doubletap', function(ev){
-                                                instance.zoomIn();
-                                            })
-                                            
-                                            // Handle pan
-                                            this.hammer.on('panstart panmove', function(ev){
-                                                // On pan start reset panned variables
-                                                if (ev.type === 'panstart') {
-                                                    pannedX = 0;
-                                                    pannedY = 0;
-                                                }
-                                                
-                                                // Pan only the difference
-                                                instance.panBy({x: ev.deltaX - pannedX, y: ev.deltaY - pannedY});
-                                                pannedX = ev.deltaX;
-                                                pannedY = ev.deltaY;
-                                            })
-                                            
-                                            // Handle pinch
-                                            this.hammer.on('pinchstart pinchmove', function(ev){
-                                                // On pinch start remember initial zoom
-                                                if (ev.type === 'pinchstart') {
-                                                    initialScale = instance.getZoom();
-                                                    instance.zoomAtPoint(initialScale * ev.scale, {x: ev.center.x, y: ev.center.y});
-                                                }
-                                          
-                                                instance.zoomAtPoint(initialScale * ev.scale, {x: ev.center.x, y: ev.center.y});
-                                            })
-                                            
-                                            // Prevent moving the page on some devices when panning over SVG
-                                            options.svgElement.addEventListener('touchmove', function(e){ e.preventDefault(); });
-                                        },
-                                        destroy: function(){
-                                            this.hammer.destroy();
-                                        }
-                                    }
-                                }
-                                else {
+                                /*var isTouchDevice = 'ontouchstart' in document.documentElement;
+                                if (!isTouchDevice) {
                                     console.log("No touch device functionality has been detected");
-                                }
+                                }*/
                                                            
-                                // Apply the svg-pan-zoom library to the svg element (see https://github.com/ariutta/svg-pan-zoom)
-                                $scope.panZoomTiger = svgPanZoom($scope.svg, panZoomOptions);
-                            }
+                                // Apply the @panzoom/panzoom library to the svg element (see https://github.com/timmywil/panzoom).
+                                $scope.panZoomModule = Panzoom($scope.svg, panZoomOptions);
+
+                                // Panning and pinch zooming are bound automatically (unless disablePan is true).
+                                // Other methods for zooming need to be added explicit, by using the provided functions.
+                                if (config.mouseWheelZoomEnabled) {
+                                    $scope.svg.parentElement.addEventListener('wheel', $scope.panZoomModule.zoomWithWheel);
+                                }
+                                
+                                // Zoom in when double clicked, or zoom out when shift key down during double click
+                                if (config.doubleClickZoomEnabled) {
+                                    $scope.svg.parentElement.addEventListener('dblclick', function() {
+                                        if (event.shiftKey) {
+                                            $scope.panZoomModule.zoomOut();
+                                        } else {
+                                            $scope.panZoomModule.zoomIn();
+                                        }
+                                    });
+                                }
+                            }   
 
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
                             // the SVG elements that match the specified CSS selectors.
@@ -1142,23 +1113,23 @@ module.exports = function(RED) {
                                             });                                               
                                             break;
                                         case "zoom_in":
-                                            if (!$scope.panZoomTiger) {
+                                            if (!$scope.panZoomModule) {
                                                 logError("Cannot zoom via input message, when zooming is not enabled in the settings");
                                                 return;
                                             }
                                         
-                                            $scope.panZoomTiger.zoomIn();
+                                            $scope.panZoomModule.zoomIn();
                                             break;
                                         case "zoom_out":
-                                            if (!$scope.panZoomTiger) {
+                                            if (!$scope.panZoomModule) {
                                                 logError("Cannot zoom via input message, when zooming is not enabled in the settings");
                                                 return;
                                             }
 
-                                            $scope.panZoomTiger.zoomOut();
+                                            $scope.panZoomModule.zoomOut();
                                             break;
                                         case "zoom_by_percentage":
-                                            if (!$scope.panZoomTiger) {
+                                            if (!$scope.panZoomModule) {
                                                 logError("Cannot zoom via input message, when zooming is not enabled in the settings");
                                                 return;
                                             }
@@ -1174,36 +1145,15 @@ module.exports = function(RED) {
                                             // Optionally point coordinates can be specified in the input message
                                             if (payload.x && payload.y) {
                                                 // When a point has been specified, zoom by the specified percentage at the specified point
-                                                $scope.panZoomTiger.zoomAtPointBy(factor, {x: payload.x, y: payload.y});
+                                                $scope.panZoomModule.zoomToPoint(factor, {clientX: payload.x, clientY: payload.y});
                                             }
                                             else {
                                                 // No point has been specified, so zoom by the specified percentage
-                                                $scope.panZoomTiger.zoomBy(factor);
-                                            }
-                                            break;
-                                        case "zoom_to_level":
-                                            if (!$scope.panZoomTiger) {
-                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
-                                                return;
-                                            }
-
-                                            if (!payload.level) {
-                                                logError("No msg.payload.level has been specified");
-                                                return;
-                                            }
-                                            
-                                            // Optionally point coordinates can be specified in the input message
-                                            if (payload.x && payload.y) {
-                                                // Zoom to the specified level at the specified point
-                                                $scope.panZoomTiger.zoomAtPoint(2, {x: 50, y: 50})
-                                            }
-                                            else {
-                                                // Zoom to the specified level
-                                                $scope.panZoomTiger.zoom(payload.level);
+                                                $scope.panZoomModule.zoom(factor);
                                             }
                                             break;
                                         case "pan_to_point":    
-                                            if (!$scope.panZoomTiger) {
+                                            if (!$scope.panZoomModule) {
                                                 logError("Cannot pan via input message, when panning is not enabled in the settings");
                                                 return;
                                             }
@@ -1214,10 +1164,10 @@ module.exports = function(RED) {
                                             }
     
                                             // Pan (absolute) to rendered point
-                                            $scope.panZoomTiger.pan({x: msg.payload.x, y: msg.payload.y});
+                                            $scope.panZoomModule.pan(msg.payload.x, msg.payload.y);
                                             break;
-                                        case "pan_to_direction":    
-                                            if (!$scope.panZoomTiger) {
+                                        case "pan_to_direction": 
+                                            if (!$scope.panZoomModule) {
                                                 logError("Cannot pan via input message, when panning is not enabled in the settings");
                                                 return;
                                             }
@@ -1228,24 +1178,16 @@ module.exports = function(RED) {
                                             }
     
                                             // Pan (relative) by x/y of rendered pixels into a direction
-                                            $scope.panZoomTiger.panBy({x: msg.payload.x, y: msg.payload.y});
-                                            break;  
-                                        case "fit":
-                                            if (!$scope.panZoomTiger) {
-                                                logError("Cannot fit via input message, when zooming is not enabled in the settings");
-                                                return;
-                                            }
-                                        
-                                            $scope.panZoomTiger.fit();
+                                            $scope.panZoomModule.panBy(msg.payload.x, msg.payload.y, { relative: true });
                                             break;
-                                        case "center":
-                                            if (!$scope.panZoomTiger) {
-                                                logError("Cannot center via input message, when panning is not enabled in the settings");
+                                        case "reset_panzoom":
+                                            if (!$scope.panZoomModule) {
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
                                                 return;
                                             }
 
-                                            $scope.panZoomTiger.center();
-                                            break;
+                                            $scope.panZoomModule.reset();
+                                            break;    
                                         default:
                                             if (msg.topic) {
                                                 logError("Unsupported msg.topic '" + msg.topic + "'");
@@ -1350,14 +1292,14 @@ module.exports = function(RED) {
                         res.writeHead(404);
                         return res.end("File not found.");
                     }
-
-                    res.setHeader("Content-Type", mime.lookup(url)); 
-                    res.writeHead(200);
                     
-                    var buff = new Buffer(data);
-                    var base64data = buff.toString('base64');
+                    var img = Buffer.from(data, 'base64');
 
-                    res.end(base64data);
+                    res.setHeader("Content-Type", mime.getType(url));
+                    res.setHeader("Content-Length", img.length);
+                    res.writeHead(200);
+
+                    res.end(img);
                 });
             } 
             else {
@@ -1401,13 +1343,8 @@ module.exports = function(RED) {
                 res.json(result);
                 break;
             case "lib":
-                var options = {
-                    root: __dirname + '/lib/',
-                    dotfiles: 'deny'
-                };
-			
-                // Send the requested file to the client (in this case it will be svg-pan-zoom.min.js)
-                res.sendFile(req.params.value, options)
+                // Send the requested file to the client (in this case it will be panzoom.js)
+                res.sendFile(panzoomPath)
                 break;
             default:
                 console.log("Unknown command " + req.params.cmd);
