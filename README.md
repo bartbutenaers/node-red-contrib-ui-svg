@@ -527,7 +527,15 @@ This is the URL where the [DrawSvg](#DrawSvg-drawing-editor) editor instance is 
 This directory of your local system (where your Node-RED instance is running) can be used to make your local images available, to both your dashboard and your flow editor.
 
 ### Pan and zoom
-A series of options are available to allow panning and zooming, which is useful for large drawings (like buildings, process flows, ...). 
+A series of options are available - in the *"Settings"* tabsheet - to allow panning and zooming, which is useful for large drawings (like buildings, process flows, ...):
+
++ ***"Panning"***: enable panning in X, Y or in both directions.
++ ***"Zooming"***:  enable zooming.
++ ***"Pan only when zoomed"***: when this option is activated, the SVG drawing can only be panned when it has been zoomed previously.  Indeed when the drawing is at its original size, it might in some cases be pointless to allow panning.
++ ***"Enable mouse-wheel zooming"***: allow zooming in/out by rotating the mouse wheel.
++ ***"Enable double click zooming"***: the behaviour of this option differs on a touch screen.
+   + When a mouse is being used, every double click will trigger zooming in.  Or it will trigger zooming out, when the SHIFT key is being pressed meanwhile.
+   + On a touch screen the first double tap will trigger zooming in.  The second double tap will trigger zooming out.  And so on ...
 
 The following demo shows how to pan and zoom via the mouse (mousewheel and dragging):
 
