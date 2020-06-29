@@ -5,7 +5,7 @@ Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner
 
 And also lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawing-editor) for his assistance!
 
-:warning: ***Moreover - for consistency with other UI nodes - we had to move some fields in the output message (when an event occurs):***
+:warning: ***The 2.0.0 release (unfortunately) contains some breaking changes;***
 + `msg.event` has become `msg.event.type`
 + `msg.coordinates.x` has become `msg.event.svgX`
 + `msg.coordinates.y` has become `msg.event.svgY`
