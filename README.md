@@ -239,6 +239,11 @@ Remark: The location is measured in the SVG coordinate system, which means the o
 ### Auto format SVG Source after saving edits in SVG Editor
 When editing the SVG source via [DrawSvg](#DrawSvg-drawing-editor), the manipulated SVG source isn't very pretty: the SVG source will contain emtpy lines, multiple SVG elements on a single line ...  This SVG source can be manually beautified using the "*Format SVG*" button, or automatically (every time the DrawSVG popup dialog window is closed - by activating this checkbox.
 
+### Show browser errors on the server
+Unfortunately not all kind of errors can be validated on the server, but instead they will occur on the client side.  For example when an input message arrives, but no SVG element can be found for the specified selector.  As a result your drawing won't be updated, and in the 1.x.x version you had to figure out yourself what is going wrong...  Of course you can have a look in the browser console log to have a look at the client side errors.  However on some systems (e.g. Android smartphones) it is very difficult to get access to that console log (unless you setup a remote connection via usb with your desktop browser). 
+
+To simplify troubleshooting, the client side errors will appear in the Node-RED debug panel when this checkbox is activated.  But keep in mind that if you have N drawings visible simultaneously (when your dashboard is currently displayed in N browsers), then you will get N errors instead of 1 ...
+
 ### Editor URL
 This is the URL where the [DrawSvg](#DrawSvg-drawing-editor) editor instance is being hosted.  By default this field contains a link to the official [DrawSvg cloud](http://drawsvg.org/drawsvg.html) system, but it can also contain a link to a local DrawSvg installation (hosted via a [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node).
 
