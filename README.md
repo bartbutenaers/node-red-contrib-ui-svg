@@ -309,7 +309,7 @@ Caution: make sure the panning and zooming is enabled in the Settings tabsheet, 
 Most of the SVG information can be manipulated by sending input messages to this node.  
 
 ### Some general msg guidelines:
-+ To define on which SVG element(s) the control message needs to be applied, the element needs to be identified via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
++ In most messages, you need to specify on which SVG element(s) the control message needs to be applied.  To specify a single element, the `elementId` field can be specified.  However it is also possible to specify one or more elements via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
    ```
    "payload": {
         "command": "update_text",
@@ -320,12 +320,31 @@ Most of the SVG information can be manipulated by sending input messages to this
 + A message can contain a single command.  For example:
    ```
    "payload": {
+       "command": "update_attribute",
        "selector": "#cam_living_room",
        "attributeName": "fill",
        "attributeValue": "orange"
    }
    ```
    But it is also possible to specify ***multiple commands (as an array)*** in a single control message.  For example:
+   ```
+   "payload": [
+        {
+           "command": "update_attribute",
+           "elementId": "cam_kitchen", /*use elementId or selector*/
+           "attributeName": "fill",
+           "attributeValue": "orange"
+        },
+        {
+           "command": "set_attribute",
+           "selector": "#cam_living", /*use elementId or selector*/
+           "attributeName": "fill",
+           "attributeValue": "red"
+        }      
+   ]
+   ```
+   
++ When multiple identical commands are being used in a single message, the message might be simplified by specifying the command inside the ```msg.topic```:
    ```
    "payload": [
         {
@@ -338,64 +357,22 @@ Most of the SVG information can be manipulated by sending input messages to this
            "attributeName": "fill",
            "attributeValue": "red"
         },        
-   }
+   ],
    "topic": "update_attribute"
    ```
-+ An action can be specified in the ```msg.topic```, for example:
-   ```
-   "payload": {
-       "selector": "#cam_living_room",
-       "attributeName": "fill",
-       "attributeValue": "orange"
-   }
-   "topic": "update_attribute"
-   ```
-   But it is also possible to use ```msg.command``` instead:
-   ```
-   "payload": {
-       "command": "update_attribute",
-       "selector": "#cam_living_room",
-       "attributeName": "fill",
-       "attributeValue": "orange"
-   }
-   ```   
-   This command approach allows you to perform multiple different commands via a single input message:
-   ```
-   "payload": [  
-     {
-         "command": "update_text",
-         "selector": "#faultMessage",
-         "textContent": "Something when wrong"
-     },
-     {
-         "command": "update_attribute",
-         "selector": "#faultMessage",
-         "attributeName": "fill",
-         "attributeValue": "red"
-     },
-     {
-         "command": "update_style",
-         "selector": "#faultMessage",
-         "attributeName": "rotate",
-         "attributeValue": "transform(180deg)"
-     },
-     {
-         "command": "trigger_animation",
-         "selector": "#faultMessage_blink",
-         "action": "start"
-     }
-   ```
-+ The command and/or (separated by `|`) CSS selector also can be part of the topic:
+  This way the command only needs to be specified once.
+  
++ To further simplify the message, the CSS selector can also be added to the topic (separated by `|`) :
    ```
     {
         "topic": "update_text|#myRect > .faultMessage",
         "payload": "hello"
     }
    ```
-   This way the message becomes shorter, but you can only use 1 selector or command value (even when the payload contains an array).
+   This way the message becomes yet shorter, but you can only use 1 selector or command value (even when the payload contains an array).
 
 ### Update/set an attribute value via msg
-The SVG elements' attribute values can be added/changed/removed via an input message:
+The SVG elements' attribute values can be added/changed via an input message:
 ```
   "payload": [
       {
@@ -434,7 +411,7 @@ The following flow demonstrates how to change the *'fill'* color and *'rotation'
 ```
 
 ### Update/set a style attribute value via msg
-The SVG elements' style attribute values can be added/changed/removed via an input message, via the *"update_style"* or *"set_style"* commands (which have both the same behaviour):
+The SVG elements' style attribute values can be added/changed via an input message, via the *"update_style"* or *"set_style"* commands (which have both the same behaviour):
 
 Change the value of 1 style attribute:
 ```
@@ -457,7 +434,7 @@ Or change (all attribute values of) the entire style object at once:
 ### Remove an attribute via msg
 The attribute of an SVG element can be removed in different ways:
 
-Remove the attribute via the 'remove_attribute' command for a specific attribute name:
+Remove the attribute via the 'remove_attribute' command for a specified attribute name:
 ```
 { 
    "command": "remove_attribute", 
@@ -556,9 +533,9 @@ The input message should have following format:
 + ```msg.payload.action``` should contain ***start*** or ***stop***, depending on which action you want to perform on the animation.
 
 ### Add/remove events via msg
-When SVG elements should always respond to some events (e.g. click), those elements should be enumerated in the *"Events"* tabsheet.  However in some cases it is required to make SVG elements to respond only temporary to events, which can be achieve by adding/removing events to/from SVG elements.
+When SVG elements always need to respond to an event (e.g. click), those elements should be enumerated in the *"Events"* tabsheet.  However in some cases it is required to make SVG elements to respond only temporary to events, which can be achieved by adding/removing events to/from SVG elements.
 
-In the following example, the ```msg.payload``` can make element with id 'circle_1' unclickable and 'circle_2' clickable:
+In the following example, the ```msg.payload``` can make element with id 'circle_1' become unclickable and 'circle_2' clickable:
 ```
 [{
   command  : "remove_event",
@@ -575,7 +552,7 @@ In the following example, the ```msg.payload``` can make element with id 'circle
 ```
 
 ### Add elements via msg
-Normally all elements will be always available, by defining them in the *"SVG Source"* tabsheet.  However it might be required to add SVG elements dynamically, which can be achieved via input messages:
+Normally SVG elements need to exist all the time, by defining them in the *"SVG Source"* tabsheet.  However it might be required to add SVG elements dynamically, which can be achieved via input messages:
 
 ```
 { 
@@ -591,14 +568,15 @@ Normally all elements will be always available, by defining them in the *"SVG So
       "fill": "red",
       "stroke": "black"
    ],
+   "textContent": "my content"
 }
 ```
 Some remarks about the input message:
 + A `parentElementId` property can be specified, if the new element should be a child of the specified parent element.  If not available, the new element will be added directly under the root SVG element.
-+ A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can add multiple elements via a single command.  Note that it is not allowed then to specifiy an elementId property, since only one element is allowed to have the same id.
++ A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can create multiple elements at once via a single command.  Note that it is not allowed in that case to specify an elementId property, since only one element is allowed to have the same id.
 + When an element with the same `elementId` already exists, then that existing element will be *replaced* by this new element!
 
-When the *"Events"* tabsheet contains a CSS selector that matches this new element, then this new element gets those event handlers automatically. 
+When the *"Events"* tabsheet contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
 
 ### Remove elements via msg
 In some uses cases it is required to remove SVG elements dynamically, which can be achieved via input messages:
@@ -630,7 +608,7 @@ Or zoom by a percentage, for example 130% (which means a factor 1.3):
    "percentage": 130
 }
 ```
-Optionally a point coordinate can be specified, to zoom in on that specific point by a specified percentage:
+Optionally coordinates can be specified, to zoom in on that specific point by a specified percentage:
 ```
 { 
    "command": "zoom_by_percentage",
@@ -641,7 +619,7 @@ Optionally a point coordinate can be specified, to zoom in on that specific poin
 ```
  
 ### Panning via msg 
-It is possible to pan absolute to a specified point:
+As explained above (in the [Pan and zoom](#pan-and-zoom) section), it is possible to pan absolute to a specified point:
 ```
 { 
    "command": "pan_to_point",
