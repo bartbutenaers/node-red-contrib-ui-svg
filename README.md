@@ -51,10 +51,21 @@ The node's config screen consists of a series of tabsheets:
 
 ### "Editor" tabsheet
 
-Click the button *Open SVG editor* to show the SVG in the [DrawSvg](#DrawSvg-drawing-editor) drawing editor.  
-The DrawSvg editor will be be opened in a popup dialog window:
+[DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSVG into this node, to allow users to edit their SVG source via a nice drawing program.
+
+***!!! DrawSvg is free software.  Note that DrawSvg and the online service is used as is without warranty of bugs !!!***
 
 ![launch_editor](https://user-images.githubusercontent.com/44235289/66716981-f40ac000-edcb-11e9-96b5-69e11220b71d.gif)
+
+Steps to use DrawSvg:
+1. Click the *"Open SVG editor"*, to show the SVG in the [DrawSvg](#DrawSvg-drawing-editor) drawing editor.
+2. DrawSvg will be opened in a popup dialog window, and it will visualize the SVG source (from this node).
+3. The SVG drawing can be edited.
+4. You can intermediately save your changes (to this node), using the *"Save"* button in the upper right corner of the popup dialog window.
+5. As soon as the popup dialog window is being closed, a notification will appear.  There you can choose to ignore all changes (i.e. you don't need them anymore), or to save all the changes (to this node).
+6. The updated SVG source will appear in the *"SVG source"* tabsheet of this node.
+
+By default this node will use the free online DrawSvg service (see *"Editor URL"* in the "Settings" tabsheet).  However we it is also possible to use the [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node, which can host a DrawSVG service locally for offline systems.
 
 ### "SVG source" tabsheet
 
@@ -595,23 +606,6 @@ Some remarks:
    ```
    [{"id":"f369eb92.6c5558","type":"ui_svg_graphics","z":"553defb0.b99fb","group":"9ec8b304.368cc","order":0,"width":"15","height":"15","svgString":"<!--<svg height=\"100\" width=\"100\"></svg>-->\n\n<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n    <text id=\"my_text\" x=\"100\" y=\"50\" font-family=\"FontAwesome\" fill=\"blue\" stroke=\"black\" font-size=\"80\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\">fa-thermometer-empty</text>\n</svg>","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"#camera_living","payloadType":"str","topic":"#camera_living"},{"targetId":"#camera_balcony","action":"click","payload":"#camera_balcony","payloadType":"str","topic":"#camera_balcony"},{"targetId":"#camera_entry","action":"click","payload":"#camera_entry","payloadType":"str","topic":"#camera_entry"}],"smilAnimations":[],"bindings":[{"selector":"#camera_living","bindSource":"payload.attributeValue","bindType":"attr","attribute":"fill"},{"selector":"#camera_entry","bindSource":"payload.attribueValue","bindType":"attr","attribute":"fill"},{"selector":"#camera_balcony","bindSource":"payload.attributeVale","bindType":"attr","attribute":"fill"}],"showCoordinates":true,"autoFormatAfterEdit":false,"outputField":"anotherField","editorUrl":"","directory":"","name":"Home Floor Plan","x":1130,"y":520,"wires":[[]]},{"id":"866e2e46.ba033","type":"inject","z":"553defb0.b99fb","name":"fa-thermometer-three-quarters","topic":"","payload":"{\"command\":\"update_text\",\"selector\":\"#my_text\",\"textContent\":\"fa-thermometer-three-quarters\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":820,"y":520,"wires":[["f369eb92.6c5558"]]},{"id":"68c4730b.af00bc","type":"inject","z":"553defb0.b99fb","name":"fa-thermometer-full ","topic":"","payload":"{\"command\":\"update_text\",\"selector\":\"#my_text\",\"textContent\":\"fa-thermometer-full\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":790,"y":560,"wires":[["f369eb92.6c5558"]]},{"id":"46183ab5.42fd54","type":"inject","z":"553defb0.b99fb","name":"fa-thermometer-empty","topic":"","payload":"{\"command\":\"update_text\",\"selector\":\"#my_text\",\"textContent\":\"fa-thermometer-empty\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":800,"y":400,"wires":[["f369eb92.6c5558"]]},{"id":"501c7f9a.08ac4","type":"inject","z":"553defb0.b99fb","name":"fa-thermometer-half ","topic":"","payload":"{\"command\":\"update_text\",\"selector\":\"#my_text\",\"textContent\":\"fa-thermometer-half\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":790,"y":480,"wires":[["f369eb92.6c5558"]]},{"id":"d3ea2538.fa9458","type":"inject","z":"553defb0.b99fb","name":"fa-thermometer-quarter","topic":"","payload":"{\"command\":\"update_text\",\"selector\":\"#my_text\",\"textContent\":\"fa-thermometer-quarter\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":800,"y":440,"wires":[["f369eb92.6c5558"]]},{"id":"9ec8b304.368cc","type":"ui_group","z":"","name":"Home Floor Plan","tab":"bb4f2a94.83b338","disp":true,"width":"15","collapse":false},{"id":"bb4f2a94.83b338","type":"ui_tab","z":"","name":"Home Floor Plan","icon":"dashboard","disabled":false,"hidden":false}]
    ```
-
-### DrawSvg drawing editor
-[DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSVG into this node, to allow users to edit their SVG source via a nice drawing program.
-
-***!!! DrawSvg is free software.  Note that DrawSvg and the online service is used as is without warranty of bugs !!!***
-
-Steps to use DrawSvg:
-1. Click the *"Drawing editor"* button in the "SVG source" tabsheet.
-2. DrawSvg will be opened in a popup dialog window, and it will visualize the SVG source.
-3. The SVG drawing can be edited, but the original SVG source in this node will remain unchanged!
-4. You can intermediately save your changes to the SVG source in this node, using the *"Save"* button in the upper right corner of the popup dialog window.
-5. As soon as the popup dialog window is being closed, a notification will appear.  There you can choose to ignore all changes (i.e. you don't need them anymore), or to save all the changes to the SVG source in this node.
-6. The updated SVG source will appear in this node.
-
-![svg_drawsvg](https://user-images.githubusercontent.com/14224149/65639275-14730600-dfe8-11e9-93be-423f358b9fb2.gif)
-
-By default this node will use the free online DrawSvg service (see *"Editor URL"* in the "Settings" tabsheet).  However we have planned to provide a new Node-RED node in the near future, which will allow to host DrawSVG locally for offline systems.
 
 ### Display images
 SVG offers an image element, that can be used to display an image inside an SVG drawing.  You have to specify at which path the image is available, but the image can be stored a different locations:
