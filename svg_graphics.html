@@ -334,7 +334,6 @@
             showCoordinates: {value: false},
             autoFormatAfterEdit: {value: false},
             showBrowserErrors: {value: false},
-            selectorAsElementId: {value: false},
             outputField: {value: "payload"},
             editorUrl: {value: "//drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
@@ -356,12 +355,6 @@
         },
         oneditprepare: function() {
             var node = this;
-          
-            // In version 1.x.x there was a bug (msg.elementId of output message contained the selector instead of the elementId).
-            // This was fixed in version 2.0.0, but to avoid breaking changes we will the checkbox automatically (to get the same behaviour as before).
-            if (node.selectorAsElementId === undefined) {
-                $('#node-input-selectorAsElementId').prop('checked', true);
-            }
             
             // Make sure the autocomplete fields at least refer to Iterable node fields...
             // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/33
@@ -1400,9 +1393,6 @@
                     method: "loadStringSVG",
                     params: {
                         'stringSVG' : svgString,
-                        //'backgroundImageURL' : '/tmp/acme_logon_screen.png', This is NOT ok!
-                        //'backgroundImageURL' : 'https://homespy2.duckdns.org:1880/ui_svg_graphics/image/2399b014.7c6ad/acme_logon_screen.png', This is ok!
-                        //'backgroundImageURL' : 'ui_svg_graphics/image/2399b014.7c6ad/acme_logon_screen.png', This is ok!
                         'nameSVG' : 'node-red',// svg name
                         // The name of the service which to be called 
                         // when user clicks on the save button of drawsvg
@@ -1741,10 +1731,6 @@
                 <input type="checkbox" id="node-input-doubleClickZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-doubleClickZoomEnabled" style="width:70%;"> Enable double click zooming</label>
             </div>            
-            <div class="form-row">
-                <input type="checkbox" id="node-input-selectorAsElementId" style="display: inline-block; width: auto; vertical-align: top;">
-                <label for="node-input-selectorAsElementId" style="width:70%;"> Enable legacy mode: CSS selector in msg.elementId (deprecated)</label>
-            </div> 
         </div>
     </div>
 </script>
