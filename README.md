@@ -307,19 +307,9 @@ Caution: make sure the panning and zooming is enabled in the Settings tabsheet, 
 
 ## Control via messages
 Most of the SVG information can be manipulated by sending input messages to this node.  
-Supported commands include...
 
-* update_text
-* update_innerHTML
-* update_attribute
-* set_attribute
-* update_style
-* set_style
-
-*Refer to the nodes built-in help for full details and examples.*
-
-### Some general guidelines:
-+ To define on which SVG element(s) the control message needs to be applied, the element needs to be identified via a [css selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
+### Some general msg guidelines:
++ To define on which SVG element(s) the control message needs to be applied, the element needs to be identified via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
    ```
    "payload": {
         "command": "update_text",
@@ -327,7 +317,7 @@ Supported commands include...
         "textContent": "my title"
     }
    ```
-+ In the example below, a message contains a single command.  For example:
++ A message can contain a single command.  For example:
    ```
    "payload": {
        "selector": "#cam_living_room",
@@ -335,7 +325,7 @@ Supported commands include...
        "attributeValue": "orange"
    }
    ```
-   But it is always possible to specify ***multiple commands*** (as an array) in a single control message.  For example:
+   But it is also possible to specify ***multiple commands (as an array)*** in a single control message.  For example:
    ```
    "payload": [
         {
@@ -351,7 +341,7 @@ Supported commands include...
    }
    "topic": "update_attribute"
    ```
-+ In the example below, action can be specified in the ```msg.topic```:
++ An action can be specified in the ```msg.topic```, for example:
    ```
    "payload": {
        "selector": "#cam_living_room",
@@ -369,7 +359,7 @@ Supported commands include...
        "attributeValue": "orange"
    }
    ```   
-   ... This  gives the additional flexability of being able to perform many things at once for example...
+   This command approach allows you to perform multiple different commands via a single input message:
    ```
    "payload": [  
      {
@@ -395,29 +385,19 @@ Supported commands include...
          "action": "start"
      }
    ```
-+ In all examples below, the selector also can be part of the topic
++ The command and/or (separated by `|`) CSS selector also can be part of the topic:
+   ```
+    {
+        "topic": "update_text|#myRect > .faultMessage",
+        "payload": "hello"
+    }
+   ```
+   This way the message becomes shorter, but you can only use 1 selector or command value (even when the payload contains an array).
 
-### Example updating/setting element attribute values
-The SVG elements have attributes, whose values can be specified in the SVG editor.  Any of these attribute values can be changed via an input message. 
-
-For example the camera is visualized by a text, which has multiple attributes (x, y, fill ...):
-
+### Update/set an attribute value via msg
+The SVG elements' attribute values can be added/changed/removed via an input message:
 ```
-<text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" ...>
-```
-
-Let's change the *'fill'* color and *'rotation'* attribute value via input messages:
-
-![2019-09-22_15-21-49](https://user-images.githubusercontent.com/44235289/65389304-c1c9ed80-dd4c-11e9-83a7-d7f41e380da2.gif)
-
-```
-[{"id":"58c6781.3a15f88","type":"debug","z":"60ad596.8120ba8","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":1540,"y":480,"wires":[]},{"id":"1ad6b670.79c40a","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"ed035e71.d5fbc","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"http://drawsvg.org/drawsvg.html","directory":"","name":"","x":1340,"y":480,"wires":[["58c6781.3a15f88"]]},{"id":"fcf645c7.5c40b8","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":960,"y":620,"wires":[["1ad6b670.79c40a"]]},{"id":"7d10ff36.e3ee6","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":960,"y":580,"wires":[["1ad6b670.79c40a"]]},{"id":"c5638689.459598","type":"inject","z":"60ad596.8120ba8","name":"Fill camera green + rotate 90","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"green\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"90\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":1020,"y":440,"wires":[["1ad6b670.79c40a"]]},{"id":"6dd97bab.e6e2b4","type":"inject","z":"60ad596.8120ba8","name":"Fill camera orange + rotate 180","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"orange\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"180\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":1030,"y":480,"wires":[["1ad6b670.79c40a"]]},{"id":"6bdbfd87.56cdc4","type":"inject","z":"60ad596.8120ba8","name":"Fill camera icon blue","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"0\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":990,"y":400,"wires":[["1ad6b670.79c40a"]]},{"id":"ed035e71.d5fbc","type":"ui_group","z":"","name":"Floorplan test","tab":"28908a07.9094f6","disp":true,"width":"14","collapse":false},{"id":"28908a07.9094f6","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
-```
-
-The `payload` looks like this:
-
-```
-  [
+  "payload": [
       {
           "command": "update_attribute",
           "selector": "#camera_living",
@@ -441,10 +421,22 @@ The input message should have following format:
 + ```msg.payload.attributeName``` should contain the name of attribute whose value needs to be changed.
 + ```msg.payload.attributeValue``` should contain the new value of the specified attribute.
 
-### Updating/setting element style values
-The SVG elements' style values can be added/changed/removed via an input message. They can be addressed in 2 ways...
+For example a camera is visualized by a FontAwesome icon (text), which has multiple attributes (x, y, fill ...):
+```
+<text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" ...>
+```
+The following flow demonstrates how to change the *'fill'* color and *'rotation'* attribute values via input messages:
 
-Named style attribute change...
+![2019-09-22_15-21-49](https://user-images.githubusercontent.com/44235289/65389304-c1c9ed80-dd4c-11e9-83a7-d7f41e380da2.gif)
+
+```
+[{"id":"58c6781.3a15f88","type":"debug","z":"60ad596.8120ba8","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":1540,"y":480,"wires":[]},{"id":"1ad6b670.79c40a","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"ed035e71.d5fbc","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"http://drawsvg.org/drawsvg.html","directory":"","name":"","x":1340,"y":480,"wires":[["58c6781.3a15f88"]]},{"id":"fcf645c7.5c40b8","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":960,"y":620,"wires":[["1ad6b670.79c40a"]]},{"id":"7d10ff36.e3ee6","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":960,"y":580,"wires":[["1ad6b670.79c40a"]]},{"id":"c5638689.459598","type":"inject","z":"60ad596.8120ba8","name":"Fill camera green + rotate 90","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"green\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"90\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":1020,"y":440,"wires":[["1ad6b670.79c40a"]]},{"id":"6dd97bab.e6e2b4","type":"inject","z":"60ad596.8120ba8","name":"Fill camera orange + rotate 180","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"orange\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"180\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":1030,"y":480,"wires":[["1ad6b670.79c40a"]]},{"id":"6bdbfd87.56cdc4","type":"inject","z":"60ad596.8120ba8","name":"Fill camera icon blue","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"0\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":990,"y":400,"wires":[["1ad6b670.79c40a"]]},{"id":"ed035e71.d5fbc","type":"ui_group","z":"","name":"Floorplan test","tab":"28908a07.9094f6","disp":true,"width":"14","collapse":false},{"id":"28908a07.9094f6","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
+```
+
+### Update/set a style attribute value via msg
+The SVG elements' style attribute values can be added/changed/removed via an input message, via the *"update_style"* or *"set_style"* commands (which have both the same behaviour):
+
+Change the value of 1 style attribute:
 ```
 { 
    "command": "update_style", 
@@ -453,7 +445,7 @@ Named style attribute change...
    "attributeValue": "purple" 
 }
 ```
-Style object attribute(s) change...
+Or change (all attribute values of) the entire style object at once:
 ```
 { 
    "command": "update_style", 
@@ -461,53 +453,72 @@ Style object attribute(s) change...
    "style": { "fill": "blue", "transform": "rotate(5deg)" } 
 }
 ```
-Additionally both `update_style` / `set_style` also support removing any styles e.g. 
+
+### Remove an attribute via msg
+The attribute of an SVG element can be removed in different ways:
+
+Remove the attribute via the 'remove_attribute' command for a specific attribute name:
+```
+{ 
+   "command": "remove_attribute", 
+   "selector": ".camera", 
+   "attributeName": "fill"
+}
+```
+But an attribute can also be removed by setting an empty string `""` value (via `update_style` or `set_style`):
+```
+{ 
+   "command": "remove_attribute", 
+   "selector": ".camera", 
+   "attributeName": "fill", 
+   "attributeValue": "" 
+}
+```
+The same mechanism can be used to remove style attributes: 
 ```
 {
    "command":"update_style", 
    "selector":".camera", 
-   "style":{"fill":"","transform":""}
+   "style":{"fill":"", "transform":""}
 }
 ```
 
-### Set text content
-There are 2 methods for updating text...
-
-+ Topic Method
-+ Command Method
-
-The topic method reduces the complexity but is simplistic and can only change the selector to one value.
-
-The Command method is similar to the `update_atttribute` and `set_atttribute` command methods. They can even be combined to permit an attribute change and text content change in the same command msg.
-
-Example Topic Method...
-
+### Set text content via msg
+It is possible to set the text content via a command:
 ```
- // send a msg with topic formatted as...   
- //  update_text|selector  
- // and the payload with the text to display
- var msg = {
+"payload": {
+    "command": "update_text",
+    "selector": "#myRect > .faultMessage",
+    "textContent": "Hello from a command message"
+}
+```
+Or accomplish the same via the topic:
+```
+{
     "topic": "update_text|#myRect > .faultMessage",
     "payload": "hello"
- }
- return msg;
- ```
-Example Command Method - payload object...
+}
 ```
-"payload": [
-  {
-     "command": "update_text",
-     "selector": "#myRect > .faultMessage",
-     "textContent": "Hello from a command message"
-  },
-  {
-     //another command
-  }
-]
-```
+There are some different naming conventions possible:
++ The command can be both *"update_text"* or *"update_innerHTML"*.
++ The text can be delivered in *"textContent"* or *"text"* or *"html"*.
 
-### Start/stop animations
-As stated above, the animations can be started/stopped via an input message.
+### Get text content via msg
+Get the text content of one or more elements via:
+```
+"payload": {
+    "command": "get_text",
+    "selector": "#myText"
+}
+```
+The texts will be send in the output message payload as an array.                                        
+
+### Start/stop animations via msg
+As mentioned above, the animations can be started/stopped via an input message:
+
+![image](https://user-images.githubusercontent.com/14224149/86404975-d6aab880-bcb0-11ea-8cd2-68732df69862.png)
+
+Which allows you to create dynamic effects like this:
 
 ![animationcontrol](https://user-images.githubusercontent.com/44235289/65391018-ccd84a00-dd5b-11e9-815f-fa62b0fe24e8.gif)
 
@@ -515,7 +526,7 @@ As stated above, the animations can be started/stopped via an input message.
 [{"id":"c997135f.8035f","type":"debug","z":"f939feb8.8dc6","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":520,"y":220,"wires":[]},{"id":"bb93fff5.927ba","type":"ui_svg_graphics","z":"f939feb8.8dc6","group":"997e40da.b5acc","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"1\" stroke-width=\"1\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[{"id":"myAnimation","targetId":"pir_living","classValue":"all_animation","attributeName":"r","fromValue":"1","toValue":"30","trigger":"cust","duration":"500","durationUnit":"ms","repeatCount":"5","end":"restore","delay":"1","delayUnit":"s","custom":"camera_living.click; "},{"id":"textRotate","targetId":"banner","classValue":"all_animation","attributeName":"rotate","fromValue":"0","toValue":"360","trigger":"msg","duration":"750","durationUnit":"ms","repeatCount":"3","end":"restore","delay":"1","delayUnit":"s","custom":""}],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"","directory":"","name":"","x":420,"y":180,"wires":[["c997135f.8035f"]]},{"id":"356e2a8f.a08fe6","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":260,"wires":[["bb93fff5.927ba"]]},{"id":"4e2e2d82.5950e4","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":220,"wires":[["bb93fff5.927ba"]]},{"id":"97b80c2d.b5c35","type":"inject","z":"f939feb8.8dc6","name":"Fill camera green + rotate 90","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"green\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"90\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":300,"y":360,"wires":[["bb93fff5.927ba"]]},{"id":"4be0130f.78b13c","type":"inject","z":"f939feb8.8dc6","name":"Fill camera orange + rotate 180","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"orange\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"180\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":310,"y":400,"wires":[["bb93fff5.927ba"]]},{"id":"46128135.4fcdd","type":"inject","z":"f939feb8.8dc6","name":"Fill camera icon blue","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"0\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":270,"y":320,"wires":[["bb93fff5.927ba"]]},{"id":"735182fa.b0c50c","type":"inject","z":"f939feb8.8dc6","name":"Start animation","topic":"trigger_animation","payload":"[{\"command\":\"trigger_animation\",\"selector\":\".all_animation\",\"action\":\"start\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":60,"wires":[["bb93fff5.927ba"]]},{"id":"7b608d5b.d892a4","type":"inject","z":"f939feb8.8dc6","name":"Stop animation","topic":"","payload":"[{\"command\":\"trigger_animation\",\"selector\":\"#myAnimation\",\"action\":\"stop\"},{\"command\":\"trigger_animation\",\"selector\":\"#textRotate\",\"action\":\"stop\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":100,"wires":[["bb93fff5.927ba"]]},{"id":"997e40da.b5acc","type":"ui_group","z":"","name":"Floorplan test","tab":"95801a22.bd5f18","disp":true,"width":"14","collapse":false},{"id":"95801a22.bd5f18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
 
-Example messages to trigger animations:
+Example messages to trigger an animation via the topic:
 ```
 "payload": {
     "selector": "#myAnimation",
@@ -523,7 +534,7 @@ Example messages to trigger animations:
 }
 "topic": "trigger_animation"
 ```
-
+Or trigger multiple animations at once via an array of commands:
 ```
 "payload": [
     {
@@ -544,7 +555,10 @@ The input message should have following format:
 + ```msg.payload.selector``` should contain a query selector, e.g. #myAnimation to find SVG element with id="myAnimation" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
 + ```msg.payload.action``` should contain ***start*** or ***stop***, depending on which action you want to perform on the animation.
 
-While permanently clickable shapes are being enumerated in the config screen, it is also possible to make shapes (un)clickable via input messages.  Example content of the ```msg.payload``` to make 'circle_1' unclickable and 'circle_2' clickable:
+### Add/remove events via msg
+When SVG elements should always respond to some events (e.g. click), those elements should be enumerated in the *"Events"* tabsheet.  However in some cases it is required to make SVG elements to respond only temporary to events, which can be achieve by adding/removing events to/from SVG elements.
+
+In the following example, the ```msg.payload``` can make element with id 'circle_1' unclickable and 'circle_2' clickable:
 ```
 [{
   command  : "remove_event",
@@ -558,6 +572,90 @@ While permanently clickable shapes are being enumerated in the config screen, it
   payload  : "circle 2 has been clicked",
   topic    : "CIRCLE_CLICKED"
 }]
+```
+
+### Add elements via msg
+Normally all elements will be always available, by defining them in the *"SVG Source"* tabsheet.  However it might be required to add SVG elements dynamically, which can be achieved via input messages:
+
+```
+{ 
+   "command": "add_element", 
+   "elementType": "circle",
+   "elementId": "extra_circle", 
+   "elementAttributes": [
+      "cx": "100",
+      "cy": "50",
+      "r": "30"
+   ],
+   "elementStyleAttributes": [
+      "fill": "red",
+      "stroke": "black"
+   ],
+}
+```
+Some remarks about the input message:
++ A `parentElementId` property can be specified, if the new element should be a child of the specified parent element.  If not available, the new element will be added directly under the root SVG element.
++ A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can add multiple elements via a single command.  Note that it is not allowed then to specifiy an elementId property, since only one element is allowed to have the same id.
++ When an element with the same `elementId` already exists, then that existing element will be *replaced* by this new element!
+
+When the *"Events"* tabsheet contains a CSS selector that matches this new element, then this new element gets those event handlers automatically. 
+
+### Remove elements via msg
+In some uses cases it is required to remove SVG elements dynamically, which can be achieved via input messages:
+```
+{ 
+   "command": "remove_element", 
+   "elementId": "extra_circle"
+}
+```
+By specifying a `selector` property (instead of an elementId property), it is possible to remove multiple elements at once via a single command.
+                                       
+### Zoom in/out via msg
+As explained above (in the [Pan and zoom](#pan-and-zoom) section), it is possible to zoom in/out via an input message:
+```
+{ 
+   "command": "zoom_in"
+}
+```
+Or the reverse:
+```
+{ 
+   "command": "zoom_out"
+}
+```
+Or zoom by a percentage, for example 130% (which means a factor 1.3):
+```
+{ 
+   "command": "zoom_by_percentage",
+   "percentage": 130
+}
+```
+Optionally a point coordinate can be specified, to zoom in on that specific point by a specified percentage:
+```
+{ 
+   "command": "zoom_by_percentage",
+   "percentage": 130,
+   "x": 300,
+   "y": 400
+}
+```
+ 
+### Panning via msg 
+It is possible to pan absolute to a specified point:
+```
+{ 
+   "command": "pan_to_point",
+   "x": 300,
+   "y": 400
+}
+```
+Or it is also possible to pan relative in a specified direction:
+```
+{ 
+   "command": "pan_to_direction",
+   "x": 300,
+   "y": 400
+}
 ```
 
 ## Various stuff
