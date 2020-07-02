@@ -684,7 +684,7 @@ Some remarks:
    ```
 
 ### Display images
-SVG offers an image element, that can be used to display an image inside an SVG drawing.  You have to specify at which path the image is available, but the image can be stored a different locations:
+In an SVG drawing, an *"image"* element can be used to display an image inside an SVG drawing.  You have to specify at which path the image is available, but the image can be stored a different locations:
 1. The easiest solution is an online image that is public available.  For example:
    ```
    <image xlink:href="https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg"\>
@@ -695,7 +695,7 @@ SVG offers an image element, that can be used to display an image inside an SVG 
    ```
    <image xlink:href="xlink:href="data:image/png;base64,base64_encoded_image_string_..."\>
    ```
-   The advantage is that the image stays available (even when it is deleted from the file system), but the size of the Node-RED flow file size will increase drastically.
+   The advantage is that the image stays available (even when it is deleted from the file system), but the size of the Node-RED flow file size will increase dramatic!
    
 3. In the SVG Source tabsheet you can use a local image file, which needs to exist (in the directory specified on the 'Settings' tabsheet) on the system where your Node-RED instance is running:
    ```
@@ -703,7 +703,7 @@ SVG offers an image element, that can be used to display an image inside an SVG 
    ```
    Since both DrawSvg and the Node-RED dashboard cannot access this local path, this node will automatically convert the image  to a base64 encoded url.  That way DrawSvg and the dasbhoard can both display the image, and in the flow file only the local path is being stored.  The disadvantage is that you have to enter the path manually in the SVG Source tabsheet.
    
-4. In the next version of DrawSvg it should be possible to work with local files.  See [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/35).
+Remark: it is ***not*** possible to select local files in DrawSvg.  See [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/35).
 
 ## Troubleshooting
 Some tips and tricks to solve known problems:
