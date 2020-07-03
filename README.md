@@ -220,8 +220,15 @@ A number of properties need to be entered:
 + ***Binding source***: the field of the input message that will contain the new value.
 + ***Selector***: the selection of (one or more) SVG elements on which the new attribute value will be applied.  See the syntax of [css selectors](https://www.w3schools.com/cssref/css_selectors.asp).
 + ***Binding destination***: on which attribute of those selected SVG elements the new values will be applied.
-   + *Attribute value*: when this option is selected, the value (from the input message) will be applied to an attribute.  This means an extra "attribute name" will have to be specified, to make sure the new value will be applied to the attribute with that name.
    + *Text content*: when this option is selected, the value (from the input message) will be be applied to the inner text content of the element.
+   
+      For example set the text content in `<text x="20" y="20">Some text content</text>`.
+   + *Attribute value*: when this option is selected, the value (from the input message) will be applied to an attribute.  This means an extra "attribute name" will have to be specified, to make sure the new value will be applied to the attribute with that name.
+   
+      For example set the fill color value in `<circle fill="yellow"/>`.
+   + *Style value*: when this option is selected, the value (from the input message) will be applied to a style attribute.  This means an extra style "attribute name" will have to be specified, to make sure the new value will be applied to the attribute with that name.
+   
+      For example set the fill color value in `<circle style="fill: yellow;"/>`.
    
 For example:
 
