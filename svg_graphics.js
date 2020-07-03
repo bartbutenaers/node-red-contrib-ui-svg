@@ -203,7 +203,7 @@ module.exports = function(RED) {
             // Store the directory property, so it is available in the endpoint below
             node.directory = config.directory;
             
-            node.availableCommands = ["get_text", "update_text", "update_innerHTML", "update_style", "set_style", "update_attribute", "set_attribute",
+            node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
                                       "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute"];
 
@@ -284,7 +284,9 @@ module.exports = function(RED) {
                                                 msg.payload = null;
                                                 break;
                                             }
-                                            if(!node.availableCommands.includes(part.command)) {
+                                            
+                                            // Make sure the commands are not case sensitive anymore
+                                            if(!node.availableCommands.includes(part.command.toLowerCase())) {
                                                 node.error("The msg.payload array contains an object that has an unsupported command property '" + part.command + "'");
                                                 msg.payload = null;
                                                 break;  
@@ -296,7 +298,8 @@ module.exports = function(RED) {
                                             node.error("The msg.payload should contain an object which has a 'command' property.");
                                             msg.payload = null;
                                         }
-                                        else if(!node.availableCommands.includes(msg.payload.command)) {
+                                        // Make sure the commands are not case sensitive anymore
+                                        else if(!node.availableCommands.includes(msg.payload.command.toLowerCase())) {
                                             node.error("The msg.payload contains an object that has an unsupported command property '" + msg.payload.command + "'");
                                             msg.payload = null;
                                         }
@@ -838,7 +841,8 @@ module.exports = function(RED) {
                                     var op = payload.command || payload.topic
 
                                     // !!!!!!!!!!!!! When adding a case statement, add the option also to node.availableCommands above !!!!!!!!!!!!!
-                                    switch (op) {
+                                    // Make sure the commands are not case sensitive anymore
+                                    switch (op.toLowerCase()) {
                                         case "add_element": // Add elements, or replace them if they already exist
                                             if (!payload.elementType) {
                                                 logError("Invalid payload. A property named .elementType is not specified");
@@ -948,7 +952,7 @@ module.exports = function(RED) {
                                             });                                             
                                             break;
                                         case "update_text":
-                                        case "update_innerHTML"://added to make adding inner HTML more readable/logical
+                                        case "update_innerhtml"://added to make adding inner HTML more readable/logical
                                             if (!payload.elementId && !payload.selector) {
                                                 logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
