@@ -755,11 +755,18 @@ module.exports = function(RED) {
                                                     if(bindValue !== undefined){
                                                         if(typeof bindValue == "object"){
                                                             bindValue = JSON.stringify(bindValue);
-                                                        } 
-                                                        if(bindType == "text"){
-                                                            setTextContent(element, bindValue);
-                                                        } else if (bindType == "attr") {
-                                                            element.setAttribute(attributeName, bindValue);
+                                                        }
+
+                                                        switch (bindType) {
+                                                            case "text":
+                                                                setTextContent(element, bindValue);
+                                                                break;
+                                                            case "attr":
+                                                                element.setAttribute(attributeName, bindValue);
+                                                                break;
+                                                            case "style":
+                                                                element.style[attributeName] = bindValue;
+                                                                break;
                                                         }
                                                     } 
                                                 });
