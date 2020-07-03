@@ -5,13 +5,14 @@ Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner
 
 And also lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawing-editor) for his assistance!
 
-:warning: ***The 2.0.0 release (unfortunately) contains some breaking changes;***
+:warning: ***The major 2.0.0 release (unfortunately) contains some breaking changes;***
 + `msg.event` has become `msg.event.type`
 + `msg.coordinates.x` has become `msg.event.svgX`
 + `msg.coordinates.y` has become `msg.event.svgY`
 + `msg.position.x` has become `msg.event.pageX`
 + `msg.position.y` has become `msg.event.pageY`
 + The (selector) content has moved from `msg.elementId` to `msg.selector`, and `msg.elementId` now contains the real element id where the event has occurred.  See [here](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Breaking-change-version-2.0.0) for detailed information.
++ The `update_style` command (for control messages) now only updates existing style attributes, but doesn't create the specified style attribute anymore (when it doesn't exist yet).  If you need to update OR create, then use the `set_style` command instead.
 
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
@@ -309,7 +310,15 @@ Caution: make sure the panning and zooming is enabled in the Settings tabsheet, 
 Most of the SVG information can be manipulated by sending input messages to this node.  
 
 ### Some general msg guidelines:
-+ In most messages, you need to specify on which SVG element(s) the control message needs to be applied.  To specify a single element, the `elementId` field can be specified.  However it is also possible to specify one or more elements via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
++ In most messages, you need to specify on which SVG element(s) the control message needs to be applied.  To specify a single element, the `elementId` field can be specified:
+   ```
+   "payload": {
+        "command": "update_text",
+        "elementId": "some_element_id",
+        "textContent": "my title"
+    }
+
+However it is also possible to specify one or more elements via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
    ```
    "payload": {
         "command": "update_text",
@@ -362,7 +371,7 @@ Most of the SVG information can be manipulated by sending input messages to this
    ```
   This way the command only needs to be specified once.
   
-+ To further simplify the message, the CSS selector can also be added to the topic (separated by `|`) :
++ To further simplify the message, the CSS selector - when it is required - can also be added to the topic (separated by `|`) :
    ```
     {
         "topic": "update_text|#myRect > .faultMessage",
@@ -373,30 +382,27 @@ Most of the SVG information can be manipulated by sending input messages to this
 
 ### Update/set an attribute value via msg
 The SVG elements' attribute values can be added/changed via an input message:
-```
-  "payload": [
-      {
-          "command": "update_attribute",
-          "selector": "#camera_living",
-          "attributeName": "fill",
-          "attributeValue": "green"
-      },
-      {
-          "command": "set_attribute",
-          "selector": "#camera_living",
-          "attributeName": "rotate",
-          "attributeValue": "90"
-      }
-  ]
-```
 
-The input message should have following format:
-+ ```msg.payload.command``` or the ```msg.topic``` should contain one of the following values:
-   + ***update_attribute***: to update the value of an *existing* SVG element attribute. 
-   + ***set_attribute***: identical to update_attribute, but now the attribute will be created if it doesn't exist yet in the SVG element.
-+ ```msg.payload.selector``` should contain a query selector, e.g. #my_circle to find SVG element with id="my_circle" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
-+ ```msg.payload.attributeName``` should contain the name of attribute whose value needs to be changed.
-+ ```msg.payload.attributeValue``` should contain the new value of the specified attribute.
++  Use command ***update_attribute*** to update the value of an *existing* SVG element attribute:
+   ```
+   "payload": {
+      "command": "update_attribute",
+      "selector": "#camera_living",
+      "attributeName": "fill",
+      "attributeValue": "green"
+   }
+   ```
+   When the specified element doesn't have the specified attribute, nothing will happen and in the browser console log an entry will appear (to indicate that the specified element attribute doesn't exist).
+
++ Use command ***set_attribute*** to update the value of an *existing* SVG element attribute, or create the attribute when it doesn't exist yet:
+   ```
+   "payload": {
+      "command": "set_attribute",
+      "selector": "#camera_living",
+      "attributeName": "rotate",
+      "attributeValue": "90"
+   }
+   ```
 
 For example a camera is visualized by a FontAwesome icon (text), which has multiple attributes (x, y, fill ...):
 ```
@@ -411,57 +417,75 @@ The following flow demonstrates how to change the *'fill'* color and *'rotation'
 ```
 
 ### Update/set a style attribute value via msg
-The SVG elements' style attribute values can be added/changed via an input message, via the *"update_style"* or *"set_style"* commands (which have both the same behaviour):
+The SVG elements' style attribute values can be added/changed via an input message:
 
-Change the value of 1 style attribute:
-```
-{ 
-   "command": "update_style", 
-   "selector": ".camera", 
-   "attributeName": "fill", 
-   "attributeValue": "purple" 
-}
-```
-Or change (all attribute values of) the entire style object at once:
-```
-{ 
-   "command": "update_style", 
-   "selector": ".camera", 
-   "style": { "fill": "blue", "transform": "rotate(5deg)" } 
-}
-```
++  Use command ***update_style*** to update the value of an *existing* SVG element style attribute:
+   ```
+   "payload": { 
+      "command": "update_style", 
+      "selector": ".camera", 
+      "attributeName": "fill", 
+      "attributeValue": "purple" 
+   }
+   ```
++ Use command ***set_style*** to update the value of an *existing* SVG element style attribute, or create the style attribute when it doesn't exist yet:
+   ```
+   "payload": {
+      "command": "set_style", 
+      "selector": ".camera", 
+      "attributeName": "fill", 
+      "attributeValue": "purple" 
+   }
+
+Instead of adding/changing a single style attribute value, it is also possible to add/change the entire style attribute at once.  In this case the *"style"* needs to be specified, instead of the *"attributeName"*:
++  Use command ***update_style*** to update the value of the *existing* SVG element style:
+   ```
+   "payload": { 
+      "command": "update_style", 
+      "selector": ".camera", 
+      "style": { "fill": "blue", "transform": "rotate(5deg)" }  
+   }
+   ```
++ Use command ***set_style*** to update the value of the *existing* SVG element style attribute, or create the style when it doesn't exist yet:
+   ```
+   "payload": { 
+      "command": "set_style", 
+      "selector": ".camera", 
+      "style": { "fill": "blue", "transform": "rotate(5deg)" } 
+   }
+   ```
 
 ### Remove an attribute via msg
-The attribute of an SVG element can be removed in different ways:
+An attribute of an SVG element can be removed via an input message:
 
-Remove the attribute via the 'remove_attribute' command for a specified attribute name:
-```
-{ 
-   "command": "remove_attribute", 
-   "selector": ".camera", 
-   "attributeName": "fill"
-}
-```
-But an attribute can also be removed by setting an empty string `""` value (via `update_style` or `set_style`):
-```
-{ 
-   "command": "remove_attribute", 
-   "selector": ".camera", 
-   "attributeName": "fill", 
-   "attributeValue": "" 
-}
-```
-The same mechanism can be used to remove style attributes: 
-```
-{
-   "command":"update_style", 
-   "selector":".camera", 
-   "style":{"fill":"", "transform":""}
-}
-```
++ Use command ***remove_attribute*** to remove an SVG element attribute:
+   ```
+   "payload": {
+      "command": "remove_attribute", 
+      "selector": ".camera", 
+      "attributeName": "fill"
+   }
+   ```
++ Use command ***update_style*** to remove an SVG element attribute by setting the attribute value to an empty string:
+   ```
+   "payload": { 
+      "command": "update_style", 
+      "selector": ".camera", 
+      "attributeName": "fill", 
+      "attributeValue": "" 
+   }
+   ```
+   This can also be used to remove SVG element style attributes: 
+   ```
+   "payload": {
+      "command":"update_style", 
+      "selector":".camera", 
+      "style":{"fill":"", "transform":""}
+   }
+   ```
 
 ### Set text content via msg
-It is possible to set the text content via a command:
+The text content (or inner html) of an SVG element can be set via an input message:
 ```
 "payload": {
     "command": "update_text",
@@ -469,7 +493,7 @@ It is possible to set the text content via a command:
     "textContent": "Hello from a command message"
 }
 ```
-Or accomplish the same via the topic:
+When the command is being specified inside the topic, you can simply send the text in the payload:
 ```
 {
     "topic": "update_text|#myRect > .faultMessage",
@@ -481,81 +505,65 @@ There are some different naming conventions possible:
 + The text can be delivered in *"textContent"* or *"text"* or *"html"*.
 
 ### Get text content via msg
-Get the text content of one or more elements via:
+The text content (or inner html) of an SVG element can be get via an input message:
 ```
 "payload": {
     "command": "get_text",
     "selector": "#myText"
 }
 ```
-The texts will be send in the output message payload as an array.                                        
+The text(s) will be send in the output message payload as an array.                                        
 
 ### Start/stop animations via msg
-As mentioned above, the animations can be started/stopped via an input message:
+Existing animations can be started/stopped via an input message, by a ***start*** or ***stop*** action value:
+```
+"payload": {
+   "command": "trigger_animation",
+   "selector": "#myAnimation",
+   "action": "start"
+}
+```
+Note that you need to specify in the *"Animations"* tabsheet which animations will be triggered via input messages:
 
-![image](https://user-images.githubusercontent.com/14224149/86404975-d6aab880-bcb0-11ea-8cd2-68732df69862.png)
+![Msg trigger](https://user-images.githubusercontent.com/14224149/86404975-d6aab880-bcb0-11ea-8cd2-68732df69862.png)
 
-Which allows you to create dynamic effects like this:
+Such messages allow you to create dynamic effects like in the following demo:
 
-![animationcontrol](https://user-images.githubusercontent.com/44235289/65391018-ccd84a00-dd5b-11e9-815f-fa62b0fe24e8.gif)
+![Animation control](https://user-images.githubusercontent.com/44235289/65391018-ccd84a00-dd5b-11e9-815f-fa62b0fe24e8.gif)
 
 ```
 [{"id":"c997135f.8035f","type":"debug","z":"f939feb8.8dc6","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":520,"y":220,"wires":[]},{"id":"bb93fff5.927ba","type":"ui_svg_graphics","z":"f939feb8.8dc6","group":"997e40da.b5acc","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"1\" stroke-width=\"1\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[{"id":"myAnimation","targetId":"pir_living","classValue":"all_animation","attributeName":"r","fromValue":"1","toValue":"30","trigger":"cust","duration":"500","durationUnit":"ms","repeatCount":"5","end":"restore","delay":"1","delayUnit":"s","custom":"camera_living.click; "},{"id":"textRotate","targetId":"banner","classValue":"all_animation","attributeName":"rotate","fromValue":"0","toValue":"360","trigger":"msg","duration":"750","durationUnit":"ms","repeatCount":"3","end":"restore","delay":"1","delayUnit":"s","custom":""}],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"","directory":"","name":"","x":420,"y":180,"wires":[["c997135f.8035f"]]},{"id":"356e2a8f.a08fe6","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":260,"wires":[["bb93fff5.927ba"]]},{"id":"4e2e2d82.5950e4","type":"inject","z":"f939feb8.8dc6","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":220,"wires":[["bb93fff5.927ba"]]},{"id":"97b80c2d.b5c35","type":"inject","z":"f939feb8.8dc6","name":"Fill camera green + rotate 90","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"green\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"90\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":300,"y":360,"wires":[["bb93fff5.927ba"]]},{"id":"4be0130f.78b13c","type":"inject","z":"f939feb8.8dc6","name":"Fill camera orange + rotate 180","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"orange\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"180\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":310,"y":400,"wires":[["bb93fff5.927ba"]]},{"id":"46128135.4fcdd","type":"inject","z":"f939feb8.8dc6","name":"Fill camera icon blue","topic":"update_attribute","payload":"[{\"command\":\"update_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"},{\"command\":\"set_attribute\",\"selector\":\"#camera_living\",\"attributeName\":\"rotate\",\"attributeValue\":\"0\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":270,"y":320,"wires":[["bb93fff5.927ba"]]},{"id":"735182fa.b0c50c","type":"inject","z":"f939feb8.8dc6","name":"Start animation","topic":"trigger_animation","payload":"[{\"command\":\"trigger_animation\",\"selector\":\".all_animation\",\"action\":\"start\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":60,"wires":[["bb93fff5.927ba"]]},{"id":"7b608d5b.d892a4","type":"inject","z":"f939feb8.8dc6","name":"Stop animation","topic":"","payload":"[{\"command\":\"trigger_animation\",\"selector\":\"#myAnimation\",\"action\":\"stop\"},{\"command\":\"trigger_animation\",\"selector\":\"#textRotate\",\"action\":\"stop\"}]","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":240,"y":100,"wires":[["bb93fff5.927ba"]]},{"id":"997e40da.b5acc","type":"ui_group","z":"","name":"Floorplan test","tab":"95801a22.bd5f18","disp":true,"width":"14","collapse":false},{"id":"95801a22.bd5f18","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
 
-Example messages to trigger an animation via the topic:
+### Add events via msg
+When SVG elements always need to respond to an event (e.g. click), those elements should be enumerated in the *"Events"* tabsheet.  However in some cases it is required to make SVG elements to respond only temporary to events, which can be achieved by adding events to SVG elements via an input message.
 ```
 "payload": {
-    "selector": "#myAnimation",
-    "action": "start"
-}
-"topic": "trigger_animation"
-```
-Or trigger multiple animations at once via an array of commands:
-```
-"payload": [
-    {
-        "command": "trigger_animation",
-        "selector": "#myAnimation",
-        "action": "start"
-    },
-    {
-        "command": "trigger_animation",
-        "elementId": "textRotate",
-        "action": "start"
-    }
-]
-```
-
-The input message should have following format:
-+ ```msg.payload.command``` or ```msg.topic``` should contain ***trigger_animation***.
-+ ```msg.payload.selector``` should contain a query selector, e.g. #myAnimation to find SVG element with id="myAnimation" (see list of available [css selectors](https://www.w3schools.com/cssref/css_selectors.asp)).
-+ ```msg.payload.action``` should contain ***start*** or ***stop***, depending on which action you want to perform on the animation.
-
-### Add/remove events via msg
-When SVG elements always need to respond to an event (e.g. click), those elements should be enumerated in the *"Events"* tabsheet.  However in some cases it is required to make SVG elements to respond only temporary to events, which can be achieved by adding/removing events to/from SVG elements.
-
-In the following example, the ```msg.payload``` can make element with id 'circle_1' become unclickable and 'circle_2' clickable:
-```
-[{
-  command  : "remove_event",
-  event    : "click",
-  selector : "#circle_1"
-},
-{
   command  : "add_event",
   event    : "click",
   selector : "#circle_2", 
-  payload  : "circle 2 has been clicked",
-  topic    : "CIRCLE_CLICKED"
+  payload  : "circle 2 has been clicked", // Content of the output message payload
+  topic    : "CIRCLE_CLICKED" // Content of the output message topic
 }]
+```
+By sending this input message, the circle will become clickable.
+
+Note carefully that the payload of the input message contains the payload and topic of the output message, that will be sent when the specified event occurs on the specified SVG element.
+
+### Remove events via msg
+An event (handler) can be removed from an SVG element via an input message:
+```
+"payload": {
+   command  : "remove_event",
+   event    : "click",
+   selector : "#circle_1"
+}
 ```
 
 ### Add elements via msg
 Normally SVG elements need to exist all the time, by defining them in the *"SVG Source"* tabsheet.  However it might be required to add SVG elements dynamically, which can be achieved via input messages:
-
 ```
-{ 
+"payload": {
    "command": "add_element", 
    "elementType": "circle",
    "elementId": "extra_circle", 
@@ -576,14 +584,14 @@ Some remarks about the input message:
 + A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can create multiple elements at once via a single command.  Note that it is not allowed in that case to specify an elementId property, since only one element is allowed to have the same id.
 + When an element with the same `elementId` already exists, then that existing element will be *replaced* by this new element!
 
-When the *"Events"* tabsheet contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
+When the *"Events"* tabsheet already contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
 
 ### Remove elements via msg
-In some uses cases it is required to remove SVG elements dynamically, which can be achieved via input messages:
+An SVG element can be removed via an input message:
 ```
-{ 
+"payload": {
    "command": "remove_element", 
-   "elementId": "extra_circle"
+   "elementId": "circle_1"
 }
 ```
 By specifying a `selector` property (instead of an elementId property), it is possible to remove multiple elements at once via a single command.
@@ -591,26 +599,26 @@ By specifying a `selector` property (instead of an elementId property), it is po
 ### Zoom in/out via msg
 As explained above (in the [Pan and zoom](#pan-and-zoom) section), it is possible to zoom in/out via an input message:
 ```
-{ 
+"payload": {
    "command": "zoom_in"
 }
 ```
-Or the reverse:
+Or the reverse is also possible:
 ```
-{ 
+"payload": {
    "command": "zoom_out"
 }
 ```
 Or zoom by a percentage, for example 130% (which means a factor 1.3):
 ```
-{ 
+"payload": {
    "command": "zoom_by_percentage",
    "percentage": 130
 }
 ```
 Optionally coordinates can be specified, to zoom in on that specific point by a specified percentage:
 ```
-{ 
+"payload": {
    "command": "zoom_by_percentage",
    "percentage": 130,
    "x": 300,
@@ -619,9 +627,9 @@ Optionally coordinates can be specified, to zoom in on that specific point by a 
 ```
  
 ### Panning via msg 
-As explained above (in the [Pan and zoom](#pan-and-zoom) section), it is possible to pan absolute to a specified point:
+As explained above (in the [Pan and zoom](#pan-and-zoom) section), it is possible to pan absolute to a specified point via an input message:
 ```
-{ 
+"payload": {
    "command": "pan_to_point",
    "x": 300,
    "y": 400
@@ -629,7 +637,7 @@ As explained above (in the [Pan and zoom](#pan-and-zoom) section), it is possibl
 ```
 Or it is also possible to pan relative in a specified direction:
 ```
-{ 
+"payload": {
    "command": "pan_to_direction",
    "x": 300,
    "y": 400
