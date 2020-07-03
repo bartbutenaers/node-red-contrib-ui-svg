@@ -368,17 +368,34 @@
             node.nonAnimationIdsAndActions = [];
             node.animationIdsAndActions = [];
             
-            //list of animatable attributes
+            // List of animatable attributes
             node.attrList = [
-                'clipPathUnits', 'color', 'cx', 'cy', 'd', 'display', 'dx', 'dy', 'fill', 'fx',
-                'fy', 'gradientTransform', 'gradientUnits', 'height', 'lengthAdjust',
-                'markerHeight', 'markerUnits', 'markerWidth', 'maskContentUnits',
-                'maskUnits', 'method', 'offset', 'orient', 'pathLength',
-                'patternContentUnits', 'patternTransform', 'patternUnits', 'points',
-                'preserveAspectRatio', 'r', 'refX', 'refY', 'rotate', 'rx', 'ry',
-                'spacing', 'spreadMethod', 'startOffset', 'textLength', 'transform',
-                'viewBox', "visibility", 'width', 'x', 'x1', 'x2', 'y', 'y1', 'y2',
-            ]   
+                'clipPathUnits', 'color', 'cx', 'cy', 'd', 'display', 'dx', 'dy', 'fill', 'fx', 'fy', 'gradientTransform', 'gradientUnits', 
+                'height', 'lengthAdjust', 'markerHeight', 'markerUnits', 'markerWidth', 'maskContentUnits', 'maskUnits', 'method', 'offset', 
+                'orient', 'pathLength', 'patternContentUnits', 'patternTransform', 'patternUnits', 'points', 'preserveAspectRatio', 'r', 
+                'refX', 'refY', 'rotate', 'rx', 'ry', 'spacing', 'spreadMethod', 'startOffset', 'textLength', 'transform', 'viewBox', 
+                'visibility', 'width', 'x', 'x1', 'x2', 'y', 'y1', 'y2'
+            ]
+            
+            // List of presentation attributes, which are used to style SVG elements and can be used as CSS properties.
+            // SVG presentation attributes are CSS properties that can be used as attributes on SVG elements.
+            // For example there are a couple of ways to give a circle a yellow color:
+            // 1) CSS (inline) style attribute: <circle style="fill: yellow;"/>
+            // 2) CSS (external) style:         circle {fill: yellow}
+            // 3) Presentational attribute:     <circle fill="yellow"/>
+            // The priority order is: 1 overrules 2, and 2 overrules 1
+            // So they accomplish the same, but - since the Node-RED dashboard applies its own styles - it is safer to use '1'.
+            // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/Presentation
+            node.presentationAttrList = [
+                'alignment-baseline', 'baseline-shift', 'clip', 'clip-path', 'clip-rule', 'color', 'color-interpolation', 'color-interpolation-filters', 
+                'color-profile', 'color-rendering', 'cursor', 'direction', 'display', 'dominant-baseline', 'enable-background', 'fill', 'fill-opacity', 
+                'fill-rule', 'filter', 'flood-color', 'flood-opacity', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 
+                'font-variant', 'font-weight', 'glyph-orientation-horizontal', 'glyph-orientation-vertical', 'image-rendering', 'kerning', 'letter-spacing', 
+                'lighting-color', 'marker-end', 'marker-mid', 'marker-start', 'mask', 'opacity', 'overflow', 'pointer-events', 'shape-rendering', 'solid-color', 
+                'solid-opacity', 'stop-color', 'stop-opacity', 'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 
+                'stroke-miterlimit', 'stroke-opacity', 'stroke-width', 'text-anchor', 'text-decoration', 'text-rendering', 'transform', 'unicode-bidi', 
+                'vector-effect', 'visibility', 'word-spacing', 'writing-mode'
+            ]
             
             node.initialised = false;
             window.node_ace_editor = null;
@@ -1027,8 +1044,8 @@
             var bindingList = $("#node-input-binding-container").css('min-height','150px').css('min-width','450px').editableList({
                 header: $("<div>").css({"margin-left":"6px"}).append($.parseHTML(
                     "<div style='width:28%; margin-left:5px; display: inline-grid'><b>Binding Source</b></div>" +
-                    "<div style='width:28%; margin-left:1px; display: inline-grid'><b>Selector</b></div>" +  
-                    "<div style='width:36%; margin-left:1px; display: inline-grid'><b>Binding Destination</b></div>" 
+                    "<div style='width:24%; margin-left:1px; display: inline-grid'><b>Selector</b></div>" +  
+                    "<div style='width:40%; margin-left:1px; display: inline-grid'><b>Binding Destination</b></div>" 
                 )),
                 addItem: function(container, i, binding) {
                     // Add a new row to the editableList
@@ -1036,7 +1053,7 @@
                     //BINDING SOURCE
                     // Column 1 :  bind msg.xxxx 
                     var bindSourceField = $('<input/>',{class:"node-input-binding-source",type:"text",placeholder:"payload.property"})
-                        .css({"width":"28%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                        .css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     bindSourceField.val(binding.bindSource);  
                
                     //BINDING DESTINATION
@@ -1063,9 +1080,10 @@
            
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
                     var bindingTypeField = $('<select/>',{class:"node-input-binding-type",type:"text",placeholder:"click"})
-                        .css({"width":"16%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                        .css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     $('<option />', {value: "text", text: "Text"}).appendTo(bindingTypeField);
                     $('<option />', {value: "attr", text: "Attribute"}).appendTo(bindingTypeField);
+                    $('<option />', {value: "style", text: "Style"}).appendTo(bindingTypeField);
                     bindingTypeField.val(binding.bindType || "text");
                     
                     // Column 4 : [textbox] Attribute to update (only used when bindingType == "attr") 
@@ -1075,19 +1093,27 @@
                     attributeField.attr("id",attributeFieldId);
                     attributeField.val(binding.attribute);
                     attributeField.focusin(function() { // Only load autocomplete on selection (performance reasons)
-                        if(attributeField.data('ui-autocomplete') == undefined){ //only load if not already loaded
-                            attributeField.autocomplete({
-                                classes: {
-                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
-                                },
-                                source: function(req, add){
-                                    add($.ui.autocomplete.filter(node.attrList, req.term));
+                        // The content of the autocomplete list depends on the value of the binding type.  Since the binding type
+                        // can have been changed meanwhile, we will reload the autocomplete list every time again.
+                        attributeField.autocomplete({
+                            classes: {
+                                "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                            },
+                            source: function(req, add){
+                                // The autocomplete list content depends on the binding type
+                                switch(bindingTypeField.val()) {
+                                    case "attr":
+                                        add($.ui.autocomplete.filter(node.attrList, req.term));
+                                        break;
+                                    case "style":
+                                        add($.ui.autocomplete.filter(node.presentationAttrList, req.term));
+                                        break;
                                 }
-                            });
-                        }
+                            }
+                        });
                     });  
                     bindingTypeField.change(function () {
-                        if (bindingTypeField.val() === "attr") {
+                        if (bindingTypeField.val() === "attr" || bindingTypeField.val() === "style") {
                             attributeField.show();
                         }
                         else {
@@ -1708,7 +1734,6 @@
                     <option value="y">Pan only Y</option>
                 </select>
             </div>
-
             <div class="form-row">
                 <label for="node-input-zooming"><i class="fa fa-search-plus"></i> Zooming</label>
                 <select id="node-input-zooming">
