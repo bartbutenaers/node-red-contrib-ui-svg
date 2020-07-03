@@ -12,7 +12,6 @@ And also lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawi
 + `msg.position.x` has become `msg.event.pageX`
 + `msg.position.y` has become `msg.event.pageY`
 + The (selector) content has moved from `msg.elementId` to `msg.selector`, and `msg.elementId` now contains the real element id where the event has occurred.  See [here](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Breaking-change-version-2.0.0) for detailed information.
-+ The `update_style` command (for control messages) now only updates existing style attributes, but doesn't create the specified style attribute anymore (when it doesn't exist yet).  If you need to update OR create, then use the `set_style` command instead.
 
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
@@ -418,24 +417,15 @@ The following flow demonstrates how to change the *'fill'* color and *'rotation'
 
 ### Update/set a style attribute value via msg
 The SVG elements' style attribute values can be added/changed via an input message:
-
-+  Use command ***update_style*** to update the value of an *existing* SVG element style attribute:
-   ```
-   "payload": { 
-      "command": "update_style", 
-      "selector": ".camera", 
-      "attributeName": "fill", 
-      "attributeValue": "purple" 
-   }
-   ```
-+ Use command ***set_style*** to update the value of an *existing* SVG element style attribute, or create the style attribute when it doesn't exist yet:
-   ```
-   "payload": {
-      "command": "set_style", 
-      "selector": ".camera", 
-      "attributeName": "fill", 
-      "attributeValue": "purple" 
-   }
+ ```
+ "payload": { 
+    "command": "update_style", 
+    "selector": ".camera", 
+    "attributeName": "fill", 
+    "attributeValue": "purple" 
+ }
+ ```
+Note that both commands ***update_style*** and ***set_style*** will both update the value of an *existing* SVG element style attribute, or create the style attribute when it doesn't exist yet.  So there is no difference between both commands (in contradiction to set_attribute and update_attribute).  Indeed because there will be always default SVG styles and optionally inline and external SVG styles, the style attributes will always already exist...
 
 Instead of adding/changing a single style attribute value, it is also possible to add/change the entire style attribute at once.  In this case the *"style"* needs to be specified, instead of the *"attributeName"*:
 +  Use command ***update_style*** to update the value of the *existing* SVG element style:
