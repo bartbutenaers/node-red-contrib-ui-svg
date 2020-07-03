@@ -727,7 +727,7 @@ module.exports = function(RED) {
                                 var a = path.split('.');
                                 for (var i = 0, n = a.length; i < n; ++i) {
                                     var k = a[i];
-                                    if (k in obj) {
+                                    if ((typeof(obj) === 'object') && (k in obj)) {
                                         obj = obj[k];
                                     } else {
                                         return def;
