@@ -3,7 +3,7 @@ A Node-RED widget node to show interactive SVG (vector graphics) in the dashboar
 
 Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner in crime for this node!
 
-And also lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawing-editor) for his assistance!
+And also, lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawing-editor) for his assistance!
 
 :warning: ***The major 2.0.0 release (unfortunately) contains some breaking changes;***
 + `msg.event` has become `msg.event.type`
@@ -33,25 +33,25 @@ An SVG drawing contains a series of SVG elements, which will be rendered by the 
 ```
 The browser will first draw the (background) image, then the circle (on top of the image), and so on ...
 
-Each of those SVG elements has attributes (fill color, ...), can respond to events (clicked, ...) and can be animated (e.g. shrink...).
+Each of those SVG elements has attributes (fill colour, ...), can respond to events (clicked, ...) and can be animated (e.g. shrink...).
 
 ## Node usage
 
 :white_check_mark: ***!!!!! SEE OUR [WIKI](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki) FOR STEP-BY-STEP TUTORIALS !!!!!***
 
-This node can be used to visualize all kind of graphical stuff in the Node-RED dashboard.  This can range from simple graphics (e.g. a round button, ...) to very complex graphics (floorplans, industrial processes, piping, wiring, ...).  But even those complex graphics will consist out of a number of simple graphical shapes.  For example a ***floorplan*** is in fact a simple image of your floor, and a series of other SVG elements (e.g. Fontawesome icons) drawn on top of that (background) image.
+This node can be used to visualize all kind of graphical stuff in the Node-RED dashboard.  This can range from simple graphics (e.g. a round button, ...) to very complex graphics (floorplans, industrial processes, piping, wiring, ...).  But even those complex graphics will consist out of several simple graphical shapes.  For example, a ***floorplan*** is in fact a simple image of your floor, and a series of other SVG elements (e.g. Fontawesome icons) drawn on top of that (background) image.
 
 Simply deploy your SVG string in the config screen, and the Node-RED dashboard will render your vector graphics:
 
 ![svg_demo](https://user-images.githubusercontent.com/14224149/65639986-94e63680-dfe9-11e9-8086-89d78394301b.gif)
 
-But what if you are not familiar with the SVG syntax.  Don't worry, we have integrated a [DrawSvg](#DrawSvg-drawing-editor) drawing editor in the config screen of our node. 
+But what if you are not familiar with the SVG syntax.  Do not worry, we have integrated a [DrawSvg](#DrawSvg-drawing-editor) drawing editor in the config screen of our node. 
 
-The node's config screen consists of a series of tabsheets:
+The node's config screen consists of a series of tab sheets:
 
-### "Editor" tabsheet
+### "Editor" tab sheet
 
-[DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSVG into this node, to allow users to edit their SVG source via a nice drawing program.
+[DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSvg into this node, to allow users to edit their SVG source via a nice drawing program.
 
 ***!!! DrawSvg is free software.  Note that DrawSvg and the online service is used as is without warranty of bugs !!!***
 
@@ -62,42 +62,42 @@ Steps to use DrawSvg:
 2. DrawSvg will be opened in a popup dialog window, and it will visualize the SVG source (from this node).
 3. The SVG drawing can be edited.
 4. You can intermediately save your changes (to this node), using the *"Save"* button in the upper right corner of the popup dialog window.
-5. As soon as the popup dialog window is being closed, a notification will appear.  There you can choose to ignore all changes (i.e. you don't need them anymore), or to save all the changes (to this node).
-6. The updated SVG source will appear in the *"SVG source"* tabsheet of this node.
+5. As soon as the popup dialog window is being closed, a notification will appear.  There you can choose to ignore all changes (i.e. you do not need them anymore), or to save all the changes (to this node).
+6. The updated SVG source will appear in the *"SVG source"* tab sheet of this node.
 
-By default this node will use the free online DrawSvg service (see *"Editor URL"* in the "Settings" tabsheet).  However we it is also possible to use the [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node, which can host a DrawSVG service locally for offline systems.
+By default, this node will use the free online DrawSvg service (see *"Editor URL"* in the "Settings" tab sheet).  However we it is also possible to use the [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node, which can host a DrawSvg service locally for offline systems.
 
-### "SVG source" tabsheet
+### "SVG source" tab sheet
 
 ![editor](https://user-images.githubusercontent.com/14224149/65357446-5faba400-dbf7-11e9-9824-886238dba228.png)
 
 Enter you (XML-based) SVG graphics in this editor.  This can be done in different ways:
-+ If you are a die-hard SVG fanatic, you can enter the SVG string manually in the *"SVG Source"* tabsheet.
++ If you are a die-hard SVG fanatic, you can enter the SVG string manually in the *"SVG Source"* tab sheet.
 + If you prefer to use an SVG drawing editor, you can use the embedded [DrawSvg](#DrawSvg-drawing-editor) editor.
-+ If you need very specific types of drawings, you can use a third party SVG editor to create your drawing (and simple paste the generated SVG string into this tabsheet).  Multiple (online) editors are free available, each with their own dedicated speciality:
++ If you need very specific types of drawings, you can use a third party SVG editor to create your drawing (and simple paste the generated SVG string into this tab sheet).  Multiple (online) editors are free available, each with their own dedicated speciality:
    + [Floorplanner](http://floorplanner.com)
    + [Floorplancreator](https://floorplancreator.net/#pricing)
    + ...
 
 However:
    + Be aware that those third-party SVG editors could create rather complex SVG strings, which are harder to understand when you want to change them manually afterwards.
-   + Be aware that the browser has a lot of work to render all the SVG elements in the drawing!  In some cases it might be useful - to gain performance - to convert your SVG once to an image, and use that as a background image in this SVG node (and draw other shapes on top of that image).  For example in Floorplanner website, the SVG drawing can be saved as a JPEG/PNG image.  That image can be loaded into an SVG *'image'* element, like I have done in the example flows on this readme page ...
+   + Be aware that the browser has a lot of work to render all the SVG elements in the drawing!  In some cases, it might be useful - to gain performance - to convert your SVG once to an image and use that as a background image in this SVG node (and draw other shapes on top of that image).  For example, in Floorplanner website, the SVG drawing can be saved as a JPEG/PNG image.  That image can be loaded into an SVG *'image'* element, like I have done in the example flows on this readme page ...
       
-At the bottom of the "SVG source" tabsheet, a series of buttons are available:
+At the bottom of the "SVG source" tab sheet, a series of buttons are available:
 
 ![buttons](https://user-images.githubusercontent.com/14224149/66707892-5621e180-ed48-11e9-8d66-e3add751e7c8.png)
 
 + *Expand source*: show the SVG source in full screen mode.
-+ *Format SVG*: by formatting the SVG source, the source will be beatyfied.  This means the empty lines will be removed, each line will get a single SVG element, indents will be corrected ...
++ *Format SVG*: by formatting the SVG source, the source will be beatified.  This means the empty lines will be removed, each line will get a single SVG element, indents will be corrected ...
 
-### "Animations" tabsheet
+### "Animations" tab sheet
 
 ![animations](https://user-images.githubusercontent.com/14224149/65359120-d2b71980-dbfb-11e9-83ea-5bbc6e155673.png)
 
-SVG allows users to animate element attributes over time.  For example you can make the radius of a circle grow in 3 seconds from 10 pixels to 40 pixels. 
+SVG allows users to animate element attributes over time.  For example, you can make the radius of a circle grow in 3 seconds from 10 pixels to 40 pixels. 
 
 Adding animations to your SVG graphics can be done in different ways:
-+ *Via the "SVG Source" tabsheet* manually, for die-hard SVG fanatics:
++ *Via the "SVG Source" tab sheet* manually, for die-hard SVG fanatics:
    ```
    <circle id="mycircle" ... r="5" ...>
       <animate id="myanimation" attributeName="r" begin="0s" dur="3s" repeatCount="1" from="10" to="40"/>
@@ -110,7 +110,7 @@ Adding animations to your SVG graphics can be done in different ways:
    <animate xlink:href="#mycircle" id="myanimation" attributeName="r" begin="0s" dur="3s" repeatCount="1" from="10" to="40"/>
    ```
 
-+ *Via the "Animations" tabsheet*, to keep the drawing and the animations separated.  Click the *'add'* button to create a new animation record, where following properties need to be entered:
++ *Via the "Animations" tab sheet*, to keep the drawing and the animations separated.  Click the *'add'* button to create a new animation record, where following properties need to be entered:
    + ***Animation id***: The id of this SVG animate element (in this example *"myanimation"*).
    + ***Target element id***: The id of the SVG element that you want to animate (in this example *"mycircle"*).
    + ***Class***: By setting a value in class, you can use a selector to start or stop multiple animations. 
@@ -130,20 +130,20 @@ Adding animations to your SVG graphics can be done in different ways:
       2s; myRect.click; myAnim.end-400ms
       ```
    
-   Creating animations via this tabsheet has the advantage that the SVG source and the animations are being kept separate.  More specifically when the SVG is being created in a third-party SVG editor (which most of the time don't support animations), your manullay inserted animation elements would be overwritten each time you need to update your SVG...
+   Creating animations via this tab sheet has the advantage that the SVG source and the animations are being kept separate.  More specifically when the SVG is being created in a third-party SVG editor (which most of the time don't support animations), your manually inserted animation elements would be overwritten each time you need to update your SVG...
    
-   Remark: it is also possible to animate transformations.  Indeed when the attribute name is *"transform"* an extra "animation type" dropdown will appear:
+   Remark: it is also possible to animate transformations.  Indeed, when the attribute name is *"transform"* an extra "animation type" dropdown will appear:
 
    ![demo_config_screen](https://user-images.githubusercontent.com/14224149/73695310-23766d00-46da-11ea-9960-065dc1bf7004.gif)
    
 + *Via an input message* as explained in the [Control via messages](#control-via-messages) section below.  
 
-### "Events" tabsheet
+### "Events" tab sheet
 
 ![events](https://user-images.githubusercontent.com/14224149/65360241-70f8ae80-dbff-11e9-8c6a-65f3a14e22a7.png)
 
 An SVG element can be added here, to make that element able to intercept one of the following events:
-+ *Click*: when a mousedown and mouseup on the same element.
++ *Click*: when a mouse-down and mouse-up on the same element.
 + *Double click*: when a double mouse click on an element.
 + *Context menu*: when a right mouse click on an element.
 + *Mouse down*: when a mouse button is pressed down on an element. 
@@ -159,13 +159,13 @@ An SVG element can be added here, to make that element able to intercept one of 
 + *Touch start*: when a touch event starts (on mobile/tablet only).
 + *Touch end*: when a touch event ends (on mobile/tablet only).
 
-When adding a new line in this tabsheet, a number of properties need to be entered:
-+ ***Selector***: the selection of (one or more) SVG elements that needs to intercept events. See the syntax of [css selectors](https://www.w3schools.com/cssref/css_selectors.asp).
+When adding a new line in this tab sheet, several properties need to be entered:
++ ***Selector***: the selection of (one or more) SVG elements that needs to intercept events. See the syntax of [CSS  selectors](https://www.w3schools.com/cssref/css_selectors.asp).
 + ***Action***: the event that the shape needs to intercept.
 + ***Payload***: the ```msg.payload``` content of the output message, which will be sent when the event occurs.
 + ***Topic***: the ```msg.topic``` content of the output message, which will be sent when the event occurs.
 
-By default the content will be stored in ```msg.payload``` of the output message.  However when the result needs to end up in ```msg.anotherField```, this message field can be specfied at the top of the tabsheet:
+By default the content will be stored in ```msg.payload``` of the output message.  However when the result needs to end up in ```msg.anotherField```, this message field can be specified at the top of the tab sheet:
 
 ![image](https://user-images.githubusercontent.com/14224149/65385332-dd71cb80-dd2d-11e9-8ae9-7b604d3f077e.png)
 
@@ -207,28 +207,28 @@ Two things will happen when an event occurs on such an SVG element:
 
 Instead of specifying events in the config screen, it is also possible to add or remove events via input messages.  This is explained in the [Control via messages](#control-via-messages) section below.
 
-### "Input bind" tabsheet
-As explained in the section [Control via messages](#control-via-messages) below, this node can be controlled via input messages.  For example to change the fill color of circle with id "mycircle" to green.  As a result the input messages need to contain a lot of information (element id, attribute name, attribute value ...), to let this node know what you want it to do.  This means the flow will become quite complex, since a lot of extra nodes are required to put all that information in the message.
+### "Input bind" tab sheet
+As explained in the section [Control via messages](#control-via-messages) below, this node can be controlled via input messages.  For example, to change the fill colour of circle with id "mycircle" to green.  As a result, the input messages need to contain a lot of information (element id, attribute name, attribute value ...), to let this node know what you want it to do.  This means the flow will become quite complex, since a lot of extra nodes are required to put all that information in the message.
 
-Another way to control this node is by using bindings.  This means that you have to specify most of the information in the binding, so the input message will only need to contain the new value itself.  Since the input messages need to contain less information, the flow can be simplified ... 
+Another way to control this node is by using bindings.  This means that you must specify most of the information in the binding, so the input message will only need to contain the new value itself.  Since the input messages need to contain less information, the flow can be simplified ... 
 
 ![bindings](https://user-images.githubusercontent.com/14224149/65362302-2bd87a80-dc07-11e9-9409-76fe1a205abc.png)
 
 Input bindings can be added to link sources (= input message fields) to destinations (= element attribute/text values).   
 
-A number of properties need to be entered:
+Several properties need to be entered:
 + ***Binding source***: the field of the input message that will contain the new value.
-+ ***Selector***: the selection of (one or more) SVG elements on which the new attribute value will be applied.  See the syntax of [css selectors](https://www.w3schools.com/cssref/css_selectors.asp).
++ ***Selector***: the selection of (one or more) SVG elements on which the new attribute value will be applied.  See the syntax of [CSS  selectors](https://www.w3schools.com/cssref/css_selectors.asp).
 + ***Binding destination***: on which attribute of those selected SVG elements the new values will be applied.
-   + *Text content*: when this option is selected, the value (from the input message) will be be applied to the inner text content of the element.
+   + *Text content*: when this option is selected, the value (from the input message) will be applied to the inner text content of the element.
    
-      For example set the text content in `<text x="20" y="20">Some text content</text>`.
+      For example, set the text content in `<text x="20" y="20">Some text content</text>`.
    + *Attribute value*: when this option is selected, the value (from the input message) will be applied to an attribute.  This means an extra "attribute name" will have to be specified, to make sure the new value will be applied to the attribute with that name.
    
-      For example set the fill color value in `<circle fill="yellow"/>`.
+      For example, set the fill colour value in `<circle fill="yellow"/>`.
    + *Style value*: when this option is selected, the value (from the input message) will be applied to a style attribute.  This means an extra style "attribute name" will have to be specified, to make sure the new value will be applied to the attribute with that name.
    
-      For example set the fill color value in `<circle style="fill: yellow;"/>`.
+      For example, set the fill colour value in `<circle style="fill: yellow;"/>`.
    
 For example:
 
@@ -243,29 +243,29 @@ The following flow shows the above binding example in action:
 [{"id":"c9ab8554.337588","type":"debug","z":"60ad596.8120ba8","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":1380,"y":440,"wires":[]},{"id":"56869c57.d65c74","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"d4ee73ea.a7676","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"http://drawsvg.org/drawsvg.html","directory":"","name":"","x":1180,"y":440,"wires":[["c9ab8554.337588"]]},{"id":"62a285fb.bd046c","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":980,"y":460,"wires":[["56869c57.d65c74"]]},{"id":"132d184e.ff0ab8","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":980,"y":420,"wires":[["56869c57.d65c74"]]},{"id":"d4ee73ea.a7676","type":"ui_group","z":"","name":"Floorplan test","tab":"b4bb5633.ba92b8","disp":true,"width":"14","collapse":false},{"id":"b4bb5633.ba92b8","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
 
-## "Settings" tabsheet
+## "Settings" tab sheet
 
 ### Show coordinates
 When this option is selected, a ***tooltip*** will be displayed to show the current mouse location (i.e. X and Y coordinate):
 
 ![svg_tooltip_coordinates](https://user-images.githubusercontent.com/14224149/63231067-79cc1e00-c216-11e9-83de-f93931f6d489.gif)
 
-This option has been introduced to simplify layouting during manual editing of the SVG string (without external SVG drawing tool).  Without this option determining the location of your shapes would require a lot of calculations or guessing ...
+This option has been introduced to simplify lay outing during manual editing of the SVG string (without external SVG drawing tool).  Without this option determining the location of your shapes would require a lot of calculations or guessing ...
 
 Remark: The location is measured in the SVG coordinate system, which means the origin (X=Y=0) is in the top left of your drawing.
 
 ### Auto format SVG Source after saving edits in SVG Editor
-When editing the SVG source via [DrawSvg](#DrawSvg-drawing-editor), the manipulated SVG source isn't very pretty: the SVG source will contain emtpy lines, multiple SVG elements on a single line ...  This SVG source can be manually beautified using the "*Format SVG*" button, or automatically (every time the DrawSVG popup dialog window is closed - by activating this checkbox.
+When editing the SVG source via [DrawSvg](#DrawSvg-drawing-editor), the manipulated SVG source is not very pretty: the SVG source will contain empty lines, multiple SVG elements on a single line ...  This SVG source can be manually beautified using the "*Format SVG*" button, or automatically (every time the DrawSvg popup dialog window is closed - by activating this checkbox.
 
 ### Show browser errors on the server
-Unfortunately not all kind of errors can be validated on the server, but instead they will occur on the client side.  For example when an input message arrives, but no SVG element can be found for the specified selector.  As a result your drawing won't be updated, and in the 1.x.x version you had to figure out yourself what is going wrong...  Of course you can have a look in the browser console log to have a look at the client side errors.  However on some systems (e.g. Android smartphones) it is very difficult to get access to that console log (unless you setup a remote connection via usb with your desktop browser). 
+Unfortunately, not all kind of errors can be validated on the server, but instead they will occur on the client side.  For example, when an input message arrives, but no SVG element can be found for the specified selector.  As a result, your drawing will not be updated, and in the 1.x.x version you had to figure out yourself what is going wrong...  Of course, you can have a look in the browser console log to have a look at the client side errors.  However, on some systems (e.g. Android smartphones) it is very difficult to get access to that console log (unless you setup a remote connection via USB with your desktop browser). 
 
-To simplify troubleshooting, the client side errors will appear in the Node-RED debug panel when this checkbox is activated.  But keep in mind that if you have N drawings visible simultaneously (when your dashboard is currently displayed in N browsers), then you will get N errors instead of 1 ...
+To simplify troubleshooting, the client-side errors will appear in the Node-RED debug panel when this checkbox is activated.  But keep in mind that if you have N drawings visible simultaneously (when your dashboard is currently displayed in N browsers), then you will get N errors instead of 1 ...
 
 ### Editor URL
 This is the URL where the [DrawSvg](#DrawSvg-drawing-editor) editor instance is being hosted.  By default this field contains a link to the official [DrawSvg cloud](http://drawsvg.org/drawsvg.html) system, but it can also contain a link to a local DrawSvg installation (hosted via a [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node).
 
-*Be aware that this is a free system, so there is no garuantee about availability of the cloud system!*
+*Be aware that this is a free system, so there is no guarantee about availability of the cloud system!*
 
 ### Directory
 This directory of your local system (where your Node-RED instance is running) can be used to make your local images available, to both your dashboard and your flow editor.
@@ -275,13 +275,13 @@ A series of options are available to allow panning and zooming, which is useful 
 
 + ***"Panning"***: enable panning in X, Y or in both directions.
 + ***"Zooming"***:  enable zooming.
-+ ***"Pan only when zoomed"***: when this option is activated, the SVG drawing can only be panned when it has been zoomed previously.  Indeed when the drawing is at its original size, it might in some cases be pointless to allow panning.
++ ***"Pan only when zoomed"***: when this option is activated, the SVG drawing can only be panned when it has been zoomed previously.  Indeed, when the drawing is at its original size, it might in some cases be pointless to allow panning.
 + ***"Enable mouse-wheel zooming"***: allow zooming in/out by rotating the mouse wheel.
 + ***"Enable double click zooming"***: the behaviour of this option differs on a touch screen.
-   + When a mouse is being used, every double click will trigger zooming in.  Or it will trigger zooming out, when the SHIFT key is being pressed meanwhile.
+   + When a mouse is being used, every double click will trigger zooming in.  Or it will trigger zooming out when the SHIFT key is being pressed meanwhile.
    + On a touch screen the first double tap will trigger zooming in.  The second double tap will trigger zooming out.  And so on ...
 
-The following demo shows how to pan and zoom via the mouse (mousewheel and dragging):
+The following demo shows how to pan and zoom via the mouse (mouse-wheel and dragging):
 
 ![svg_panzoom_mouse](https://user-images.githubusercontent.com/14224149/85945109-cd7dbc80-b93b-11ea-8dde-86f32be2b89e.gif)
 
@@ -310,7 +310,7 @@ Notice the different behaviour between the two types of buttons in this flow:
    
 + The Inject node buttons will trigger a message that contains no socketid (since there is no specific dashboard client involved here), so ALL clients will receive the same pan/zoom command (which is most of the time not useful).
 
-Caution: make sure the panning and zooming is enabled in the Settings tabsheet, otherwise it won't be possible to control panning and zooming via input messages!
+Caution: make sure the panning and zooming is enabled in the Settings tab sheet, otherwise it will not be possible to control panning and zooming via input messages!
 
 ## Control via messages
 Most of the SVG information can be manipulated by sending input messages to this node.  
@@ -324,7 +324,7 @@ Most of the SVG information can be manipulated by sending input messages to this
         "textContent": "my title"
     }
 
-However it is also possible to specify one or more elements via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example set all texts with class 'titleText' to value 'my title':
+However it is also possible to specify one or more elements via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example, set all texts with class 'titleText' to value 'my title':
    ```
    "payload": {
         "command": "update_text",
@@ -377,7 +377,7 @@ However it is also possible to specify one or more elements via a [CSS selector]
    ```
   This way the command only needs to be specified once.
   
-+ To further simplify the message, the CSS selector - when it is required - can also be added to the topic (separated by `|`) :
++ To further simplify the message, the CSS selector - when it is required - can also be added to the topic (separated by `|`):
    ```
     {
         "topic": "update_text|#myRect > .faultMessage",
@@ -398,9 +398,9 @@ The SVG elements' attribute values can be added/changed via an input message:
       "attributeValue": "green"
    }
    ```
-   When the specified element doesn't have the specified attribute, nothing will happen and in the browser console log an entry will appear (to indicate that the specified element attribute doesn't exist).
+   When the specified element does not have the specified attribute, nothing will happen and, in the browser console log an entry will appear (to indicate that the specified element attribute doesn't exist).
 
-+ Use command ***set_attribute*** to update the value of an *existing* SVG element attribute, or create the attribute when it doesn't exist yet:
++ Use command ***set_attribute*** to update the value of an *existing* SVG element attribute, or create the attribute when it does not exist yet:
    ```
    "payload": {
       "command": "set_attribute",
@@ -410,11 +410,11 @@ The SVG elements' attribute values can be added/changed via an input message:
    }
    ```
 
-For example a camera is visualized by a FontAwesome icon (text), which has multiple attributes (x, y, fill ...):
+For example, a camera is visualized by a FontAwesome icon (text), which has multiple attributes (x, y, fill ...):
 ```
 <text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" ...>
 ```
-The following flow demonstrates how to change the *'fill'* color and *'rotation'* attribute values via input messages:
+The following flow demonstrates how to change the *'fill'* colour and *'rotation'* attribute values via input messages:
 
 ![2019-09-22_15-21-49](https://user-images.githubusercontent.com/44235289/65389304-c1c9ed80-dd4c-11e9-83a7-d7f41e380da2.gif)
 
@@ -432,7 +432,7 @@ The SVG elements' style attribute values can be added/changed via an input messa
     "attributeValue": "purple" 
  }
  ```
-Note that both commands ***update_style*** and ***set_style*** will both update the value of an *existing* SVG element style attribute, or create the style attribute when it doesn't exist yet.  So there is no difference between both commands (in contradiction to set_attribute and update_attribute).  Indeed because there will be always default SVG styles and optionally inline and external SVG styles, the style attributes will always already exist...
+Note that both commands ***update_style*** and ***set_style*** will both update the value of an *existing* SVG element style attribute or create the style attribute when it doesn't exist yet.  So, there is no difference between both commands (in contradiction to set_attribute and update_attribute).  Indeed, because there will be always default SVG styles and optionally inline and external SVG styles, the style attributes will always already exist...
 
 Instead of adding/changing a single style attribute value, it is also possible to add/change the entire style attribute at once.  In this case the *"style"* needs to be specified, instead of the *"attributeName"*:
 +  Use command ***update_style*** to update the value of the *existing* SVG element style:
@@ -443,7 +443,7 @@ Instead of adding/changing a single style attribute value, it is also possible t
       "style": { "fill": "blue", "transform": "rotate(5deg)" }  
    }
    ```
-+ Use command ***set_style*** to update the value of the *existing* SVG element style attribute, or create the style when it doesn't exist yet:
++ Use command ***set_style*** to update the value of the *existing* SVG element style attribute, or create the style when it does not exist yet:
    ```
    "payload": { 
       "command": "set_style", 
@@ -509,7 +509,7 @@ The text content (or inner html) of an SVG element can be get via an input messa
     "selector": "#myText"
 }
 ```
-The text(s) will be send in the output message payload as an array.                                        
+The text(s) will be sent in the output message payload as an array.                                        
 
 ### Start/stop animations via msg
 Existing animations can be started/stopped via an input message, by a ***start*** or ***stop*** action value:
@@ -520,7 +520,7 @@ Existing animations can be started/stopped via an input message, by a ***start**
    "action": "start"
 }
 ```
-Note that you need to specify in the *"Animations"* tabsheet which animations will be triggered via input messages:
+Note that you need to specify in the *"Animations"* tab sheet which animations will be triggered via input messages:
 
 ![Msg trigger](https://user-images.githubusercontent.com/14224149/86404975-d6aab880-bcb0-11ea-8cd2-68732df69862.png)
 
@@ -533,7 +533,7 @@ Such messages allow you to create dynamic effects like in the following demo:
 ```
 
 ### Add events via msg
-When SVG elements always need to respond to an event (e.g. click), those elements should be enumerated in the *"Events"* tabsheet.  However in some cases it is required to make SVG elements to respond only temporary to events, which can be achieved by adding events to SVG elements via an input message.
+When SVG elements always need to respond to an event (e.g. click), those elements should be enumerated in the *"Events"* tab sheet.  However, in some cases it is required to make SVG elements to respond only temporary to events, which can be achieved by adding events to SVG elements via an input message.
 ```
 "payload": {
   command  : "add_event",
@@ -558,7 +558,7 @@ An event (handler) can be removed from an SVG element via an input message:
 ```
 
 ### Add elements via msg
-Normally SVG elements need to exist all the time, by defining them in the *"SVG Source"* tabsheet.  However it might be required to add SVG elements dynamically, which can be achieved via input messages:
+Normally SVG elements need to exist all the time, by defining them in the *"SVG Source"* tab sheet.  However, it might be required to add SVG elements dynamically, which can be achieved via input messages:
 ```
 "payload": {
    "command": "add_element", 
@@ -577,11 +577,11 @@ Normally SVG elements need to exist all the time, by defining them in the *"SVG 
 }
 ```
 Some remarks about the input message:
-+ A `parentElementId` property can be specified, if the new element should be a child of the specified parent element.  If not available, the new element will be added directly under the root SVG element.
-+ A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can create multiple elements at once via a single command.  Note that it is not allowed in that case to specify an elementId property, since only one element is allowed to have the same id.
++ A `parentElementId` property can be specified if the new element should be a child of the specified parent element.  If not available, the new element will be added directly under the root SVG element.
++ A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can create multiple elements at once via a single command.  Note that it is not allowed in that case to specify an elementId property, since only one element can have the same id.
 + When an element with the same `elementId` already exists, then that existing element will be *replaced* by this new element!
 
-When the *"Events"* tabsheet already contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
+When the *"Events"* tab sheet already contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
 
 ### Remove elements via msg
 An SVG element can be removed via an input message:
@@ -644,7 +644,7 @@ Or it is also possible to pan relative in a specified direction:
 ## Various stuff
 
 ### Fontawesome icons
-Fontawesome icons are used widely in Node-RED, and are in fact little SVG drawings on their own.  They are a very easy way e.g. to represent devices on a floorplan.  Such an icon can easily be added via DrawSvg, as demonstrated in this animation:
+Fontawesome icons are used widely in Node-RED and are in fact little SVG drawings on their own.  They are a very easy way e.g. to represent devices on a floorplan.  Such an icon can easily be added via DrawSvg, as demonstrated in this animation:
 
 ![icons via drawsvg](https://user-images.githubusercontent.com/14224149/66722326-17edf600-ee0c-11e9-94b9-225edcc12250.gif)
 
@@ -652,14 +652,14 @@ By specifying an identifier for the icon (like in the above animation), the icon
 
 When you want to enter your SVG source ***manually*** (without using DrawSvg), there is another mechanism provided:
 
-1. Search the [Fontawesome](https://fontawesome.com/v4.7.0/icons/) website for an icon that fits your needs.  For example 'fa-video-camera'.
+1. Search the [Fontawesome](https://fontawesome.com/v4.7.0/icons/) website for an icon that fits your needs.  For example, 'fa-video-camera'.
 
 2. Create a text element (with font family *"FontAwesome"*) containing that icon name:
    ```
    <text id="camera_living" x="310" y="45" font-family="FontAwesome" fill="blue" stroke="black" font-size="35" text-anchor="middle" alignment-baseline="middle" stroke-width="1">fa-video-camera</text>
    ```
    
-3. The result will be the fontawesome icon at the specified location:
+3. The result will be the FontAwesome icon at the specified location:
 
    ![icon](https://user-images.githubusercontent.com/14224149/63217104-29828c80-c140-11e9-957b-22ea8eb9a0ed.png)
    
@@ -689,12 +689,12 @@ Some remarks:
    ```
 
 ### Display images
-In an SVG drawing, an *"image"* element can be used to display an image inside an SVG drawing.  You have to specify at which path the image is available, but the image can be stored a different locations:
+In an SVG drawing, an *"image"* element can be used to display an image inside an SVG drawing.  You must specify at which path the image is available, but the image can be stored at different locations:
 1. The easiest solution is an online image that is public available.  For example:
    ```
    <image xlink:href="https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg"\>
    ```
-   You can also make local images online available in Node-RED, e.g. by using a httpIn/httpOut nodes based flow.  However the disadvantage of online images is that they are public available ...
+   You can also make local images online available in Node-RED, e.g. by using a httpIn/httpOut nodes-based flow.  However, the disadvantage of online images is that they are public available ...
    
 2. Load a local image, via the file selection dialog in [DrawSvg](#DrawSvg-drawing-editor).  This way you can easily select a local image available on the machine where you are *viewing* your dashboard in a browser.  DrawSvg will convert the image to a base64 encoded string, which is being inserted into the SVG source.
    ```
@@ -702,28 +702,26 @@ In an SVG drawing, an *"image"* element can be used to display an image inside a
    ```
    The advantage is that the image stays available (even when it is deleted from the file system), but the size of the Node-RED flow file size will increase dramatic!
    
-3. In the SVG Source tabsheet you can use a local image file, which needs to exist (in the directory specified on the 'Settings' tabsheet) on the system where your Node-RED instance is running:
+3. In the SVG Source tab sheet you can use a local image file, which needs to exist (in the directory specified on the 'Settings' tab sheet) on the system where your Node-RED instance is running:
    ```
    <image xlink:href="xlink:href="file://some_local_file_name"\>
    ```
-   Since both DrawSvg and the Node-RED dashboard cannot access this local path, this node will automatically convert the image  to a base64 encoded url.  That way DrawSvg and the dasbhoard can both display the image, and in the flow file only the local path is being stored.  The disadvantage is that you have to enter the path manually in the SVG Source tabsheet.
+   Since both DrawSvg and the Node-RED dashboard cannot access this local path, this node will automatically convert the image to a base64 encoded URL.  That way DrawSvg and the dashboard can both display the image, and in the flow file only the local path is being stored.  The disadvantage is that you must enter the path manually in the SVG Source tab sheet.
    
 Remark: it is ***not*** possible to select local files in DrawSvg.  See [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/35).
 
 ## Troubleshooting
 Some tips and tricks to solve known problems:
 
-1. When all shapes of the original drawing have disappeared, and have received the same color as the dashboard theme:
+1. When all shapes of the original drawing have disappeared, and have received the same colour as the dashboard theme:
 
    ![Dashboard color](https://user-images.githubusercontent.com/14224149/79540632-c2c7c100-8088-11ea-9ba7-6c5dd4f0a842.png)
    
-   + Seems this is not the case with DrawSvg drawings, since DrawSvg sets the fill color as a ```style``` attribute (e.g. <element style="fill:red" ... />).  
-   + But some third party editors use the ```fill``` attribute fill (e.g. <element fill="red" ... />), which seems to be overwritten by the dashboard theme color.  Until we find a solution, you will have to change this manually ...
+   + Seems this is not the case with DrawSvg drawings, since DrawSvg sets the fill colour as a ```style``` attribute (e.g. <element style="fill:red" ... />).  
+   + But some third-party editors use the ```fill``` attribute fill (e.g. <element fill="red" ... />), which seems to be overwritten by the dashboard theme colour.  Until we find a solution, you will have to change this manually ...
 
-2. Some basic input messages validation has been added on the server-side, and validation errors will be showed in the debug sidepanel.
+2. Some basic input messages validation has been added on the server-side, and validation errors will be showed in the debug side-panel.
 
 3. See the [DrawSvg](#show-browser-errors-on-the-server) how to show client-side errors in your Node-RED debug panel.
 
-   Remark: when N drawings are visible at the moment (e.g. running in N dashboards simultaneously), then N duplicate messages will be displayed (where N can be 0 is no dashboards are open...).
-
-
+   Remark: when N drawings are visible now (e.g. running in N dashboards simultaneously), then N duplicate messages will be displayed (where N can be 0 is no dashboards are open...).
