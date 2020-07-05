@@ -2003,7 +2003,7 @@
                         <li>When a <code>parentElementId</code> is specified, the new element will be added as a child element of that parent element.  When not specified, the new element will be added directly below the root SVG element.</li>
                         <li>When a <code>parentSelector</code> is specified, a new element will be added as a child element of EVERY parent element.  In this case it is not allowed to specify an <code>elementId</code>, because multiple elements are added (which are not allowed to have the same element id).</li>
                         <li>When there is already an existing element (at the same parent) with the same <code>elementId</code>, then the existing element will be replaced by the new one.</li>
-                        <li>When command <i>"remove_element"</i> is used, only the <code>elementId</code> is required.</li>
+                        <li>When command <i>"remove_element"</i> is used, only the <code>elementId</code> is required.  Or a <code>selector</code> if multiple elements need to be removed with a single command.</li>
                     </ul>
                 </p> 
             </p>
