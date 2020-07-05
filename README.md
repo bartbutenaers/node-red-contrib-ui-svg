@@ -332,6 +332,7 @@ However it is also possible to specify one or more elements via a [CSS selector]
         "textContent": "my title"
     }
    ```
+   Note that a `selector` can also be used to specify a single element id (similar to `elementId`), by using a hashtag like *"#some_element_id"*.
 + A message can contain a single command.  For example:
    ```
    "payload": {
@@ -500,6 +501,7 @@ When the command is being specified inside the topic, you can simply send the te
 There are some different naming conventions possible:
 + The command can be both *"update_text"* or *"update_innerHTML"*.
 + The text can be delivered in *"textContent"* or *"text"* or *"html"*.
++ Beside to plain text, it is also possible to specify text containing HTML or SVG markup!  For example "`\<b>Hello\</b> \<i>from a command message\</i>"`.
 
 ### Get text content via msg
 The text content (or inner html) of an SVG element can be get via an input message:
@@ -536,11 +538,11 @@ Such messages allow you to create dynamic effects like in the following demo:
 When SVG elements always need to respond to an event (e.g. click), those elements should be enumerated in the *"Events"* tab sheet.  However, in some cases it is required to make SVG elements to respond only temporary to events, which can be achieved by adding events to SVG elements via an input message.
 ```
 "payload": {
-  command  : "add_event",
-  event    : "click",
-  selector : "#circle_2", 
-  payload  : "circle 2 has been clicked", // Content of the output message payload
-  topic    : "CIRCLE_CLICKED" // Content of the output message topic
+   "command"  : "add_event",
+   "event"    : "click",
+   "selector" : "#circle_2", 
+   "payload"  : "circle 2 has been clicked", // Content of the output message payload
+   "topic"    : "CIRCLE_CLICKED" // Content of the output message topic
 }]
 ```
 By sending this input message, the circle will become clickable.
@@ -551,9 +553,9 @@ Note carefully that the payload of the input message contains the payload and to
 An event (handler) can be removed from an SVG element via an input message:
 ```
 "payload": {
-   command  : "remove_event",
-   event    : "click",
-   selector : "#circle_1"
+   "command"  : "remove_event",
+   "event"    : "click",
+   "selector" : "#circle_1"
 }
 ```
 
@@ -579,7 +581,7 @@ Normally SVG elements need to exist all the time, by defining them in the *"SVG 
 Some remarks about the input message:
 + A `parentElementId` property can be specified if the new element should be a child of the specified parent element.  If not available, the new element will be added directly under the root SVG element.
 + A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can create multiple elements at once via a single command.  Note that it is not allowed in that case to specify an elementId property, since only one element can have the same id.
-+ When an element with the same `elementId` already exists, then that existing element will be *replaced* by this new element!
++ When an element with the same `elementId` already exists (for the same parent element), then that existing element will be *replaced* by this new element!
 
 When the *"Events"* tab sheet already contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
 
