@@ -1761,7 +1761,7 @@
 </script>
 <script type="text/html" data-help-name="ui_svg_graphics">
     <p>A Node Red node to show a vector graphics (SVG) drawing inside the dashboard.</p>
-    <p>See our readme page on <a target="_blank" href="https://github.com/bartbutenaers/node-red-contrib-ui-svg">Github</a> for more information.</p>
+    <p><b>See our readme page on <a target="_blank" href="https://github.com/bartbutenaers/node-red-contrib-ui-svg">Github</a> for more information!</b></p>
     <h3>General Properties...</h3>
     <dl class="message-properties">
         <h4>Group</h4>
@@ -1843,6 +1843,7 @@
                     <ul>
                         <li>If <code>Text</code> is selected, the inner text content of the element will be updated with the value of the binding source.</li>
                         <li>If <code>Attribute</code> is selected, the attribute specified in the next input will be updated with the value of the binding source.</li>
+                        <li>If <code>Style</code> is selected, the style attribute specified in the next input will be updated with the value of the binding source.</li>
                     </ul>    
                 </ul>
             </ul>
@@ -1860,29 +1861,41 @@
     <h3>Inputs - Commands <i>(Advanced Usage)</i></h3>
     <dl class="message-properties">
         <dt><i>payload</i> <span class="property-type">string|object|Array</span></dt>
-        <dd>It is possible to dynamically trigger animations, set/update/remove element attributes, set/update/remove style attributes, update text and innerHTML via a <code>msg</code></dd>
+        <dd>It is possible to dynamically trigger all kind of actions on the SVG drawing, via a <code>msg</code></dd>       
+        <dd>General guidelines about input messages: 
+            <ul>
+                <li>A <code>command</code> specifies which operation to perform.</li>
+                <li>An <code>elementId</code> or a <code>selector</code> specifies on which element(s) the operation needs to be performed.  An <code>elementId</code> is used to specify a single element id.  While a <code>selector</code> is a <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a>, which can be used to select multiple SVG elements at once.  Note that a selector can also be used to select a single element id via a hashtag ( <i>"#some_element_id"</i> ).</li>
+                <li>A <code>payload</code> can contain a single command object, or an array of multiple command objects.</li>
+                <li>It is possible to specify the command and the selector in the message <code>topic</code>, and only the new value in the payload:
+                    <pre style="white-space: pre">
+ var msg = {
+    "topic": "update_text|#myRect > .faultMessage",
+    "payload": "hello"
+ }
+ return msg;</pre>
+                </li>
+            </ul>        
+        </dd>
         <dd>
-            <p><b>Triggering an animation command - payload object</b><br>Example...<br>
-                <pre style="white-space: pre">[
+            <p><b>Trigger an animation (via a "start" or "stop" action):</b><br>
+                <pre style="white-space: pre">"payload": [
  {
     "command": "trigger_animation",
     "selector": "#myAnimation",
     "action": "start"
  }
 ]</pre>
-                
-                <p><i>Details...</i><br>
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple animations.</li>
-                        <li>action: (string|required) This must be <code>start</code>or <code>stop</code></li>
+                        <li>The <code>action</code> can be <i>"start"</i> or <i>"stop"</i>.</li>
+                        <li>This will only work for animations that have been specified in the "Animations" tabsheet, with trigger <i>"Input message"</i>!</li>
                     </ul>
                 </p>
             </p>
-
-
-            <p><b>Setting an attribute value command - payload object</b><br>Example...<br>
-                <pre style="white-space: pre">[
+            
+            <p><b>Update or set an attribute value:</b><br>
+                <pre style="white-space: pre">"payload": [
  {
     "command": "update_attribute",
     "selector": "#myRect > .statusBar",
@@ -1890,33 +1903,24 @@
     "attributeValue": "red"
  },
  {
-    "command": "update_attribute",
+    "command": "set_attribute",
     "selector": "#myRect > .faultMessage",
     "attributeName": "display",
     "attributeValue": "inline"
  }
 ]</pre>
-                
-                <p><i>Details...</i><br>
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the SVG shapes.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
-                        <li>attributeName: (string|required) This attribute be updated</li>
-                        <li>attributeValue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
+                        <li>Use <code>attributeName</code> in combination with <code>attributeValue</code> to update the (string or number) value of the specified attribute.</li>
+                        <li>An attribute can be removed by sending an empty string for the attributeValue.</li>
+                        <li><code>set_attribute</code> can be used in place of <code>update_attribute</code>, when a new attribute should be create if it does not exist yet.</li> 
+                        <li><code>update_attribute</code> will only change an existing attribute, but do nothing when the attribute doesn't exist yet.</li>
                     </ul>
                 </p>
-                <p><i>Notes...</i><br>
-                    An attribute can be removed by sending an empty string for the attributeValue.<br> 
-                    <code>set_attribute</code> can be used in place of <code>update_attribute</code>.<br> 
-                    <code>update_attribute</code> will only change an existing attribute.<br> 
-                    <code>set_attribute</code> will add the attribute if it does not already exist.
-                </p>
             </p>
-
-
-
-            <p><b>Setting a style value command - payload object</b><br>Example...<br>
-                <pre style="white-space: pre">[
+            
+            <p><b>Set a style attribute value:</b><br>
+                <pre style="white-space: pre">payload": [
  {
     "command": "update_style",
     "selector": "#myRect > .statusBar",
@@ -1930,85 +1934,138 @@
  }
 ]</pre>
                                 
-                <p><i>Details...</i><br>
-                    Named style attribute change...
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the SVG shapes.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
-                        <li>attributeName: (string|required) This attribute be updated</li>
-                        <li>attributeValue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
-                    </ul>
-                    Style object attribute(s) change...
-                    <ul>
-                        <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the SVG shapes.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
-                        <li>style: (object|required) The style(s) to be updated</li>
+                        <li>Use <code>attributeName</code> in combination with <code>attributeValue</code> to update the (string or number) value of the specified style attribute.</li>
+                        <li>Use <code>style</code> to update the entire style object, i.e. update all the style attribute values with a single command.</li>
+                        <li>A style attribute can be removed by sending an empty string for the <code>attributeValue</code> or <code>style</code> value.</li>
+                        <li>The command <code>set_style</code> can be used in place of <code>update_style</code>, which perform exactly the same functionality.</li>
                     </ul>
                 </p>                
-                <p><i>Notes...</i><br>
-                    A style value can be reset by sending an empty string for the attributeValue or style object property value. <br>
-                    <code>set_style</code> can be used in place of <code>update_style</code> *(These are operationally the same command)*.
-                </p>
             </p>
-            
 
-            <p><b>Setting text content command</b><br>Example...<br>
-                <P>Topic Method</P>
-                <pre style="white-space: pre">
- //send a msg with topic formatted as...   
- //  update_text|selector  
- //... and the payload with the text to display
- var msg = {
-    "topic": "update_text|#myRect > .faultMessage",
-    "payload": "hello"
- }
- return msg;</pre>
-
-                <P>Command Method - payload object</P>
-                <pre style="white-space: pre">[
+            <p><b>Set or get text content</b><br>
+                <pre style="white-space: pre">"payload": [
  {
     "command": "update_text",
     "selector": "#myRect > .faultMessage",
     "text": "Hello from a command message"
  }
 ]</pre>
-                
-                <p><i>Topic Method Details...</i><br>
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>topic: (string|required) The format must adhere to "update_text|selector"</li>
-                        <li>payload: (string|required) The text to set</li>
+                        <li>Instead of specifying a <code>text</code> field, it is also possible to use the aliases <code>html</code> or <code>textContent</code>.</li>
+                        <li>Use the command <i>"get_text"</i>field to get the current text content.</li>
+                        <li>The <code>text</code> can contain HTML or SVG markup.</li>
                     </ul>
-                </p>
-                
-                <p><i>Command Method Details...</i><br>
-                    <ul>
-                        <li>selector: (string|required) A query selector to select the animations.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple animations.</li>
-                        <li>text: (string|required) The text to set</li>
-                    </ul>
-                    NOTE: <code>text</code> can contain SVG markup.
-                </p>
+                </p> 
             </p>
-
-
-            <p><b>Setting inner HTML command</b><br>Example...<br>
-                <P>Command - payload object</P>
-                <pre style="white-space: pre">[
+            
+            <p><b>Add or remove events</b><br>
+                <pre style="white-space: pre">"payload": [
  {
-    "command": "update_innerHTML",
-    "selector": "#myRect > .faultMessage",
-    "html": "<b>Hello</b> <i>from a command message</i>"
+    "command": "add_event",
+    "event": "click",
+    "selector": "#circle_2", 
+    "payload": "circle 2 has been clicked",
+    "topic": "CIRCLE_CLICKED"
  }
 ]</pre>
-
-                <p><i>Details...</i><br>
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>selector: (string|required) A query selector to select the animations.  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
-                        <li>html: (string|required) The html/SVG markup to be set</li>
+                        <li>An event handler will be added to the selected elements, to handle the specified <code>event</code>.</li>
+                        <li>As soon as the event occurs, an output message will be sent containing the specified <code>payload</code> and <code>topic</code>.</li>
+                        <li>When command <i>"remove_event"</i> is used, only the <code>event</code> and <code>selector</code> are required.</li>
                     </ul>
-                </p>
-            </p>            
-
+                </p> 
+            </p>
+            
+            <p><b>Add or remove elements</b><br>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "add_element", 
+   "elementType": "circle",
+   "elementId": "extra_circle", 
+   "elementAttributes": [
+      "cx": "100",
+      "cy": "50",
+      "r": "30"
+   ],
+   "elementStyleAttributes": [
+      "fill": "red",
+      "stroke": "black"
+   ],
+   "textContent": "my content"
+ }
+]</pre>
+                <p><i>Notes:</i><br>
+                    <ul>
+                        <li>When a <code>parentElementId</code> is specified, the new element will be added as a child element of that parent element.  When not specified, the new element will be added directly below the root SVG element.</li>
+                        <li>When a <code>parentSelector</code> is specified, a new element will be added as a child element of EVERY parent element.  In this case it is not allowed to specify an <code>elementId</code>, because multiple elements are added (which are not allowed to have the same element id).</li>
+                        <li>When there is already an existing element (at the same parent) with the same <code>elementId</code>, then the existing element will be replaced by the new one.</li>
+                        <li>When command <i>"remove_element"</i> is used, only the <code>elementId</code> is required.</li>
+                    </ul>
+                </p> 
+            </p>
+            
+            <p><b>Zoom in or out</b><br>
+                <pre style="white-space: pre">"payload": [
+ {
+    "command": "zoom_in"
+ }
+]</pre>
+                <pre style="white-space: pre">"payload": [
+ {
+    "command": "zoom_out"
+ }
+]</pre>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "zoom_by_percentage",
+   "percentage": 130
+ }
+]</pre>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "zoom_by_percentage",
+   "percentage": 130,
+   "x": 300,
+   "y": 400
+ }
+]</pre>
+                <p><i>Notes:</i><br>
+                    <ul>
+                        <li>The <i>"zoom_in"</i> <i>"zoom_out"</i> commands use fixed zoom percentages.</li>
+                        <li>The <i>"zoom_by_percentage"</i> command can be used to specify a custom <code>percentage</code>.</li>
+                        <li>The <i>"zoom_by_percentage"</i> command can have optional <code>x</code> and <code>y</code> coordinates, to zoom in an a specific location.</li>
+                    </ul>
+                </p> 
+            </p>
+            
+            <p><b>Panning</b><br>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "pan_to_point",
+   "x": 300,
+   "y": 400
+ }
+]</pre>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "pan_to_direction",
+   "x": 300,
+   "y": 400
+ }
+]</pre>
+                <p><i>Notes:</i><br>
+                    <ul>
+                        <li>The <i>"pan_to_point"</i> command is being used for absolute panning (to a specified location).</li>
+                        <li>The <i>"pan_to_direction"</i> command is being used for relative panning (in a specified direction).</li>
+                    </ul>
+                </p> 
+            </p>
         </dd>
+        <br>
 
         <h3>Inputs - databind <i>(Advanced Usage)</i></h3>
         <dl class="message-properties">
@@ -2038,12 +2095,5 @@
                 </p>
             </dd>
         </dl>            
-    
-            <dd>GENERAL NOTES...<br>
-        <ul>
-            <li>Multiple commands objects can be executed if the payload is an array of objects</li>
-            <li>Multiple elements can be addressed by the selector (e.g. ".status" would operate on all elements with class "status")</li>
-        </ul>
-        </dd>
     </dl>
 </script>
