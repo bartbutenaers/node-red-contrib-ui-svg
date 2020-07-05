@@ -628,7 +628,7 @@ module.exports = function(RED) {
                                         animationElement.setAttribute("repeatCount"  , smilAnimation.repeatCount);
                                     }
                                     
-                                    if (smilAnimation.freeze) {
+                                    if (smilAnimation.end) {
                                         animationElement.setAttribute("fill"     , "freeze");
                                     }
                                     else {
