@@ -286,6 +286,7 @@
         var targetId      = row.find(".node-input-animation-targetId").val();
         var classValue    = row.find(".node-input-animation-classValue").val();
         var attributeName = row.find(".node-input-animation-attributeName").val();
+        var transformType = row.find(".node-input-animation-transformType").val();
         var fromValue     = row.find(".node-input-animation-fromValue").val();
         var toValue       = row.find(".node-input-animation-toValue").val();
         var trigger       = row.find(".node-input-animation-trigger").val();
@@ -297,7 +298,7 @@
         var delayUnit     = row.find(".node-input-animation-delayUnit").val();
         var otherId       = row.find(".node-input-animation-otherId").val();
         var custom        = row.find(".node-input-animation-custom").val();        
-        return {id:id, targetId:targetId, classValue:classValue, attributeName:attributeName, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, end:end, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
+        return {id:id, targetId:targetId, classValue:classValue, attributeName:attributeName, transformType:transformType, fromValue:fromValue, toValue:toValue, trigger:trigger, duration:duration, durationUnit:durationUnit, repeatCount:repeatCount, end:end, delay:delay, otherId:otherId, delayUnit:delayUnit, custom:custom};
     }
     function getBindingFromFormRow(ele){
         var row = $(ele);
@@ -332,10 +333,16 @@
             bindings: {value: []},
             showCoordinates: {value: false},
             autoFormatAfterEdit: {value: false},
+            showBrowserErrors: {value: false},
             outputField: {value: "payload"},
-            editorUrl: {value: "http://drawsvg.org/drawsvg.html"},
+            editorUrl: {value: "//drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
             directory: {value: ""},
+            panning: {value: "disabled"},
+            zooming: {value: "disabled"},
+            panOnlyWhenZoomed: {value: false},
+            doubleClickZoomEnabled: {value: false}, 
+            mouseWheelZoomEnabled: {value: false}, 
             name: {value: ''}
         },
         inputs:1,
@@ -361,17 +368,34 @@
             node.nonAnimationIdsAndActions = [];
             node.animationIdsAndActions = [];
             
-            //list of animatable attributes
+            // List of animatable attributes
             node.attrList = [
-                'clipPathUnits', 'cx', 'cy', 'd', 'display', 'dx', 'dy', 'fill', 'fx',
-                'fy', 'gradientTransform', 'gradientUnits', 'height', 'lengthAdjust',
-                'markerHeight', 'markerUnits', 'markerWidth', 'maskContentUnits',
-                'maskUnits', 'method', 'offset', 'orient', 'pathLength',
-                'patternContentUnits', 'patternTransform', 'patternUnits', 'points',
-                'preserveAspectRatio', 'r', 'refX', 'refY', 'rotate', 'rx', 'ry',
-                'spacing', 'spreadMethod', 'startOffset', 'textLength', 'transform',
-                'viewBox', "visibility", 'width', 'x', 'x1', 'x2', 'y', 'y1', 'y2',
-            ]   
+                'clipPathUnits', 'color', 'cx', 'cy', 'd', 'display', 'dx', 'dy', 'fill', 'fx', 'fy', 'gradientTransform', 'gradientUnits', 
+                'height', 'lengthAdjust', 'markerHeight', 'markerUnits', 'markerWidth', 'maskContentUnits', 'maskUnits', 'method', 'offset', 
+                'orient', 'pathLength', 'patternContentUnits', 'patternTransform', 'patternUnits', 'points', 'preserveAspectRatio', 'r', 
+                'refX', 'refY', 'rotate', 'rx', 'ry', 'spacing', 'spreadMethod', 'startOffset', 'textLength', 'transform', 'viewBox', 
+                'visibility', 'width', 'x', 'x1', 'x2', 'y', 'y1', 'y2'
+            ]
+            
+            // List of presentation attributes, which are used to style SVG elements and can be used as CSS properties.
+            // SVG presentation attributes are CSS properties that can be used as attributes on SVG elements.
+            // For example there are a couple of ways to give a circle a yellow color:
+            // 1) CSS (inline) style attribute: <circle style="fill: yellow;"/>
+            // 2) CSS (external) style:         circle {fill: yellow}
+            // 3) Presentational attribute:     <circle fill="yellow"/>
+            // The priority order is: 1 overrules 2, and 2 overrules 1
+            // So they accomplish the same, but - since the Node-RED dashboard applies its own styles - it is safer to use '1'.
+            // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/Presentation
+            node.presentationAttrList = [
+                'alignment-baseline', 'baseline-shift', 'clip', 'clip-path', 'clip-rule', 'color', 'color-interpolation', 'color-interpolation-filters', 
+                'color-profile', 'color-rendering', 'cursor', 'direction', 'display', 'dominant-baseline', 'enable-background', 'fill', 'fill-opacity', 
+                'fill-rule', 'filter', 'flood-color', 'flood-opacity', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 
+                'font-variant', 'font-weight', 'glyph-orientation-horizontal', 'glyph-orientation-vertical', 'image-rendering', 'kerning', 'letter-spacing', 
+                'lighting-color', 'marker-end', 'marker-mid', 'marker-start', 'mask', 'opacity', 'overflow', 'pointer-events', 'shape-rendering', 'solid-color', 
+                'solid-opacity', 'stop-color', 'stop-opacity', 'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 
+                'stroke-miterlimit', 'stroke-opacity', 'stroke-width', 'text-anchor', 'text-decoration', 'text-rendering', 'transform', 'unicode-bidi', 
+                'vector-effect', 'visibility', 'word-spacing', 'writing-mode'
+            ]
             
             node.initialised = false;
             window.node_ace_editor = null;
@@ -554,6 +578,7 @@
                             id            : "", 
                             targetId      : "",
                             attributeName : "",
+                            transformType : "rotate",
                             classValue    : "",
                             fromValue     : "",
                             duration      : 1,
@@ -596,7 +621,7 @@
                     // The COMMON ROWS contain the common animation properties:
                     // - Animation id
                     // - Target id
-                    // - Attribute name
+                    // - Attribute name + (optional) transformType
                     // - From value
                     // - To value
                     // - Duration + DurationUnit
@@ -617,14 +642,18 @@
                     var targetIdRow = addPropertyRow(container, "Target Element Id");
                     var targetIdField = $('<input/>', {class: "node-input-animation-targetId", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(targetIdRow);
                     targetIdField.val(animation.targetId);
-                    targetIdField.autocomplete({
-                        classes: {
-                            "ui-autocomplete": "ui-svg-ui-autocomplete",
-                        },
-                        source: function(req, add){    
-                            add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
+                    targetIdField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(targetIdField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            targetIdField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    add($.ui.autocomplete.filter(node.nonAnimationIds || [] , req.term));
+                                }
+                            });
                         }
-                    });
+                    });                     
                     targetIdField.on("change", function(){
                         updateTitle(titleField, this)
                     });
@@ -634,32 +663,59 @@
                     var classValueRow = addPropertyRow(container, "Class");
                     var classValueField = $('<input/>', {class: "node-input-animation-classValue", style: "width:180px; margin-right:10px;", type: "text", placeholder: "class"}).appendTo(classValueRow);
                     classValueField.val(animation.classValue);
-                    classValueField.autocomplete({
-                        classes: {
-                            "ui-autocomplete": "ui-svg-ui-autocomplete",
-                        },
-                        source: function(req, add){        
-                            add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
+                    classValueField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(classValueField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            classValueField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    add($.ui.autocomplete.filter(node.animationListClasses || [],req.term));
+                                }
+                            });
                         }
-                    });
+                    });                    
                     $('<span/>').text('%').appendTo(classValueField);
                     
                     // Add an 'attribute name' property row
                     var attributeNameRow = addPropertyRow(container, "Attribute name");
                     var attributeNameField = $('<input/>', {class: "node-input-animation-attributeName", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
-                    attributeNameField.val(animation.attributeName);
-                    attributeNameField.autocomplete({
-                        classes: {
-                            "ui-autocomplete": "ui-svg-ui-autocomplete",
-                        },
-                        source: function(req, add){     
-                            add($.ui.autocomplete.filter(node.attrList || [], req.term));
+                    attributeNameField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(attributeNameField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            attributeNameField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    add($.ui.autocomplete.filter(node.attrList || [], req.term));
+                                }
+                            });
+                        }
+                    });                      
+                    attributeNameField.on("change", function(){
+                        updateTitle(titleField, this);
+                        
+                        // Only show the transform type dropdown when the attribute name is 'transform'
+                        if (this.value === "transform") {
+                            transformTypeField.show();
+                        }
+                        else {
+                            transformTypeField.hide();
                         }
                     });
-                    attributeNameField.on("change", function(){
-                        updateTitle(titleField, this)
-                    });
-                    $('<span/>').text('%').appendTo(attributeNameField); 
+                    attributeNameField.val(animation.attributeName);
+                    $('<span/>').text('%').appendTo(attributeNameField);
+                    // Add a transform 'type' (after the attribute name)
+                    var transformTypeField = $('<select/>', {class: "node-input-animation-transformType", style: "width:180px; margin-right:10px;", type: "text"}).appendTo(attributeNameRow);
+                    transformTypeField.append($('<option>', {value: "rotate"    , text: 'Rotate'}));
+                    transformTypeField.append($('<option>', {value: "scale"     , text: 'Scale'}));
+                    transformTypeField.append($('<option>', {value: "translate" , text: 'Translate'}));
+                    transformTypeField.append($('<option>', {value: "skewX"     , text: 'Skew X'}));
+                    transformTypeField.append($('<option>', {value: "skewY"     , text: 'Skew Y'}));
+                    transformTypeField.val(animation.transformType || "rotate");
+                    $('<span/>').text('%').appendTo(transformTypeField);                   
+                    // Trigger the attribute name change event handler, to make sure the transform type is shown or hided at startup
+                    attributeNameField.change();
                     
                     // Add a 'from / to value' property row
                     var fromToValueRow = addPropertyRow(container, "From / To");
@@ -769,39 +825,42 @@
                             }
                         }
                     })
-                    .on("click", function (event) {
-                        //show dropdown on click (disabled/annoying/problematic)
-                        //$( this ).autocomplete( "search", "" )
-                    })
-                    .autocomplete({
-                        minLength: 0,
-                        source: function (request, response) {
-                            //TODO: Consider how to handle editing in middle of string
-                            //currently, the last tag (after last ;) is used.
-                            let list;
-                            let lastTag = extractLastTag(request.term);
-                            if(lastTag.includes(".")){
-                                list = [...node.nonAnimationIdsAndActions,...node.animationIdsAndActions]; 
-                            } else {
-                                list = [...node.nonAnimationIds, ...node.animationIds]; 
-                            }
-                            // delegate back to autocomplete, but extract the last term
-                            response($.ui.autocomplete.filter(list, lastTag));
-                        },
-                        focus: function () {
-                            // prevent value inserted on focus
-                            return false;
-                        },
-                        select: function (event, ui) {
-                            var terms = tagSplit(this.value);
-                            terms.pop();// remove the current input 
-                            terms.push(ui.item.value); // add the selected item
-                            // add placeholder to get the comma-and-space at the end
-                            terms.push("");
-                            this.value = terms.join("; ");
-                            return false;
+                    customField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(customField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            customField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                                },
+                                minLength: 0,
+                                source: function (request, response) {
+                                    //TODO: Consider how to handle editing in middle of string
+                                    //currently, the last tag (after last ;) is used.
+                                    let list;
+                                    let lastTag = extractLastTag(request.term);
+                                    if(lastTag.includes(".")){
+                                        list = [...node.nonAnimationIdsAndActions,...node.animationIdsAndActions]; 
+                                    } else {
+                                        list = [...node.nonAnimationIds, ...node.animationIds]; 
+                                    }
+                                    // delegate back to autocomplete, but extract the last term
+                                    response($.ui.autocomplete.filter(list, lastTag));
+                                },
+                                focus: function () {
+                                    // prevent value inserted on focus
+                                    return false;
+                                },
+                                select: function (event, ui) {
+                                    var terms = tagSplit(this.value);
+                                    terms.pop();// remove the current input 
+                                    terms.push(ui.item.value); // add the selected item
+                                    // add placeholder to get the comma-and-space at the end
+                                    terms.push("");
+                                    this.value = terms.join("; ");
+                                    return false;
+                                }
+                            });
                         }
-                    });                 
+                    });                        
                     $('<span/>').text('%').appendTo(customField);
                     customRow.append($("<i />", {class:"fa fa-question", title:"Press down to select, right to accept, dot to access properties, semicolon/enter/tab to complete the entry."}));
                     
@@ -889,18 +948,22 @@
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
                     
-                    // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on 
-                    var targetIdField = $('<input/>',{class:"node-input-clickable-targetId",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    targetIdField.val(clickableShape.targetId);
-                    targetIdField.autocomplete({
-                        classes: {
-                            "ui-autocomplete": "ui-svg-ui-autocomplete",
-                        },
-                        source: function(req, add){  
-                            var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
-                            add($.ui.autocomplete.filter(list , req.term));
+                    // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on.
+                    var selectorField = $('<input/>',{class:"node-input-clickable-selector",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    selectorField.val(clickableShape.selector);
+                    selectorField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(selectorField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            selectorField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                    add($.ui.autocomplete.filter(list , req.term));
+                                }
+                            });
                         }
-                    });
+                    });                     
                     
                     // Column 2 : Add an input field (type option) to the new row, that represents the action type 
                     var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
@@ -946,7 +1009,7 @@
                     topicField.val(clickableShape.topic);
                     
                     // When there is not yet a topic or payload, the target Id should be cloned (when complete) to the topic and payload (as a default value).
-                    targetIdField.on("change", function(){
+                    selectorField.on("change", function(){
                         
                         if (payloadType === "str" && !payloadField.typedInput("value")) {
                             payloadField.typedInput('value',$(this).val());
@@ -963,7 +1026,10 @@
             // Show all the clickable shapes (stored in this node) into the editableList
             if (this.clickableShapes) {
                 this.clickableShapes.forEach(function (clickableShape, index) {
-                    clickableShapesList.editableList('addItem', {targetId:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
+                    // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                    //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                    //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
+                    clickableShapesList.editableList('addItem', {selector:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
                 });
             }
             
@@ -978,8 +1044,8 @@
             var bindingList = $("#node-input-binding-container").css('min-height','150px').css('min-width','450px').editableList({
                 header: $("<div>").css({"margin-left":"6px"}).append($.parseHTML(
                     "<div style='width:28%; margin-left:5px; display: inline-grid'><b>Binding Source</b></div>" +
-                    "<div style='width:28%; margin-left:1px; display: inline-grid'><b>Selector</b></div>" +  
-                    "<div style='width:36%; margin-left:1px; display: inline-grid'><b>Binding Destination</b></div>" 
+                    "<div style='width:24%; margin-left:1px; display: inline-grid'><b>Selector</b></div>" +  
+                    "<div style='width:40%; margin-left:1px; display: inline-grid'><b>Binding Destination</b></div>" 
                 )),
                 addItem: function(container, i, binding) {
                     // Add a new row to the editableList
@@ -987,7 +1053,7 @@
                     //BINDING SOURCE
                     // Column 1 :  bind msg.xxxx 
                     var bindSourceField = $('<input/>',{class:"node-input-binding-source",type:"text",placeholder:"payload.property"})
-                        .css({"width":"28%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                        .css({"width":"24%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     bindSourceField.val(binding.bindSource);  
                
                     //BINDING DESTINATION
@@ -997,21 +1063,27 @@
                     var targetSelectorFieldId = "node-input-binding-selector" + i
                     targetSelectorField.attr("id",targetSelectorFieldId);
                     targetSelectorField.val(binding.selector);
-                    targetSelectorField.autocomplete({
-                        classes: {
-                            "ui-autocomplete": "ui-svg-ui-autocomplete",
-                        },
-                        source: function(req, add){  
-                            var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
-                            add($.ui.autocomplete.filter(list, req.term));
+                    targetSelectorField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(targetSelectorField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            targetSelectorField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                    add($.ui.autocomplete.filter(list, req.term));
+                                }
+                            });
                         }
-                    });
+                    });                      
+
            
                     // Column 3 : [dropdown] Binding Type ["Text Content","Attribute Value"]
                     var bindingTypeField = $('<select/>',{class:"node-input-binding-type",type:"text",placeholder:"click"})
-                        .css({"width":"16%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                        .css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     $('<option />', {value: "text", text: "Text"}).appendTo(bindingTypeField);
                     $('<option />', {value: "attr", text: "Attribute"}).appendTo(bindingTypeField);
+                    $('<option />', {value: "style", text: "Style"}).appendTo(bindingTypeField);
                     bindingTypeField.val(binding.bindType || "text");
                     
                     // Column 4 : [textbox] Attribute to update (only used when bindingType == "attr") 
@@ -1019,18 +1091,29 @@
                         .css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var attributeFieldId = "node-input-binding-attribute" + i
                     attributeField.attr("id",attributeFieldId);
-                    attributeField.val(binding.attribute);  
-                    attributeField.autocomplete({
-                        classes: {
-                            "ui-autocomplete": "ui-svg-ui-autocomplete",
-                        },
-                        source: function(req, add){        
-                            add($.ui.autocomplete.filter(node.attrList, req.term));
-
-                        }
-                    });
+                    attributeField.val(binding.attribute);
+                    attributeField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        // The content of the autocomplete list depends on the value of the binding type.  Since the binding type
+                        // can have been changed meanwhile, we will reload the autocomplete list every time again.
+                        attributeField.autocomplete({
+                            classes: {
+                                "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                            },
+                            source: function(req, add){
+                                // The autocomplete list content depends on the binding type
+                                switch(bindingTypeField.val()) {
+                                    case "attr":
+                                        add($.ui.autocomplete.filter(node.attrList, req.term));
+                                        break;
+                                    case "style":
+                                        add($.ui.autocomplete.filter(node.presentationAttrList, req.term));
+                                        break;
+                                }
+                            }
+                        });
+                    });  
                     bindingTypeField.change(function () {
-                        if (bindingTypeField.val() === "attr") {
+                        if (bindingTypeField.val() === "attr" || bindingTypeField.val() === "style") {
                             attributeField.show();
                         }
                         else {
@@ -1092,6 +1175,12 @@
                         }
                         var fail = function(error, message) { 
                             console.error(error,message); 
+                            
+                            // Simplify the timeout message
+                            if (error === "timeout_error") {
+                                message = "No response from the editor";
+                            }
+                            
                             messageBox.show(
                                 "An error occured getting SVG from editor.<br>Error message...<br>" + message + "<br>Press OK to return to the editor or close to return to Node-red (changes may be lost).",
                                 "Error getting SVG!",
@@ -1201,9 +1290,13 @@
 
             function getSVGData(onSuccess, onFail) {
                 console.log("Calling getSVG method...")
+                
+                // Try to get an SVG object from the SVG editor.  However when the editor doesn't respond (e.g. because we
+                // used an incorrect url) then we should give an error after a timeout of 2 seconds
                 window.drawSvgCommChannel.call({
                     method: "getSVGObject",
                     params: {},
+                    timeout: 2000,
                     error: onFail,
                     success: onSuccess
                 });                
@@ -1360,8 +1453,9 @@
                 var height = winhei - ((winhei/100)*5);//window height less 5%
 
                 // When the "#jsChannel:" postfix is not available in the URL, then the onDrawSVGReady will never be executed!
-                if(!src.endsWith("#jsChannel:")) {
-                    src += "#jsChannel:";
+                // We will send our key in the url, so Joseph sees in his logs how many people are drawing via Node-RED.
+                if(!src.endsWith("#jsChannel:?key=487a80da-f75a-4ab7-975f-055ff24ac400")) {
+                    src += "#jsChannel:?key=487a80da-f75a-4ab7-975f-055ff24ac400";
                 }
                 showDrawSVG(src,title,width,height);
             });
@@ -1399,11 +1493,72 @@
             }
             
             $("#node-input-restoreUrl").on("click", function (e) {
-                $("#node-input-editorUrl").val("http://drawsvg.org/drawsvg.html");
+                $("#node-input-editorUrl").val("//drawsvg.org/drawsvg.html");
             });
             setTimeout(function() {
                 $("#node-input-name").css({"width":"70%"});    
-            }, 50);//workaround for odd over sizing of name field            
+            }, 50);//workaround for odd over sizing of name field       
+
+            // Migrate old nodes which don't have pan/zoom functionality yet
+            $('#node-input-panning').val(this.panning || "disabled");
+            $('#node-input-zooming').val(this.zooming || "disabled");
+            
+            $("#node-input-panning").on("change", function(){
+                var panAndZoomEnabled = $(this).val() !== "disabled" && $("#node-input-zooming").val() !== "disabled";
+                
+                var panOnlyWhenZoomedElement = $("#node-input-panOnlyWhenZoomed")[0];
+                
+                // The checkbox panOnlyWhenZoomed is only enabled when both panning and zooming are enabled
+                if (panAndZoomEnabled) {
+                    panOnlyWhenZoomedElement.nextElementSibling.style.color= "black"; // on label
+                    panOnlyWhenZoomedElement.disabled = false;
+                }
+                else {
+                    panOnlyWhenZoomedElement.nextElementSibling.style.color= "darkgrey"; // on label
+                    panOnlyWhenZoomedElement.checked = false;
+                    panOnlyWhenZoomedElement.disabled = true;
+                }
+            });
+            $("#node-input-panning").change();
+
+            $("#node-input-zooming").on("change", function(){
+                var panAndZoomEnabled = $(this).val() !== "disabled" && $("#node-input-zooming").val() !== "disabled";
+                
+                var panOnlyWhenZoomedElement = $("#node-input-panOnlyWhenZoomed")[0];
+                
+                // The checkbox panOnlyWhenZoomed is only enabled when both panning and zooming are enabled
+                if (panAndZoomEnabled) {
+                    panOnlyWhenZoomedElement.nextElementSibling.style.color= "black";
+                    panOnlyWhenZoomedElement.disabled = false;
+                }
+                else {
+                    panOnlyWhenZoomedElement.nextElementSibling.style.color= "darkgrey"; // on label
+                    panOnlyWhenZoomedElement.checked = false;
+                    panOnlyWhenZoomedElement.disabled = true;
+                }
+                
+                var zoomEnabled = $(this).val() !== "disabled";
+     
+                var mouseWheelZoomEnabledElement = $("#node-input-mouseWheelZoomEnabled")[0];
+                var doubleClickZoomEnabledElement = $("#node-input-doubleClickZoomEnabled")[0];
+                
+                // The checkboxes mouseWheelZoomEnabled and doubleClickZoomEnabled are only enabled when zooming are enabled
+                if (panAndZoomEnabled) {
+                    mouseWheelZoomEnabledElement.nextElementSibling.style.color= "black"; // on label
+                    doubleClickZoomEnabledElement.nextElementSibling.style.color= "black"; // on label
+                    mouseWheelZoomEnabledElement.disabled = false;
+                    doubleClickZoomEnabledElement.disabled = false;
+                }
+                else {
+                    mouseWheelZoomEnabledElement.nextElementSibling.style.color= "darkgrey"; // on label
+                    doubleClickZoomEnabledElement.nextElementSibling.style.color= "darkgrey"; // on label
+                    mouseWheelZoomEnabledElement.disabled = true;
+                    doubleClickZoomEnabledElement.disabled = true;
+                    mouseWheelZoomEnabledElement.checked = false;
+                    doubleClickZoomEnabledElement.checked = false;
+                }
+            });
+            $("#node-input-zooming").change();
         },
         oneditsave: function() {
             var node = this;
@@ -1435,13 +1590,16 @@
             var clickableShapesList = $("#node-input-clickable-container").editableList('items');
             clickableShapesList.each(function(i) {
                 var clickableShape = $(this);
-                var targetId = clickableShape.find(".node-input-clickable-targetId").val();
+                var selector = clickableShape.find(".node-input-clickable-selector").val();
                 var action = clickableShape.find(".node-input-clickable-action").val();
                 var payload  = clickableShape.find(".node-input-clickable-payload").val();
                 var payloadType  = clickableShape.find(".node-input-clickable-payloadType").val();
                 var topic    = clickableShape.find(".node-input-clickable-topic").val();
                 
-                node.clickableShapes.push({targetId:targetId, action:action, payload:payload, payloadType:payloadType, topic:topic});
+                // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
+                node.clickableShapes.push({targetId:selector, action:action, payload:payload, payloadType:payloadType, topic:topic});
             });
             // Copy all the bindings from the editableList to this node
             node.bindings = [];
@@ -1488,7 +1646,7 @@
         <div id="node-svg-tab-editor" class="node-svg-tab-content" style="position: relative; text-align: center; margin-top: 30px;">           
             <button id="node-display-svg-popup" 
                 class="svgButton node-display-svg-popup" 
-                data-href="http://drawsvg.org/drawsvg.html#jsChannel:" 
+                data-href="//drawsvg.org/drawsvg.html#jsChannel:" 
                 data-title="SVG Editor">
                 <div class="svgButtonIcon">  
                     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 60 60" version="1.1"><!-- Generator: Sketch 51.3 (57544) - http://www.bohemiancoding.com/sketch --><defs/><g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g id="012---Edit-Text" fill="#ffffff" fill-rule="nonzero"><path d="M11.92,16 L18.08,16 C18.5816184,16.0001393 19.0501055,15.7495298 19.3283997,15.332189 C19.6066939,14.9148482 19.6579559,14.3860216 19.465,13.923 L16.384,6.523 C16.1510259,5.96417691 15.6049421,5.60019992 14.9995,5.60019992 C14.3940579,5.60019992 13.8479741,5.96417691 13.615,6.523 L10.535,13.923 C10.3420441,14.3860216 10.3933061,14.9148482 10.6716003,15.332189 C10.9498945,15.7495298 11.4183816,16.0001393 11.92,16 Z M15,8.4 L17.331,14 L12.669,14 L15,8.4 Z" id="Shape"/><path d="M2,29 L8,29 C9.1045695,29 10,28.1045695 10,27 L10,26 C9.99715878,25.0134931 9.51156415,24.0908633 8.7,23.53 L10.167,20 L19.833,20 L21.588,24.217 C21.2052017,24.7325545 20.9989841,25.3578707 21,26 L21,27 C21,28.1045695 21.8954305,29 23,29 L29,29 C30.1045695,29 31,28.1045695 31,27 L31,26 C30.9978857,24.4411833 29.8041514,23.1427964 28.251,23.01 L19.18,1.231 C18.8694142,0.485331324 18.1407656,-0.000302895298 17.333,4.23429917e-17 L13.667,4.23429917e-17 C12.8592344,-0.000302895298 12.1305858,0.485331324 11.82,1.231 L2.749,23.01 C1.19584863,23.1427964 0.00211433151,24.4411833 0,26 L0,27 C2.09738034e-15,28.1045695 0.8954305,29 2,29 Z M2,26 C2,25.4477153 2.44771525,25 3,25 L3.42,25 C3.8238222,24.9998655 4.18793229,24.7568624 4.343,24.384 L13.667,2 L17.333,2 L26.657,24.384 C26.8120677,24.7568624 27.1761778,24.9998655 27.58,25 L28,25 C28.5522847,25 29,25.4477153 29,26 L29,27 L23,27 L23,26 C23.0040027,25.6919001 23.1455981,25.4017395 23.386,25.209 C23.7335967,24.9312445 23.8558685,24.4572375 23.686,24.046 L21.686,19.231 C21.3745779,18.4833108 20.6429478,17.9972683 19.833,18 L10.167,18 C9.35935132,17.998312 8.63044906,18.4839836 8.321,19.23 L6.477,23.655 C6.36218989,23.9308511 6.37674397,24.243589 6.51667728,24.5075849 C6.65661059,24.7715808 6.90726124,24.9591738 7.2,25.019 C7.6639235,25.1176028 7.99674471,25.5257248 8,26 L8,27 L2,27 L2,26 Z" id="Shape"/><path d="M42.112,51.28 L48.292,50.044 C48.7763649,49.9476703 49.2211865,49.7095967 49.57,49.36 L52.546,46.384 C52.8074121,46.1224696 53.007553,45.806206 53.132,45.458 L59.83,26.7 C60.1163189,25.8892813 59.9117422,24.9861881 59.304,24.378 C58.9974834,24.0764266 58.6077918,23.8733969 58.185,23.795 C58.0609259,23.1593718 57.6659496,22.6093993 57.1032643,22.2887705 C56.540579,21.9681417 55.8660838,21.908709 55.256,22.126 L54,22.578 L54,11.57 C54,7.243 54,-4.46691295e-16 44.75,-4.46691295e-16 C41.8428326,-0.0184684772 38.9763984,0.683795856 36.407,2.044 C35.644589,2.48300306 35.2585826,3.36866658 35.456,4.226 L36.067,6.861 C36.2048502,7.44824596 36.60225,7.94094808 37.147,8.2 C37.700402,8.46245662 38.3430249,8.45951388 38.894,8.192 C40.5309628,7.41085175 42.3212122,7.00368187 44.135,7 C44.9108183,6.95485539 45.6886512,7.04244614 46.435,7.259 C46.868,7.431 47.135,7.689 47.117,8.459 C47.117,8.721 47.104,9.43 47.084,9.999 C43.129,10.023 39.384,10.416 36.522,13.18 C33.8430608,15.7163103 32.7839886,19.5248154 33.769,23.08 C34.4752821,25.3657456 36.1535984,27.2237116 38.356,28.158 L36.499,28.822 C36.1505681,28.9465849 35.8340068,29.1466981 35.572,29.408 L32.6,32.39 C32.2502828,32.7383242 32.0121712,33.1828688 31.916,33.667 L30.68,39.848 C30.6604756,39.944649 30.6128111,40.0333678 30.543,40.103 L29.087,41.559 C28.3120731,41.44701 27.5296358,41.7063405 26.975,42.259 L22.732,46.5 C21.7560452,47.4762496 21.7560452,49.0587504 22.732,50.035 L31.925,59.228 C32.9012496,60.2039548 34.4837504,60.2039548 35.46,59.228 L39.7,54.985 C40.2526877,54.4299699 40.5119963,53.6472283 40.4,52.872 L41.855,51.417 C41.9251744,51.3468432 42.0146368,51.2991531 42.112,51.28 Z M35.688,22.511 C34.9121205,19.6709117 35.7689319,16.63456 37.915,14.619 C40.461,12.162 44,11.975 48,12 C49.12,12 49.12,11.108 49.12,8.48 C49.2462734,7.13167591 48.44905,5.86728451 47.178,5.4 C46.2008824,5.07528136 45.1708835,4.93953192 44.143,5 C42.0210586,5.00286873 39.9267357,5.4812587 38.014,6.4 L37.378,3.788 C39.6499936,2.59241307 42.1827243,1.97812626 44.75,2 C51.48,2 52,5.966 52,11.57 L52,23.292 L41.7,26.971 C38.9498397,26.9188443 36.5355672,25.1278171 35.688,22.511 Z M34.046,57.811 C33.8507501,58.006191 33.5342499,58.006191 33.339,57.811 L24.146,48.619 C23.950809,48.4237501 23.950809,48.1072499 24.146,47.912 L25.914,46.144 L35.814,56.044 L34.046,57.811 Z M38.289,53.569 L37.228,54.629 L27.328,44.729 L28.389,43.668 C28.5842499,43.472809 28.9007501,43.472809 29.096,43.668 L38.289,52.86 C38.3839648,52.9539219 38.437404,53.0819349 38.437404,53.2155 C38.437404,53.3490651 38.3839648,53.4770781 38.289,53.571 L38.289,53.569 Z M40.442,50 L39.349,51.1 L30.864,42.61 L31.956,41.518 C32.3060603,41.1693879 32.5445057,40.7245218 32.641,40.24 L33.876,34.06 C33.8956185,33.9628781 33.9436507,33.8737748 34.014,33.804 L36.989,30.828 C37.0415571,30.7756902 37.1050912,30.7357252 37.175,30.711 L42.187,28.921 L42.217,28.91 L53.379,24.923 L53.394,24.923 L55.929,24.023 C56.0270919,23.9893025 56.1355093,24.0270242 56.1914999,24.1143316 C56.2474905,24.201639 56.2365456,24.3159083 56.165,24.391 L47.027,33.528 C45.2921917,32.5044983 43.0669597,32.9305994 41.8329806,34.5225829 C40.5990016,36.1145663 40.7412587,38.3757569 42.1650296,39.8005347 C43.5888005,41.2253126 45.84989,41.3691682 47.4427454,40.1363149 C49.0356008,38.9034617 49.463275,36.6785314 48.441,34.943 L57.579,25.8 C57.6148455,25.7480819 57.6739097,25.7170871 57.737,25.7170871 C57.8000903,25.7170871 57.8591545,25.7480819 57.895,25.8 C57.9552035,25.8602422 57.9754329,25.9497182 57.947,26.03 L51.247,44.785 C51.2219361,44.8544504 51.1820056,44.9175884 51.13,44.97 L48.154,47.946 C48.0840966,48.0159836 47.9950061,48.0636609 47.898,48.083 L41.718,49.319 C41.2346347,49.4146911 40.790548,49.6516998 40.442,50 Z M46.42,38.368 C45.6286285,39.1233037 44.3833715,39.1233037 43.592,38.368 C43.0198788,37.7960515 42.8486566,36.9357685 43.1581832,36.1883456 C43.4677098,35.4409226 44.1970205,34.9535729 45.006,34.9535729 C45.8149795,34.9535729 46.5442902,35.4409226 46.8538168,36.1883456 C47.1633434,36.9357685 46.9921212,37.7960515 46.42,38.368 Z" id="Shape"/><path d="M48.021,15 C44.864,14.938 41.384,15.12 39.475,16.99 C38.5782384,17.8810069 38.0936816,19.1056273 38.138,20.369 C38.0600373,21.6119005 38.5167928,22.8289002 39.3932666,23.7135885 C40.2697404,24.5982768 41.4824264,25.066365 42.726,25 C45.4244899,25.0565985 47.8511361,23.3652997 48.732,20.814 C48.9003341,20.3224135 48.9907597,19.8075269 49,19.288 L49,16 C49.00012,15.4558134 48.5650666,15.0114279 48.021,15 Z M47,19.288 C46.9910731,19.5902336 46.9361079,19.8893385 46.837,20.175 C46.2402391,21.9206983 44.5696005,23.068729 42.726,23 C42.0143431,23.0634839 41.311628,22.8051131 40.8105918,22.2957521 C40.3095556,21.7863912 40.0627986,21.0795143 40.138,20.369 C40.0984418,19.6442692 40.3659812,18.9363968 40.875,18.419 C42.094,17.224 44.762,17 47,16.99 L47,19.288 Z" id="Shape"/><path d="M3,30 C2.44771525,30 2,30.4477153 2,31 L2,39 C2,39.5522847 2.44771525,40 3,40 C3.55228475,40 4,39.5522847 4,39 L4,36 L27,36 L27,39 C27,39.5522847 27.4477153,40 28,40 C28.5522847,40 29,39.5522847 29,39 L29,31 C29,30.4477153 28.5522847,30 28,30 C27.4477153,30 27,30.4477153 27,31 L27,34 L4,34 L4,31 C4,30.4477153 3.55228475,30 3,30 Z" id="Shape"/></g></g></svg>              
@@ -1553,6 +1711,10 @@
                 <input type="checkbox" id="node-input-autoFormatAfterEdit" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-autoFormatAfterEdit" style="width:70%;"> Auto format SVG Source after saving edits in SVG Editor</label>
             </div>
+            <div class="form-row">
+                <input type="checkbox" id="node-input-showBrowserErrors" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-showBrowserErrors" style="width:70%;"> Show browser errors on the server</label>
+            </div>
             <div class="form-row" id="div-editorUrl">
                 <label for="node-input-editorUrl"><i class="fa fa-globe"></i> Editor URL</label>
                 <input type="text" id="node-input-editorUrl">
@@ -1562,12 +1724,44 @@
                 <label for="node-input-directory"><i class="fa fa-folder"></i> Directory</label>
                 <input type="text" id="node-input-directory" placeholder="Select directory">
             </div>
+            </br>
+            <div class="form-row">
+                <label for="node-input-panning"><i class="fa fa-arrows"></i> Panning</label>
+                <select id="node-input-panning">
+                    <option value="disabled">Disabled</option> 
+                    <option value="both">Pan both X and Y</option>
+                    <option value="x">Pan only X</option>
+                    <option value="y">Pan only Y</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-zooming"><i class="fa fa-search-plus"></i> Zooming</label>
+                <select id="node-input-zooming">
+                    <option value="disabled">Disabled</option> 
+                    <option value="enabled">Enabled</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>&nbsp;</label>
+                <input type="checkbox" id="node-input-panOnlyWhenZoomed" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-panOnlyWhenZoomed" style="width:70%;"> Pan only when zoomed</label>
+            </div>      
+            <div class="form-row">
+                <label>&nbsp;</label>
+                <input type="checkbox" id="node-input-mouseWheelZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-mouseWheelZoomEnabled" style="width:70%;"> Enable mouse-wheel zooming</label>
+            </div>
+            <div class="form-row">
+                <label>&nbsp;</label>
+                <input type="checkbox" id="node-input-doubleClickZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-doubleClickZoomEnabled" style="width:70%;"> Enable double click zooming</label>
+            </div>            
         </div>
     </div>
 </script>
 <script type="text/html" data-help-name="ui_svg_graphics">
     <p>A Node Red node to show a vector graphics (SVG) drawing inside the dashboard.</p>
-    <p>See our readme page on <a target="_blank" href="https://github.com/bartbutenaers/node-red-contrib-ui-svg">Github</a> for more information.</p>
+    <p><b>See our readme page on <a target="_blank" href="https://github.com/bartbutenaers/node-red-contrib-ui-svg">Github</a> for more information!</b></p>
     <h3>General Properties...</h3>
     <dl class="message-properties">
         <h4>Group</h4>
@@ -1628,11 +1822,15 @@
                     </ul>
                 </li>
             </ul>
+            <p><i><strong>CAUTION</strong>: it is not possible to use CSS selectors here, but only a single SVG shape (via the Target Element Id field)!</i> It is only possible (in the input messages) to select multiple animations at once via CSS selectors (as explained below).</p>
         </div>        
         <h4>Events</h4>
         <div style="padding-left: 15px">
             A customisable list of events. Each event targets an element where you can specify what action (e.g. click, mouseover, focus, etc) and a payload/topic to send upon the specified action.
             Additionally, <code>Output to</code> permits you to specify what part of the <code>msg</code> to send the payload to.
+        </div>
+        <div style="padding-left: 15px">
+            <i>Note that (in the "Selector" field) it is possible to specify the id of a single SVG shape, or multiple SVG shapes via a <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a>!</i>  In the latter case, all the SVG shapes - that match the CSS selector - will respond to the specified event.
         </div>
         <h4>Input Bind</h4>
         <div style="padding-left: 15px">
@@ -1640,11 +1838,12 @@
             e.g. it is possible to send a <code>msg</code> object with nested objects/properties to animate an elements' text and attributes as specified in this list.
             <ul>
                 <li><b>Source</b> - What properties in the <code>msg</code> you wish to use as the value in this binding</li>
-                <li><b>Selector</b> - What elements this binding should work on (e.g. <code>.indicators</code> would affect all elements in the SVG with class="indicators")</li>
+                <li><b>Selector</b> - What elements this binding should work on (e.g. <code>.indicators</code> would affect all elements in the SVG with class="indicators").  Any valid <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a> can be used to select one or multiple SVG shapes.</li>
                 <li><b>Destination</b> - 
                     <ul>
                         <li>If <code>Text</code> is selected, the inner text content of the element will be updated with the value of the binding source.</li>
                         <li>If <code>Attribute</code> is selected, the attribute specified in the next input will be updated with the value of the binding source.</li>
+                        <li>If <code>Style</code> is selected, the style attribute specified in the next input will be updated with the value of the binding source.</li>
                     </ul>    
                 </ul>
             </ul>
@@ -1662,29 +1861,41 @@
     <h3>Inputs - Commands <i>(Advanced Usage)</i></h3>
     <dl class="message-properties">
         <dt><i>payload</i> <span class="property-type">string|object|Array</span></dt>
-        <dd>It is possible to dynamically trigger animations, set/update/remove element attributes, set/update/remove style attributes, update text and innerHTML via a <code>msg</code></dd>
+        <dd>It is possible to dynamically trigger all kind of actions on the SVG drawing, via a <code>msg</code></dd>       
+        <dd>General guidelines about input messages: 
+            <ul>
+                <li>A <code>command</code> specifies which operation to perform.</li>
+                <li>An <code>elementId</code> or a <code>selector</code> specifies on which element(s) the operation needs to be performed.  An <code>elementId</code> is used to specify a single element id.  While a <code>selector</code> is a <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a>, which can be used to select multiple SVG elements at once.  Note that a selector can also be used to select a single element id via a hashtag ( <i>"#some_element_id"</i> ).</li>
+                <li>A <code>payload</code> can contain a single command object, or an array of multiple command objects.</li>
+                <li>It is possible to specify the command and the selector in the message <code>topic</code>, and only the new value in the payload:
+                    <pre style="white-space: pre">
+ var msg = {
+    "topic": "update_text|#myRect > .faultMessage",
+    "payload": "hello"
+ }
+ return msg;</pre>
+                </li>
+            </ul>        
+        </dd>
         <dd>
-            <p><b>Triggering an animation command - payload object</b><br>Example...<br>
-                <pre style="white-space: pre">[
+            <p><b>Trigger an animation (via a "start" or "stop" action):</b><br>
+                <pre style="white-space: pre">"payload": [
  {
     "command": "trigger_animation",
     "selector": "#myAnimation",
     "action": "start"
  }
 ]</pre>
-                
-                <p><i>Details...</i><br>
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations</li>
-                        <li>action: (string|required) This must be <code>start</code>or <code>stop</code></li>
+                        <li>The <code>action</code> can be <i>"start"</i> or <i>"stop"</i>.</li>
+                        <li>This will only work for animations that have been specified in the "Animations" tabsheet, with trigger <i>"Input message"</i>!</li>
                     </ul>
                 </p>
             </p>
-
-
-            <p><b>Setting an attribute value command - payload object</b><br>Example...<br>
-                <pre style="white-space: pre">[
+            
+            <p><b>Update or set an attribute value:</b><br>
+                <pre style="white-space: pre">"payload": [
  {
     "command": "update_attribute",
     "selector": "#myRect > .statusBar",
@@ -1692,33 +1903,24 @@
     "attributeValue": "red"
  },
  {
-    "command": "update_attribute",
+    "command": "set_attribute",
     "selector": "#myRect > .faultMessage",
     "attributeName": "display",
     "attributeValue": "inline"
  }
 ]</pre>
-                
-                <p><i>Details...</i><br>
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations</li>
-                        <li>attributeName: (string|required) This attribute be updated</li>
-                        <li>attributeValue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
+                        <li>Use <code>attributeName</code> in combination with <code>attributeValue</code> to update the (string or number) value of the specified attribute.</li>
+                        <li>An attribute can be removed by sending an empty string for the attributeValue.</li>
+                        <li><code>set_attribute</code> can be used in place of <code>update_attribute</code>, when a new attribute should be create if it does not exist yet.</li> 
+                        <li><code>update_attribute</code> will only change an existing attribute, but do nothing when the attribute doesn't exist yet.</li>
                     </ul>
                 </p>
-                <p><i>Notes...</i><br>
-                    An attribute can be removed by sending an empty string for the attributeValue.<br> 
-                    <code>set_attribute</code> can be used in place of <code>update_attribute</code>.<br> 
-                    <code>update_attribute</code> will only change an existing attribute.<br> 
-                    <code>set_attribute</code> will add the attribute if it does not already exist.
-                </p>
             </p>
-
-
-
-            <p><b>Setting a style value command - payload object</b><br>Example...<br>
-                <pre style="white-space: pre">[
+            
+            <p><b>Set a style attribute value:</b><br>
+                <pre style="white-space: pre">payload": [
  {
     "command": "update_style",
     "selector": "#myRect > .statusBar",
@@ -1732,85 +1934,138 @@
  }
 ]</pre>
                                 
-                <p><i>Details...</i><br>
-                    Named style attribute change...
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations</li>
-                        <li>attributeName: (string|required) This attribute be updated</li>
-                        <li>attributeValue: (string|number|required) The value to set the attribute specified by <code>attributeName</code></li>
-                    </ul>
-                    Style object attribute(s) change...
-                    <ul>
-                        <li>command: (string|required) The operation to perform</li>
-                        <li>selector: (string|required) A query selector to select the animations</li>
-                        <li>style: (object|required) The style(s) to be updated</li>
+                        <li>Use <code>attributeName</code> in combination with <code>attributeValue</code> to update the (string or number) value of the specified style attribute.</li>
+                        <li>Use <code>style</code> to update the entire style object, i.e. update all the style attribute values with a single command.</li>
+                        <li>A style attribute can be removed by sending an empty string for the <code>attributeValue</code> or <code>style</code> value.</li>
+                        <li>The command <code>set_style</code> can be used in place of <code>update_style</code>, which perform exactly the same functionality.</li>
                     </ul>
                 </p>                
-                <p><i>Notes...</i><br>
-                    A style value can be reset by sending an empty string for the attributeValue or style object property value. <br>
-                    <code>set_style</code> can be used in place of <code>update_style</code> *(These are operationally the same command)*.
-                </p>
             </p>
-            
 
-            <p><b>Setting text content command</b><br>Example...<br>
-                <P>Topic Method</P>
-                <pre style="white-space: pre">
- //send a msg with topic formatted as...   
- //  update_text|selector  
- //... and the payload with the text to display
- var msg = {
-    "topic": "update_text|#myRect > .faultMessage",
-    "payload": "hello"
- }
- return msg;</pre>
-
-                <P>Command Method - payload object</P>
-                <pre style="white-space: pre">[
+            <p><b>Set or get text content</b><br>
+                <pre style="white-space: pre">"payload": [
  {
     "command": "update_text",
     "selector": "#myRect > .faultMessage",
     "text": "Hello from a command message"
  }
 ]</pre>
-                
-                <p><i>Topic Method Details...</i><br>
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>topic: (string|required) The format must adhere to "update_text|selector"</li>
-                        <li>payload: (string|required) The text to set</li>
+                        <li>Instead of specifying a <code>text</code> field, it is also possible to use the aliases <code>html</code> or <code>textContent</code>.</li>
+                        <li>Use the command <i>"get_text"</i>field to get the current text content.</li>
+                        <li>The <code>text</code> can contain HTML or SVG markup.</li>
                     </ul>
-                </p>
-                
-                <p><i>Command Method Details...</i><br>
-                    <ul>
-                        <li>selector: (string|required) A query selector to select the animations</li>
-                        <li>text: (string|required) The text to set</li>
-                    </ul>
-                    NOTE: <code>text</code> can contain SVG markup.
-                </p>
+                </p> 
             </p>
-
-
-            <p><b>Setting inner HTML command</b><br>Example...<br>
-                <P>Command - payload object</P>
-                <pre style="white-space: pre">[
+            
+            <p><b>Add or remove events</b><br>
+                <pre style="white-space: pre">"payload": [
  {
-    "command": "update_innerHTML",
-    "selector": "#myRect > .faultMessage",
-    "html": "<b>Hello</b> <i>from a command message</i>"
+    "command": "add_event",
+    "event": "click",
+    "selector": "#circle_2", 
+    "payload": "circle 2 has been clicked",
+    "topic": "CIRCLE_CLICKED"
  }
 ]</pre>
-
-                <p><i>Details...</i><br>
+                <p><i>Notes:</i><br>
                     <ul>
-                        <li>selector: (string|required) A query selector to select the animations</li>
-                        <li>html: (string|required) The html/SVG markup to be set</li>
+                        <li>An event handler will be added to the selected elements, to handle the specified <code>event</code>.</li>
+                        <li>As soon as the event occurs, an output message will be sent containing the specified <code>payload</code> and <code>topic</code>.</li>
+                        <li>When command <i>"remove_event"</i> is used, only the <code>event</code> and <code>selector</code> are required.</li>
                     </ul>
-                </p>
-            </p>            
-
+                </p> 
+            </p>
+            
+            <p><b>Add or remove elements</b><br>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "add_element", 
+   "elementType": "circle",
+   "elementId": "extra_circle", 
+   "elementAttributes": [
+      "cx": "100",
+      "cy": "50",
+      "r": "30"
+   ],
+   "elementStyleAttributes": [
+      "fill": "red",
+      "stroke": "black"
+   ],
+   "textContent": "my content"
+ }
+]</pre>
+                <p><i>Notes:</i><br>
+                    <ul>
+                        <li>When a <code>parentElementId</code> is specified, the new element will be added as a child element of that parent element.  When not specified, the new element will be added directly below the root SVG element.</li>
+                        <li>When a <code>parentSelector</code> is specified, a new element will be added as a child element of EVERY parent element.  In this case it is not allowed to specify an <code>elementId</code>, because multiple elements are added (which are not allowed to have the same element id).</li>
+                        <li>When there is already an existing element (at the same parent) with the same <code>elementId</code>, then the existing element will be replaced by the new one.</li>
+                        <li>When command <i>"remove_element"</i> is used, only the <code>elementId</code> is required.  Or a <code>selector</code> if multiple elements need to be removed with a single command.</li>
+                    </ul>
+                </p> 
+            </p>
+            
+            <p><b>Zoom in or out</b><br>
+                <pre style="white-space: pre">"payload": [
+ {
+    "command": "zoom_in"
+ }
+]</pre>
+                <pre style="white-space: pre">"payload": [
+ {
+    "command": "zoom_out"
+ }
+]</pre>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "zoom_by_percentage",
+   "percentage": 130
+ }
+]</pre>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "zoom_by_percentage",
+   "percentage": 130,
+   "x": 300,
+   "y": 400
+ }
+]</pre>
+                <p><i>Notes:</i><br>
+                    <ul>
+                        <li>The <i>"zoom_in"</i> <i>"zoom_out"</i> commands use fixed zoom percentages.</li>
+                        <li>The <i>"zoom_by_percentage"</i> command can be used to specify a custom <code>percentage</code>.</li>
+                        <li>The <i>"zoom_by_percentage"</i> command can have optional <code>x</code> and <code>y</code> coordinates, to zoom in an a specific location.</li>
+                    </ul>
+                </p> 
+            </p>
+            
+            <p><b>Panning</b><br>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "pan_to_point",
+   "x": 300,
+   "y": 400
+ }
+]</pre>
+                <pre style="white-space: pre">"payload": [
+ {
+   "command": "pan_to_direction",
+   "x": 300,
+   "y": 400
+ }
+]</pre>
+                <p><i>Notes:</i><br>
+                    <ul>
+                        <li>The <i>"pan_to_point"</i> command is being used for absolute panning (to a specified location).</li>
+                        <li>The <i>"pan_to_direction"</i> command is being used for relative panning (in a specified direction).</li>
+                    </ul>
+                </p> 
+            </p>
         </dd>
+        <br>
 
         <h3>Inputs - databind <i>(Advanced Usage)</i></h3>
         <dl class="message-properties">
@@ -1840,12 +2095,5 @@
                 </p>
             </dd>
         </dl>            
-    
-            <dd>GENERAL NOTES...<br>
-        <ul>
-            <li>Multiple commands objects can be executed if the payload is an array of objects</li>
-            <li>Multiple elements can be addressed by the selector (e.g. ".status" would operate on all elements with class "status")</li>
-        </ul>
-        </dd>
     </dl>
 </script>

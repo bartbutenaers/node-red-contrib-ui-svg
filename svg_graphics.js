@@ -21,6 +21,36 @@ module.exports = function(RED) {
     const mime = require('mime');
     // Shared object between N instances of this node (caching for performance)
     var faMapping;
+    
+    // -------------------------------------------------------------------------------------------------
+    // Determining the path to the files in the dependent panzoom module once.
+    // See https://discourse.nodered.org/t/use-files-from-dependent-npm-module/17978/5?u=bartbutenaers
+    // -------------------------------------------------------------------------------------------------
+    var panzoomPath = require.resolve("@panzoom/panzoom");
+    
+    // For example suppose the require.resolved results in panzoomPath = /home/pi/.node-red/node_modules/@panzoom/panzoom/dist/panzoom.js
+    // Then we need to load the minified version
+    panzoomPath = panzoomPath.replace("panzoom.js", "panzoom.min.js");
+
+    if (!fs.existsSync(panzoomPath)) {
+        console.log("Javascript file " + panzoomPath + " does not exist");
+        panzoomPath = null;
+    }
+    
+    // -------------------------------------------------------------------------------------------------
+    // Determining the path to the files in the dependent hammerjs module once.
+    // See https://discourse.nodered.org/t/use-files-from-dependent-npm-module/17978/5?u=bartbutenaers
+    // -------------------------------------------------------------------------------------------------
+    var hammerPath = require.resolve("hammerjs");
+    
+    // For example suppose the require.resolved results in panzoomPath = /home/pi/.node-red/node_modules/hammerjs/hammer.js
+    // Then we need to load the minified version
+    hammerPath = hammerPath.replace("hammer.js", "hammer.min.js");
+
+    if (!fs.existsSync(hammerPath)) {
+        console.log("Javascript file " + hammerPath + " does not exist");
+        hammerPath = null;
+    }
 
     function HTML(config) {       
         // The configuration is a Javascript object, which needs to be converted to a JSON string
@@ -104,6 +134,10 @@ module.exports = function(RED) {
             }
         })
         
+        // Seems that the SVG string sometimes contains "&quot;" instead of normal quotes.
+        // Those need to be removed, otherwise AngularJs will throw a parse error
+        //svgString = svgString.replace(/&quot;/g, "'");
+      
         var html = String.raw`
 <style>
     .nr-dashboard-theme .nr-dashboard-template div.ui-svg svg{
@@ -114,6 +148,8 @@ module.exports = function(RED) {
         fill: inherit;
     }
 </style>
+<script src= "ui_svg_graphics/lib/panzoom"></script>
+<script src= "ui_svg_graphics/lib/hammer"></script>
 <div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
@@ -136,6 +172,22 @@ module.exports = function(RED) {
         const lastObj = keys.reduce((obj, key) => obj[key] = obj[key] || {}, msg); 
         lastObj[lastKey] = value;
     };
+    
+    function getNestedProperty(obj, key) {
+        // Get property array from key string
+        var properties = key.split(".");
+
+        // Iterate through properties, returning undefined if object is null or property doesn't exist
+        for (var i = 0; i < properties.length; i++) {
+            if (!obj || !obj.hasOwnProperty(properties[i])) {
+                return;
+            }
+            obj = obj[properties[i]];
+        }
+
+        // Nested property found, so return the value
+        return obj;
+    }
 
     var ui = undefined;
     
@@ -147,9 +199,14 @@ module.exports = function(RED) {
             }
             RED.nodes.createNode(this, config);
             node.outputField = config.outputField;
+            node.bindings = config.bindings;
             // Store the directory property, so it is available in the endpoint below
             node.directory = config.directory;
             
+            node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
+                                      "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
+                                      "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute"];
+
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
                 var done = ui.addWidget({
@@ -163,24 +220,121 @@ module.exports = function(RED) {
                     emitOnlyNewValues: false,
                     forwardInputMessages: false,
                     storeFrontEndInputAsState: false,
+                    // Avoid contextmenu to appear automatically after deploy.
+                    // (see https://github.com/node-red/node-red-dashboard/pull/558)
+                    persistantFrontEndValue: false,
                     convertBack: function (value) {
                         return value;
                     },
                     beforeEmit: function(msg, value) {                    
+                        // ******************************************************************************************
+                        // Server side validation of input messages.
+                        // ******************************************************************************************
+
+                        // Would like to ignore invalid input messages, but that seems not to possible in UI nodes:
+                        // See https://discourse.nodered.org/t/custom-ui-node-not-visible-in-dashboard-sidebar/9666
+                        // We will workaround it by sending a 'null' payload to the dashboard.
+
+                        if (!msg.payload) {
+                            node.error("A msg.payload is required");
+                            msg.payload = null;
+                        }
+                        else {
+                            // TODO Does are not blocking in version 1.0.  Nu wel of toch naar ui sturen?
+                            if(msg.topic == "databind") {                                                                                                                   
+                                if (node.bindings.length === 0) {
+                                    node.error("Useless to send msg.topic 'databinding' since no bindings have been specified in the config screen.");
+                                    msg.payload = null;
+                                }
+                                else {
+                                    var counter = 0;
+
+                                    node.bindings.forEach(function (binding, index) {
+                                        if (getNestedProperty(msg, binding.bindSource)) {
+                                            counter++;
+                                        }
+                                    });
+
+                                    if (counter === 0) {
+                                        node.error("Useless to send msg.topic 'databinding' since none of the bindings fields are available in this message.");
+                                        msg.payload = null;
+                                    }
+                                }
+                            }
+                            else {
+                                if (msg.topic && (typeof payload == "string" || typeof payload == "number")) {
+                                    var topicParts = msg.topic.split("|");
+
+                                    if (topicParts[0] !== "update_text" || topicParts[0] !== "update_innerHTML") {
+                                        node.error("Only msg.topic 'update_text' or 'update_innerHTML' is supported");
+                                        msg.payload = null;
+                                    }
+                                }
+                                else {                                                                                          
+                                    if (msg.topic) {
+                                        node.warn("The specified msg.topic is not supported");
+                                    }
+                                    
+                                    if(Array.isArray(msg.payload)){
+                                        for (var i = 0; i < msg.payload.length; i++) {
+                                            var part = msg.payload[i];
+
+                                            if(typeof part != "object" && !part.command) {
+                                                node.error("The msg.payload array should contain objects which all have a 'command' property.");
+                                                msg.payload = null;
+                                                break;
+                                            }
+                                            
+                                            // Make sure the commands are not case sensitive anymore
+                                            if(!node.availableCommands.includes(part.command.toLowerCase())) {
+                                                node.error("The msg.payload array contains an object that has an unsupported command property '" + part.command + "'");
+                                                msg.payload = null;
+                                                break;  
+                                            }
+                                        }
+                                    }
+                                    else {
+                                        if(typeof msg.payload != "object" && !msg.payload.command) {
+                                            node.error("The msg.payload should contain an object which has a 'command' property.");
+                                            msg.payload = null;
+                                        }
+                                        // Make sure the commands are not case sensitive anymore
+                                        else if(!node.availableCommands.includes(msg.payload.command.toLowerCase())) {
+                                            node.error("The msg.payload contains an object that has an unsupported command property '" + msg.payload.command + "'");
+                                            msg.payload = null;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         return { msg: msg };
                     },
                     beforeSend: function (msg, orig) {
                         if (!orig || !orig.msg) {
                            return;//TODO: what to do if empty? Currently, halt flow by returning nothing
                         }
+                        
+                        // When an error message is being send from the client-side, just log the error
+                        if (orig.msg.hasOwnProperty("error")) {
+                            node.error(orig.msg.error);
+                            
+                            // Dirty hack to avoid that the error message is being send on the output of this node
+                            orig["_fromInput"] = true; // Legacy code for older dashboard versions
+                            orig["_dontSend"] = true; 
+                            return;
+                        }
+                            
+                        // Compose the output message    
                         let newMsg = {
                             topic: orig.msg.topic,
                             elementId: orig.msg.elementId,
                             selector: orig.msg.selector,
                             event: orig.msg.event,
-                            coordinates: orig.msg.coordinates,
-                            position: orig.msg.position,
                         };
+                        
+                        // In the editableList of the clickable shapes, the content of the node.outputField property has been specified.
+                        // Apply that content to the node.outputField property in the output message
                         RED.util.evaluateNodeProperty(orig.msg.payload,orig.msg.payloadType,node,orig.msg,(err,value) => {
                             if (err) {
                                 return;//TODO: what to do on error? Currently, halt flow by returning nothing
@@ -193,6 +347,16 @@ module.exports = function(RED) {
                     initController: function($scope, events) {
                         // Remark: all client-side functions should be added here!  
                         // If added above, it will be server-side functions which are not available at the client-side ...
+                        
+                        function logError(error) {
+                            // Log the error on the client-side in the browser console log
+                            console.log(error);
+                            
+                            // Send the error to the server-side to log it there, if requested
+                            if ($scope.config.showBrowserErrors) {
+                                $scope.send({error: error});
+                            }
+                        }
                      
                         function setTextContent(element, textContent) {
                             var children = [];
@@ -240,28 +404,92 @@ module.exports = function(RED) {
                             }                           
                         }
                         
-                        $scope.flag = true;
-                        console.log("initController")
-                        $scope.init = function (config) {
-                            $scope.config = config;
-                            $scope.faMapping = {};
-                            $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
-                            $scope.svg = $scope.rootDiv.querySelector("svg");
-                            $scope.isObject = function(obj) {
-                                return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
+                        function handleEvent(evt) {
+                            var userData = this.getAttribute("data-event_" + evt.type);
+                                        
+                            if (!userData) {
+                                logError("No user data available for this " + evt.type + " event");
+                                return;
                             }
                             
-                            //$scope.svg.style.cursor = "crosshair";
+                            userData = JSON.parse(userData);
                             
-                            // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler
-                            config.clickableShapes.forEach(function(clickableShape) {
+                            // In version 1.x.x there was a bug (msg.elementId contained the selector instead of the elementId).
+                            // This was fixed in version 2.0.0
+                            var msg = {
+                                elementId  : userData.elementId,
+                                selector   : userData.selector,
+                                payload    : userData.payload,
+                                payloadType: userData.payloadType,
+                                topic      : userData.topic
+                            }
+                            
+                            // Get the mouse coordinates (with origin at left top of the SVG drawing)
+                            if(evt.pageX !== undefined && evt.pageY !== undefined){
+                                var pt = $scope.svg.createSVGPoint();
+                                pt.x = evt.pageX;
+                                pt.y = evt.pageY;
+                                pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                
+                                msg.event = {
+                                    type    : evt.type,
+                                    svgX    : pt.x,
+                                    svgY    : pt.y,
+                                    pageX   : evt.pageX,
+                                    pageY   : evt.pageY,
+                                    screenX : evt.screenX,
+                                    screenY : evt.screenY,
+                                    clientX : evt.clientX,
+                                    clientY : evt.clientY
+                                }
+                                
+                                // Get the SVG element where the event has occured (e.g. which has been clicked)
+                                var svgElement = $(event.target)[0];
+                                
+                                if (!svgElement) {
+                                    logError("No SVG element has been found for this " + evt.type + " event");
+                                    return;
+                                }
+                                
+                                var bbox;
+                                
+                                try {
+                                    // Use getBoundingClientRect instead of getBBox to have an array like [left, bottom, right, top].
+                                    // See https://discourse.nodered.org/t/contextmenu-location/22780/64?u=bartbutenaers
+                                    bbox = svgElement.getBoundingClientRect();
+                                }
+                                catch (err) {
+                                    logError("No bounding client rect has been found for this " + evt.type + " event");
+                                    return;  
+                                }
+                                
+                                msg.event.bbox = [
+                                    bbox.left,
+                                    bbox.bottom,
+                                    bbox.right,
+                                    bbox.top
+                                ]
+                            }
+                            
+                            $scope.send(msg);
+                        }
+                        
+                        function applyEventHandlers(rootElement) {
+                            $scope.config.clickableShapes.forEach(function(clickableShape) {
+                                // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                                //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                                //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
                                 if (!clickableShape.targetId) {
                                     return;
                                 }
-                                var elements = $scope.rootDiv.querySelectorAll(clickableShape.targetId);
+                                var elements = rootElement.querySelectorAll(clickableShape.targetId); // The "targetId" now contains the CSS selector!
+                                
+                                if (elements.length === 0) {
+                                    logError("No clickable elements found for selector '" + clickableShape.targetId + "'");
+                                }
+                                
                                 var action = clickableShape.action || "click" ;
                                 elements.forEach(function(element){
-                                    console.log("initController.init > config.clickableShapes.forEach > element ok, adding action ")
                                     // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
                                     // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
                                     // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
@@ -274,37 +502,95 @@ module.exports = function(RED) {
                                         element.style.cursor = "pointer";
                                     }
                                     
-                                    $(element).on(action, function(evt) {
-                                        // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                                        console.log( `$(element).on('${action}', function(evt) {...` )
-                                        var msg = {
-                                            event: action,
-                                            elementId: clickableShape.targetId,
-                                            selector: clickableShape.selector,
-                                            payload: clickableShape.payload, 
-                                            payloadType: clickableShape.payloadType, 
-                                            topic: clickableShape.topic
-                                        }
-                                        if(evt.pageX !== undefined && evt.pageY !== undefined){
-                                            var pt = $scope.svg.createSVGPoint();
-                                            pt.x = evt.pageX;
-                                            pt.y = evt.pageY;
-                                            pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
-                                            //relative position on svg
-                                            msg.coordinates = {
-                                                x: pt.x,
-                                                y: pt.y
-                                            }
-                                            //absolute position on page - usefull for sending to popup menu
-                                            msg.position = {
-                                                x: evt.pageX,
-                                                y: evt.pageY
-                                            }
-                                        }
-                                        $scope.send(msg); 
-                                    });
+                                    // Store all the user data in a "data-<event>" element attribute, to have it available in the handleEvent function
+                                    element.setAttribute("data-event_" + action,  JSON.stringify({
+                                        elementId  : element.id,
+                                        selector   : clickableShape.targetId, // The "targetId" now contains the CSS selector! 
+                                        payload    : clickableShape.payload, 
+                                        payloadType: clickableShape.payloadType, 
+                                        topic      : clickableShape.topic
+                                    }));
+                                    
+                                    // Make sure we don't end up with multiple handlers for the same event
+                                    element.removeEventListener(action, handleEvent, false);
+                                    
+                                    element.addEventListener(action, handleEvent, false);
                                 })
-                            });                            
+                            }); 
+                        }
+                        
+                        $scope.flag = true;
+                        $scope.init = function (config) {
+                            $scope.config = config;
+                            $scope.faMapping = {};
+                            $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
+                            $scope.svg = $scope.rootDiv.querySelector("svg");
+                            $scope.isObject = function(obj) {
+                                return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
+                            }
+                            $scope.events = ["click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", 
+                                             "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"];
+                            
+                            //$scope.svg.style.cursor = "crosshair";
+
+                            // Migrate old nodes which don't have pan/zoom functionality yet
+                            var panning = config.panning || "disabled";
+                            var zooming = config.zooming || "disabled";
+
+                            if (panning !== "disabled" || zooming !== "disabled") {
+                                var panZoomOptions = {
+                                    disablePan        : panning === "disabled",
+                                    disableXAxis      : panning === "y",
+                                    disableYAxis      : panning === "x",
+                                    disableZoom       : zooming === "disabled",
+                                    panOnlyWhenZoomed : config.panOnlyWhenZoomed
+                                }
+                                
+                                /*var isTouchDevice = 'ontouchstart' in document.documentElement;
+                                if (!isTouchDevice) {
+                                    console.log("No touch device functionality has been detected");
+                                }*/
+                                                    
+                                // Apply the @panzoom/panzoom library to the svg element (see https://github.com/timmywil/panzoom).
+                                $scope.panZoomModule = Panzoom($scope.svg, panZoomOptions);
+
+                                // Panning and pinch zooming are bound automatically (unless disablePan is true).
+                                // Other methods for zooming need to be added explicit, by using the provided functions.
+                                if (config.mouseWheelZoomEnabled) {
+                                    $scope.svg.parentElement.addEventListener('wheel', $scope.panZoomModule.zoomWithWheel);
+                                }
+                                
+                                if (config.doubleClickZoomEnabled) {
+                                    // Zoom in when double clicked, or zoom out when shift key down during double click
+                                    $scope.svg.parentElement.addEventListener('dblclick', function() {
+                                        if (event.shiftKey) {
+                                            $scope.panZoomModule.zoomOut();
+                                        } else {
+                                            $scope.panZoomModule.zoomIn();
+                                        }
+                                    });
+                                   
+                                    // Zoom in when tapped twice on a touch screen.  Next time zoom out, and so on ...
+                                    // We will need to use hammer.js for this (see https://github.com/timmywil/panzoom/issues/275).
+                                    // Make sure to pass the SVG element, instead of the parent DIV element (see https://github.com/hammerjs/hammer.js/issues/1119).
+                                    var mc = new Hammer.Manager($scope.svg);
+                                    mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
+                                    mc.on('doubletap', function (ev) {
+                                        if ($scope.previousTouchEvent === "zoomOut") {
+                                            $scope.panZoomModule.zoomIn();
+                                            $scope.previousTouchEvent = "zoomIn";
+                                        }
+                                        else {
+                                            $scope.panZoomModule.zoomOut();
+                                            $scope.previousTouchEvent = "zoomOut";
+                                        }
+                                    });
+                                }
+                            }   
+
+                            // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
+                            // the SVG elements that match the specified CSS selectors.
+                            applyEventHandlers($scope.rootDiv);                           
                             
                             // Apply the animations to the SVG elements (i.e. in the DIV subtree), by adding <animation> elements
                             config.smilAnimations.forEach(function(smilAnimation) {
@@ -313,8 +599,19 @@ module.exports = function(RED) {
                                 }
                                 
                                 var element = $scope.rootDiv.querySelector("#" + smilAnimation.targetId);
+                                
                                 if (element) {
-                                    var animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animate');
+                                    var animationElement;
+
+                                    // For attribute "transform" an animateTransform element should be created
+                                    if (smilAnimation.attributeName === "transform") {
+                                        animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animateTransform');
+                                        animationElement.setAttribute("type"     , smilAnimation.transformType); 
+                                    }
+                                    else {
+                                        animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animate');
+                                    }
+                                    
                                     animationElement.setAttribute("id"           , smilAnimation.id); 
                                     animationElement.setAttribute("attributeType", "XML");  // TODO what is this used for ???
                                     animationElement.setAttribute("class", smilAnimation.classValue); 
@@ -331,7 +628,7 @@ module.exports = function(RED) {
                                         animationElement.setAttribute("repeatCount"  , smilAnimation.repeatCount);
                                     }
                                     
-                                    if (smilAnimation.freeze) {
+                                    if (smilAnimation.end) {
                                         animationElement.setAttribute("fill"     , "freeze");
                                     }
                                     else {
@@ -354,6 +651,9 @@ module.exports = function(RED) {
                                     // By appending the animation as a child of the SVG element, that parent SVG element will be animated.
                                     // So there is no need to specify explicit the xlink:href attribute on the animation element.
                                     element.appendChild(animationElement);
+                                }
+                                else {
+                                    logError("No animatable element found for selector '" + smilAnimation.targetId + "'");
                                 }
                             });                  
 
@@ -420,13 +720,14 @@ module.exports = function(RED) {
                             if (!msg) {
                                 return;
                             }
+                                
                             function getValueByName(obj, path, def) {
                                 path = path.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
                                 path = path.replace(/^\./, '');           // strip a leading dot
                                 var a = path.split('.');
                                 for (var i = 0, n = a.length; i < n; ++i) {
                                     var k = a[i];
-                                    if (k in obj) {
+                                    if ((typeof(obj) === 'object') && (k in obj)) {
                                         obj = obj[k];
                                     } else {
                                         return def;
@@ -454,11 +755,18 @@ module.exports = function(RED) {
                                                     if(bindValue !== undefined){
                                                         if(typeof bindValue == "object"){
                                                             bindValue = JSON.stringify(bindValue);
-                                                        } 
-                                                        if(bindType == "text"){
-                                                            setTextContent(element, bindValue);
-                                                        } else if (bindType == "attr") {
-                                                            element.setAttribute(attributeName, bindValue);
+                                                        }
+
+                                                        switch (bindType) {
+                                                            case "text":
+                                                                setTextContent(element, bindValue);
+                                                                break;
+                                                            case "attr":
+                                                                element.setAttribute(attributeName, bindValue);
+                                                                break;
+                                                            case "style":
+                                                                element.style[attributeName] = bindValue;
+                                                                break;
                                                         }
                                                     } 
                                                 });
@@ -524,7 +832,7 @@ module.exports = function(RED) {
                                                     selector = topicParts[1];
                                                     elements = $scope.rootDiv.querySelectorAll(selector);
                                                     if (!elements || !elements.length) {
-                                                        console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                        logError("Invalid selector. No SVG elements found for selector " + selector);
                                                         return;
                                                     }
                                                     elements.forEach(function (element) {
@@ -535,21 +843,132 @@ module.exports = function(RED) {
                                         }
                                         return;
                                     }
-
-                                    if (!payload.elementId && !payload.selector) {
-                                        console.log("Invalid payload. A property named .elementId or .selector is not specified");
-                                        return;
-                                    }          
-                                    
+                                 
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
-                                    switch (op) {
-                                        case "update_text":
-                                        case "update_innerHTML"://added to make adding inner HTML more readable/logical
+
+                                    // !!!!!!!!!!!!! When adding a case statement, add the option also to node.availableCommands above !!!!!!!!!!!!!
+                                    // Make sure the commands are not case sensitive anymore
+                                    switch (op.toLowerCase()) {
+                                        case "add_element": // Add elements, or replace them if they already exist
+                                            if (!payload.elementType) {
+                                                logError("Invalid payload. A property named .elementType is not specified");
+                                                return;
+                                            }
+                                            
+                                            var parentElements = null;
+
+                                            if (payload.parentSelector || payload.parentElementId) {
+                                                selector = payload.parentSelector || "#" + payload.parentElementId;
+                                                parentElements = $scope.rootDiv.querySelectorAll(selector);
+                                            }
+                                            
+                                            if (!parentElements || !parentElements.length) {
+                                                // When no parent elements have been specified, add the SVG element directly under the SVG element
+                                                parentElements = [$scope.svg];
+                                            }
+                                            
+                                            // It is not possible to add elements with the same id to multiple parent elements
+                                            if (parentElements.length > 1 && payload.elementId) {
+                                                logError("When multiple parent SVG elements are specified, it is not allowed to specify an .elementId");
+                                                return;
+                                            }
+                                        
+                                            // Create a new SVG element (of the specified type) to every specified parent SVG element
+                                            parentElements.forEach(function(parentElement){
+                                                var newElement = document.createElementNS("http://www.w3.org/2000/svg", payload.elementType);
+                                                
+                                                if (payload.elementId) {
+                                                    newElement.setAttribute("id", payload.elementId);
+                                                }
+                                                
+                                                if (payload.elementAttributes) {
+                                                    for (const [key, value] of Object.entries(payload.elementAttributes)) {
+                                                        newElement.setAttribute(key, value);
+                                                    }
+                                                }
+                                                
+                                                if (payload.elementStyleAttributes) {
+                                                    var style = "";
+                                                    // Convert the Javascript object to a style formatted string
+                                                    for (const [key, value] of Object.entries(payload.elementStyleAttributes)) {
+                                                        style += key;
+                                                        style += ":";
+                                                        style += value;
+                                                        style += "; ";
+                                                    }
+                                                    newElement.setAttribute("style", style);
+                                                }
+                                                
+                                                if (payload.textContent) {
+                                                    setTextContent(newElement, payload.textContent);
+                                                }
+                                                
+                                                // In the "Events" tabsheet might be a CSS selector that matches this new element. This means that the 
+                                                // new element might need to get event handlers automatically.  To make sure we ONLY apply those handlers 
+                                                // to this new element, we add the element to a dummy parent which only has one child (i.e. this new element).
+                                                var dummyParent = document.createElement("div");
+                                                dummyParent.appendChild(newElement);
+                                                applyEventHandlers(dummyParent);
+                                                
+                                                parentElement.appendChild(newElement);
+                                            })
+                                            
+                                            break;
+                                        case "remove_element":
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+
+                                            elements.forEach(function(element){
+                                                var parent = element.parentNode;
+                                                parent.removeChild(element);
+                                            })
+                                            break;
+                                        case "get_text":
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                    
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+                                            
+                                            var elementArray = [];
+                                            elements.forEach(function(element){
+                                                elementArray.push({
+                                                    id: element.id,
+                                                    text: element.textContent
+                                                });
+                                            });  
+
+                                            $scope.send({
+                                                payload: elementArray
+                                            });                                             
+                                            break;
+                                        case "update_text":
+                                        case "update_innerhtml"://added to make adding inner HTML more readable/logical
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             var innerContent = payload.text || payload.html || payload.textContent;
@@ -559,10 +978,15 @@ module.exports = function(RED) {
                                             break;
                                         case "update_style":
                                         case "set_style"://same as update_style
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             if (payload.style && $scope.isObject(payload.style)) {
@@ -570,22 +994,27 @@ module.exports = function(RED) {
                                             } else if(payload.attributeName) {
                                                 elements.css(payload.attributeName, payload.attributeValue);
                                             } else {
-                                                console.log("Cannot update style! style object not valid or attributeName/attributeValue strings not provided (selector '" + selector + "')");
+                                                logError("Cannot update style! style object not valid or attributeName/attributeValue strings not provided (selector '" + selector + "')");
                                                 return;
                                             }
                                             break;
                                         case "update_attribute":
                                         case "set_attribute": //fall through 
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             elements.forEach(function(element){
                                                 if (op == "update_attribute") {
                                                     if(!element.hasAttribute(payload.attributeName)) {
-                                                        console.log("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"'");
+                                                        logError("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"'");
                                                         return
                                                     }
                                                 }
@@ -599,16 +1028,38 @@ module.exports = function(RED) {
                                                 element.setAttribute(payload.attributeName, payload.attributeValue);
                                             });
                                             break;
+                                        case "remove_attribute":
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+                                            elements.forEach(function(element){
+                                                if(element.hasAttribute(payload.attributeName)) {
+                                                    element.removeAttribute(payload.attributeName);
+                                                }
+                                            });
+                                            break;
                                         case "trigger_animation":
-                                                
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
                                             selector = payload.selector || ("#" + payload.elementId);
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                console.log("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
                                                 return;
                                             }
                                             if (!payload.action) {
-                                                console.log("When triggering an animation, there should be a .action field");
+                                                logError("When triggering an animation, there should be a .action field");
                                                 return;
                                             }
                                             let animations = ["set","animate","animatemotion","animatecolor","animatetransform"]
@@ -627,22 +1078,177 @@ module.exports = function(RED) {
                                                             try {
                                                                 element[payload.action]();
                                                             } catch (error) {
-                                                                throw new Error(`Error calling ${payload.elementId}.${payload.action}()`);
+                                                                logError(`Error calling ${payload.elementId}.${payload.action}()`);
                                                             }
                                                             break;
                                                     }
                                                 }
 
-                                            });                                                
+                                            });
+                                            break;    
+                                        case "add_event":// add the specified event(s) to the specified element(s)
+                                        case "remove_event":// remove the specified event(s) from the specified element(s)
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+
+                                            if (!payload.event) {
+                                                logError("No msg.payload.event has been specified");
+                                                return;
+                                            }
+
+                                            if (!$scope.events.includes(payload.event)) {
+                                                logError("The msg.payload.event contains an unsupported event name");
+                                                return;
+                                            }
+
+                                            elements.forEach(function(element) {
+                                                // Get all the user data in a "data-<event>" element attribute
+                                                var userData = element.getAttribute("data-event_" + payload.event);
+                                            
+                                                if (op === "add_event") {
+                                                    if (userData) {
+                                                        logError("The event " + payload.event + " already has been registered");
+                                                    }
+                                                    else {
+                                                        // Seems the event has been registered yet for this element, so let's do that now ...
+                                                        element.addEventListener(payload.event, handleEvent, false);
+                                                        
+                                                        // Store all the user data in a "data-event_<event>" element attribute, to have it available in the handleEvent function
+                                                        element.setAttribute("data-event_" + payload.event, JSON.stringify({
+                                                            elementId  : element.id,
+                                                            selector   : selector, 
+                                                            payload    : payload.payload, 
+                                                            payloadType: payload.payloadType, 
+                                                            topic      : payload.topic
+                                                        }));
+                                                        
+                                                        element.style.cursor = "pointer";
+                                                    }
+                                                }
+                                                else { // "remove_event"
+                                                    if (!userData) {
+                                                        logError("The event " + payload.event + " was not registered yet");
+                                                    }
+                                                    else {
+                                                        element.removeEventListener(payload.event, handleEvent, false);
+                                                        
+                                                        // Remove all the user data in a "data-<event>" element attribute
+                                                        element.removeAttribute("data-event_" + payload.event);
+                                                        
+                                                        element.style.cursor = "";
+                                                    }
+                                                }
+                                            });                                               
+                                            break;
+                                        case "zoom_in":
+                                            if (!$scope.panZoomModule) {
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                return;
+                                            }
+                                        
+                                            $scope.panZoomModule.zoomIn();
+                                            break;
+                                        case "zoom_out":
+                                            if (!$scope.panZoomModule) {
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            $scope.panZoomModule.zoomOut();
+                                            break;
+                                        case "zoom_by_percentage":
+                                            if (!$scope.panZoomModule) {
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            if (!payload.percentage) {
+                                                logError("No msg.payload.percentage has been specified");
+                                                return;
+                                            }
+                                            
+                                            // Convert e.g. 130% to a factor 1.3
+                                            var factor = payload.percentage / 100;
+                                            
+                                            // Optionally point coordinates can be specified in the input message
+                                            if (payload.x && payload.y) {
+                                                // When a point has been specified, zoom by the specified percentage at the specified point
+                                                $scope.panZoomModule.zoomToPoint(factor, {clientX: payload.x, clientY: payload.y});
+                                            }
+                                            else {
+                                                // No point has been specified, so zoom by the specified percentage
+                                                $scope.panZoomModule.zoom(factor);
+                                            }
+                                            break;
+                                        case "pan_to_point":    
+                                            if (!$scope.panZoomModule) {
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            if (!payload.x || !payload.y) {
+                                                logError("No point coordinates (msg.payload.x msg.payload.y) have been specified");
+                                                return;
+                                            }
+    
+                                            // Pan (absolute) to rendered point
+                                            $scope.panZoomModule.pan(msg.payload.x, msg.payload.y);
+                                            break;
+                                        case "pan_to_direction": 
+                                            if (!$scope.panZoomModule) {
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            if (!payload.x || !payload.y) {
+                                                logError("No direction coordinates (msg.payload.x msg.payload.y) have been specified");
+                                                return;
+                                            }
+    
+                                            // Pan (relative) by x/y of rendered pixels into a direction
+                                            $scope.panZoomModule.pan(msg.payload.x, msg.payload.y, { relative: true });
+                                            break;
+                                        case "reset_panzoom":
+                                            if (!$scope.panZoomModule) {
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
+                                                return;
+                                            }
+
+                                            $scope.panZoomModule.reset();
+                                            break;    
+                                        default:
+                                            if (msg.topic) {
+                                                logError("Unsupported msg.topic '" + msg.topic + "'");
+                                            }
+                                            else {
+                                                logError("Unsupported command '" + payload.command + "'");
+                                            }
                                     }
                                     
-                                } catch (error) {
-                                    console.error(error);
+                                } 
+                                catch (error) {
+                                    logError("Unexpected error when processing input message: " + error); 
                                 }
                             }
 
                             var payload = msg.payload;
                             var topic = msg.topic;
+           
+                            if (!payload || payload === "") {
+                                logError("Missing msg.payload");
+                                return;
+                            }
+                            
                             if(topic == "databind" || ((typeof payload == "string" || typeof payload == "number") && topic)){
                                 processCommand(payload, topic);
                             } else {
@@ -650,8 +1256,12 @@ module.exports = function(RED) {
                                     payload = [payload];
                                 }
                                 payload.forEach(function(val,idx){
-                                    if(typeof val == "object" && val.command)
+                                    if(typeof val != "object" || !val.command) {
+                                        logError("The msg.payload should contain an object (or an array of objects) which have a 'command' property.");
+                                    }
+                                    else {   
                                         processCommand(val);
+				    }
                                 });
                             }   
                                                         
@@ -720,14 +1330,14 @@ module.exports = function(RED) {
                         res.writeHead(404);
                         return res.end("File not found.");
                     }
-
-                    res.setHeader("Content-Type", mime.lookup(url)); 
-                    res.writeHead(200);
                     
-                    var buff = new Buffer(data);
-                    var base64data = buff.toString('base64');
+                    var img = Buffer.from(data, 'base64');
 
-                    res.end(base64data);
+                    res.setHeader("Content-Type", mime.getType(url));
+                    res.setHeader("Content-Length", img.length);
+                    res.writeHead(200);
+
+                    res.end(img);
                 });
             } 
             else {
@@ -749,7 +1359,7 @@ module.exports = function(RED) {
 	
     // Create the complete server-side path
     uiPath = '/' + uiPath + '/ui_svg_graphics';
-    
+
     // Replace a sequence of multiple slashes (e.g. // or ///) by a single one
     uiPath = uiPath.replace(/\/+/g, '/');
 	
@@ -757,17 +1367,33 @@ module.exports = function(RED) {
     RED.httpNode.get(uiPath + "/:cmd/:value", function(req, res){
         var result = {};
         
-        if (req.params.cmd === "famapping") {
-            result.cssClass = req.params.value.trim();
-            
-            result.uniCode = faMapping.get(result.cssClass);
-            
-            if (result.uniCode) {
-                result.uniCode = "&#x" + result.uniCode + ";";
-            }
+        switch (req.params.cmd) {
+            case "famapping":
+                result.cssClass = req.params.value.trim();
+                
+                result.uniCode = faMapping.get(result.cssClass);
+                
+                if (result.uniCode) {
+                    result.uniCode = "&#x" + result.uniCode + ";";
+                }
+                
+                // Return a json object (containing the unicode value) to the dashboard
+                res.json(result);
+                break;
+            case "lib":
+                // Send the requested JS library file to the client
+                switch (req.params.value) {
+                    case "panzoom":
+                        res.sendFile(panzoomPath);
+                        break;
+                    case "hammer":
+                        res.sendFile(hammerPath);
+                        break;
+                }
+                break
+            default:
+                console.log("Unknown command " + req.params.cmd);
+                res.status(404).json('Unknown command');
         }
-       
-        // Return a json object (containing the unicode value) to the dashboard
-        res.json(result);
     });
 }
