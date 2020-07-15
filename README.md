@@ -5,7 +5,8 @@ Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner
 
 And also, lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawing-editor) for his assistance!
 
-:warning: ***The major 2.0.0 release (unfortunately) contains some breaking changes;***
+| :warning: The major 2.0.0 release (unfortunately) contains some breaking changes:  |
+|:---------------------------|
 + `msg.event` has become `msg.event.type`
 + `msg.coordinates.x` has become `msg.event.svgX`
 + `msg.coordinates.y` has become `msg.event.svgY`
@@ -37,7 +38,9 @@ Each of those SVG elements has attributes (fill colour, ...), can respond to eve
 
 ## Node usage
 
-:white_check_mark: ***!!!!! SEE OUR [WIKI](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki) FOR STEP-BY-STEP TUTORIALS !!!!!***
+
+| :boom: HAVE A LOOK AT THE [WIKI](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki) FOR STEP-BY-STEP TUTORIALS   |
+|:---------------------------|
 
 This node can be used to visualize all kind of graphical stuff in the Node-RED dashboard.  This can range from simple graphics (e.g. a round button, ...) to very complex graphics (floorplans, industrial processes, piping, wiring, ...).  But even those complex graphics will consist out of several simple graphical shapes.  For example, a ***floorplan*** is in fact a simple image of your floor, and a series of other SVG elements (e.g. Fontawesome icons) drawn on top of that (background) image.
 
@@ -696,26 +699,7 @@ Some remarks:
    ```
 
 ### Display images
-In an SVG drawing, an *"image"* element can be used to display an image inside an SVG drawing.  You must specify at which path the image is available, but the image can be stored at different locations:
-1. The easiest solution is an online image that is public available.  For example:
-   ```
-   <image xlink:href="https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg"\>
-   ```
-   You can also make local images online available in Node-RED, e.g. by using a httpIn/httpOut nodes-based flow.  However, the disadvantage of online images is that they are public available ...
-   
-2. Load a local image, via the file selection dialog in [DrawSvg](#DrawSvg-drawing-editor).  This way you can easily select a local image available on the machine where you are *viewing* your dashboard in a browser.  DrawSvg will convert the image to a base64 encoded string, which is being inserted into the SVG source.
-   ```
-   <image xlink:href="xlink:href="data:image/png;base64,base64_encoded_image_string_..."\>
-   ```
-   The advantage is that the image stays available (even when it is deleted from the file system), but the size of the Node-RED flow file size will increase dramatic!
-   
-3. In the SVG Source tab sheet you can use a local image file, which needs to exist (in the directory specified on the 'Settings' tab sheet) on the system where your Node-RED instance is running:
-   ```
-   <image xlink:href="xlink:href="file://some_local_file_name"\>
-   ```
-   Since both DrawSvg and the Node-RED dashboard cannot access this local path, this node will automatically convert the image to a base64 encoded URL.  That way DrawSvg and the dashboard can both display the image, and in the flow file only the local path is being stored.  The disadvantage is that you must enter the path manually in the SVG Source tab sheet.
-   
-Remark: it is ***not*** possible to select local files in DrawSvg.  See [issue](https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/35).
+In an SVG drawing, an *"image"* element can be used to display an image inside an SVG drawing.  See this [tutorial](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Add-an-image-to-an-SVG-drawing) on the wiki for more information!
 
 ## Troubleshooting
 Some tips and tricks to solve known problems:
