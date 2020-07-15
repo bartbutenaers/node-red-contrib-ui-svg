@@ -23,6 +23,20 @@ module.exports = function(RED) {
     var faMapping;
     
     // -------------------------------------------------------------------------------------------------
+    // Determining the path to the files in the dependent js-beautify module once.
+    // See https://discourse.nodered.org/t/use-files-from-dependent-npm-module/17978/5?u=bartbutenaers
+    // -------------------------------------------------------------------------------------------------
+    var jsBeautifyPath = require.resolve("js-beautify");
+    
+    // For example suppose the require.resolved results in jsBeautifyPath = /home/pi/.node-red/node_modules/js-beautify/js/index.js
+    jsBeautifyPath = jsBeautifyPath.replace("index.js", "lib" + path.sep + "beautify-html.js");
+
+    if (!fs.existsSync(jsBeautifyPath)) {
+        console.log("Javascript file " + jsBeautifyPath + " does not exist");
+        jsBeautifyPath = null;
+    }
+    
+    // -------------------------------------------------------------------------------------------------
     // Determining the path to the files in the dependent panzoom module once.
     // See https://discourse.nodered.org/t/use-files-from-dependent-npm-module/17978/5?u=bartbutenaers
     // -------------------------------------------------------------------------------------------------
@@ -1286,13 +1300,20 @@ module.exports = function(RED) {
     // Make some static resources from this node public available (to be used in the FLOW EDITOR).
     RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){ 
         if (req.params[0].startsWith("lib/")) {
-            var options = {
-                root: __dirname,
-                dotfiles: 'deny'
-            };
-        
             // Send the requested js library file to the client
-            res.sendFile(req.params[0], options);
+            if (req.params[0].endsWith("beautify-html.js") && jsBeautifyPath) {
+                res.sendFile(jsBeautifyPath);
+            }
+            else if (req.params[0].endsWith("jschannel.js")) {
+                var options = {
+                    root: __dirname,
+                    dotfiles: 'deny'
+                };
+            
+                // Send the requested js library file to the client
+                // Note that we use a local library, since the jschannel NPM package contains an old version!
+                res.sendFile(req.params[0], options);
+            }
         }
         else if(req.params[0].startsWith("image/")) {
             // The url format to load a local image file will be "image/<svg_node_id>/<filename>"
