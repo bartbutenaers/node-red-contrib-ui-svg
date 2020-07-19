@@ -355,7 +355,7 @@
         },
         oneditprepare: function() {
             var node = this;
-            
+
             // Make sure the autocomplete fields at least refer to Iterable node fields...
             // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/33
             node.nonAnimationClasses = [];
@@ -1385,26 +1385,26 @@
             }
 
             function sendSVGtoEditor(){
-                // Since the external cloud editor cannot access local image files, we will load the base64 string (of that image) into the SVG string.
-                // For example: xlink:href="file://C:\myimage.png"
-                // TODO dit is te laat, want DrawSvg probeert die local links al reeds op te laden:
-                //    "Not allowed to load local resource: file:///C:/temp/floorplan.jpg"
-                // TODO daarom verhuizen naar onDrawSVGReady?  Probleem is wel dat sendSvgToEditor op 2 plaatsen opgeroepen wordt (en niet enkel uit sendSvgEditor)!!!!!
+                // Since the external DrawSvg cloud editor cannot access local image files, we load the image bytes and convert it to a base64 encoded
+                // data URL (which is stored into the SVG string).  The original (relative) local image path is stored in a data-xlink-href attribute 
+                // (on the same image element), so it can be restored when returning back from DrawSvg.
+                // For example: The image element has an attribute xlink:href="/someLocalImage.jpg"
                 var svgString = window.node_ace_editor ? window.node_ace_editor.getValue() : "";
-                svgString = svgString.replace(/(xlink:href="file:\/\/)([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
+                svgString = svgString.replace(/(xlink:href="\/{1})([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
                     var newUrl = "";
-                    var fileName = $2;
+                    // This is the local file URL (without the '/' in front)
+                    var relativeFilePath = $2;
 
                     $.ajax({
                         type: "GET",
-                        url: "ui_svg_graphics/image/" + node.id + "/" + fileName, 
+                        url: "ui_svg_graphics/image/" + relativeFilePath, 
                         async: false, // Synchronous call
                         success: function(response, status, xhr){ 
                             var contentType = xhr.getResponseHeader("content-type") || "";
                         
                             // Return data url of base64 encoded image string.
                             // And store the original file name in a custom 'data' attribute
-                            newUrl = 'xlink:href="data:' + contentType + ';base64,' + response + '" data-xlink-href="file://' + fileName + '"';
+                            newUrl = 'xlink:href="data:' + contentType + ';base64,' + response + '" data-xlink-href="/' + relativeFilePath + '"';
                         },
                         error: function() {
                             // Leave the local file path untouched, since we cannot load the specified image
