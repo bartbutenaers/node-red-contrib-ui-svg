@@ -107,10 +107,10 @@ module.exports = function(RED) {
             // Replace the CSS class name ($2) by its unicode value
             return $1 + "&#x" + uniCode + ";" + $3;
         })
-        
+     
         // When the SVG string contains links to local images, we will replace those by a data url containing the base64 encoded
         // string of that image.  Otherwise the Dashboard (i.e. the browser) would not have access to that image...
-        svgString = svgString.replace(/(xlink:href="file:\/\/)([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
+        /*svgString = svgString.replace(/(xlink:href="file:\/\/)([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
             if (!config.directory) {
                 console.log("For svg node with id=" + config.id + " no image directory has been specified");  
                 // Leave the local file path untouched, since we cannot load the specified image
@@ -146,7 +146,7 @@ module.exports = function(RED) {
                 // Leave the local file path untouched, since we cannot load the specified image
                 return $1 + $2 + $3;
             }
-        })
+        })*/
         
         // Seems that the SVG string sometimes contains "&quot;" instead of normal quotes.
         // Those need to be removed, otherwise AngularJs will throw a parse error
@@ -1316,45 +1316,26 @@ module.exports = function(RED) {
             }
         }
         else if(req.params[0].startsWith("image/")) {
-            // The url format to load a local image file will be "image/<svg_node_id>/<filename>"
-            var parts = req.params[0].split("/");
+            // The url format to load a local image file will be "image/<filename>"
+            var relativeFilePath = req.params[0].substring(6);
             
-            var svgNodeId = parts[1];
-            var svgNode = RED.nodes.getNode(svgNodeId);
-            
-            if (parts.length !== 3) {
-                console.log("To request a local image, the url should look like image/<svg_node_id>/<filename>");
-                return;
+            if (!RED.settings.httpStatic || RED.settings.httpStatic === "") {
+                res.writeHead(404);
+                return res.end("No httpStatic directory has been specified in the settings.js file");
             }
             
-            if (!svgNode) {
-                console.log("Svg node with id=" + svgNodeId + " cannot be found");
-                return;
-            }
-            
-            if (!svgNode.directory || svgNode.directory === "") {
-                console.log("For svg node with id=" + svgNodeId + " no image directory has been specified");
-                return;
-            }
-            
-            var fileName = parts[2];
-            
-            var url = path.format({
-                root: '/ignored',
-                dir: svgNode.directory,
-                base: fileName
-            });
+            var absoluteFilePath = path.join(RED.settings.httpStatic, relativeFilePath);
 
-            if (fs.existsSync(url)) {
-                fs.readFile(url, function(err, data) {
+            if (fs.existsSync(absoluteFilePath)) {
+                fs.readFile(absoluteFilePath, function(err, data) {
                     if (err) {
                         res.writeHead(404);
                         return res.end("File not found.");
                     }
                     
-                    var img = Buffer.from(data, 'base64');
+                    var img = new Buffer(data).toString('base64');
 
-                    res.setHeader("Content-Type", mime.getType(url));
+                    res.setHeader("Content-Type", mime.getType(absoluteFilePath));
                     res.setHeader("Content-Length", img.length);
                     res.writeHead(200);
 
