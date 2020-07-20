@@ -215,7 +215,7 @@ Two things will happen when an event occurs on such an SVG element:
 
 Instead of specifying events in the config screen, it is also possible to add or remove events via input messages.  This is explained in the [Control via messages](#control-via-messages) section below.
 
-### "Input bind" tab sheet
+### "Input Binding" tab sheet
 As explained in the section [Control via messages](#control-via-messages) below, this node can be controlled via input messages.  For example, to change the fill colour of circle with id "mycircle" to green.  As a result, the input messages need to contain a lot of information (element id, attribute name, attribute value ...), to let this node know what you want it to do.  This means the flow will become quite complex, since a lot of extra nodes are required to put all that information in the message.
 
 Another way to control this node is by using bindings.  This means that you must specify most of the information in the binding, so the input message will only need to contain the new value itself.  Since the input messages need to contain less information, the flow can be simplified ... 
