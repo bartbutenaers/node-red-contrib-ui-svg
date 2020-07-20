@@ -108,32 +108,31 @@ module.exports = function(RED) {
             return $1 + "&#x" + uniCode + ";" + $3;
         })
      
-        // When the SVG string contains links to local images, we will replace those by a data url containing the base64 encoded
-        // string of that image.  Otherwise the Dashboard (i.e. the browser) would not have access to that image...
-        /*svgString = svgString.replace(/(xlink:href="file:\/\/)([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
+        // When the SVG string contains links to local server image files, we will replace those by a data url containing the base64 encoded
+        // string of that image.  Otherwise the Dashboard (i.e. the browser) would not have access to that image...  We could have also added
+        // an extra httpNode endpoint for the dashboard, which could provided images (similar to the admin endpoint which is available for the
+        // flow editor.  This function is very similar to the function (in the html file) for resolving local images for DrawSvg...
+        svgString = svgString.replace(/(xlink:href="\/{1})([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
             if (!config.directory) {
                 console.log("For svg node with id=" + config.id + " no image directory has been specified");  
                 // Leave the local file path untouched, since we cannot load the specified image
                 return $1 + $2 + $3; 
             }
             
-            var fileName = $2;
-            var url = path.format({
-                root: '/ignored',
-                dir: config.directory,
-                base: fileName
-            });
+            // This is the local file URL (without the '/' in front)
+            var relativeFilePath = $2;                    
+            var absoluteFilePath = path.join(config.directory, relativeFilePath);
 
-            if (!fs.existsSync(url)) {
-                console.log("The specified local image file (" + url + ") does not exist");  
+            if (!fs.existsSync(absoluteFilePath)) {
+                console.log("The specified local image file (" + absoluteFilePath + ") does not exist");  
                 // Leave the local file path untouched, since we cannot load the specified image
                 return $1 + $2 + $3; 
             }
             
             try {
-                var data = fs.readFileSync(url);
+                var data = fs.readFileSync(absoluteFilePath);
                 
-                var contentType = mime.lookup(url);
+                var contentType = mime.getType(absoluteFilePath);
                     
                 var buff = new Buffer(data);
                 var base64data = buff.toString('base64');
@@ -142,11 +141,11 @@ module.exports = function(RED) {
                 return 'xlink:href="data:' + contentType + ';base64,' + base64data + '"';
             } 
             catch (err) {
-                console.log("Cannot read the specified local image file (" + url + ")");  
+                console.log("Cannot read the specified local image file (" + absoluteFilePath + "): " + err);  
                 // Leave the local file path untouched, since we cannot load the specified image
                 return $1 + $2 + $3;
             }
-        })*/
+        })
         
         // Seems that the SVG string sometimes contains "&quot;" instead of normal quotes.
         // Those need to be removed, otherwise AngularJs will throw a parse error
@@ -1297,59 +1296,69 @@ module.exports = function(RED) {
 
     RED.nodes.registerType("ui_svg_graphics", SvgGraphicsNode);
    
-    // Make some static resources from this node public available (to be used in the FLOW EDITOR).
-    RED.httpAdmin.get('/ui_svg_graphics/*', function(req, res){ 
-        if (req.params[0].startsWith("lib/")) {
-            // Send the requested js library file to the client
-            if (req.params[0].endsWith("beautify-html.js") && jsBeautifyPath) {
-                res.sendFile(jsBeautifyPath);
-            }
-            else if (req.params[0].endsWith("jschannel.js")) {
-                var options = {
-                    root: __dirname,
-                    dotfiles: 'deny'
-                };
-            
-                // Send the requested js library file to the client
-                // Note that we use a local library, since the jschannel NPM package contains an old version!
-                res.sendFile(req.params[0], options);
-            }
+    // Make all the javascript library files available to the FLOW EDITOR.
+    // We use a separate endpoint, since no permissions are required to read those resources.
+    // Otherwise we get 'unauthorized' problems, when calling this endpoint from a 'script' tag.
+    // See details on https://discourse.nodered.org/t/unauthorized-when-accessing-custom-admin-endpoint/20201/4
+    RED.httpAdmin.get('/ui_svg_graphics/lib/:libraryname', function(req, res){ 
+        // Send the requested js library file to the client
+        switch (req.params.libraryname) {
+            case "beautify-html.js":
+                if (jsBeautifyPath) {
+                    res.sendFile(jsBeautifyPath);
+                    return;
+                }
+                break;
+            case "jschannel.js":
+                var absoluteFilePath = path.join(__dirname, "lib", req.params.libraryname);
+        
+                // We use a local library (package inside this repository), since the jschannel NPM package contains an obsolete version!
+                res.sendFile(absoluteFilePath);
+                return;
         }
-        else if(req.params[0].startsWith("image/")) {
-            // The url format to load a local image file will be "image/<filename>"
-            var relativeFilePath = req.params[0].substring(6);
-            
-            if (!RED.settings.httpStatic || RED.settings.httpStatic === "") {
-                res.writeHead(404);
-                return res.end("No httpStatic directory has been specified in the settings.js file");
-            }
-            
-            var absoluteFilePath = path.join(RED.settings.httpStatic, relativeFilePath);
-
-            if (fs.existsSync(absoluteFilePath)) {
-                fs.readFile(absoluteFilePath, function(err, data) {
-                    if (err) {
-                        res.writeHead(404);
-                        return res.end("File not found.");
-                    }
-                    
-                    var img = new Buffer(data).toString('base64');
-
-                    res.setHeader("Content-Type", mime.getType(absoluteFilePath));
-                    res.setHeader("Content-Length", img.length);
-                    res.writeHead(200);
-
-                    res.end(img);
-                });
-            } 
-            else {
-                res.writeHead(403);
-                return res.end("Forbidden.");
-            }
+        
+        res.writeHead(404);
+        return res.end("The requested library is not supported");
+    });
+        
+    // Make all the specified image files available to the FLOW EDITOR.
+    RED.httpAdmin.get('/ui_svg_graphics/image/:nodeid/:relativefilepath', RED.auth.needsPermission('ui_svg_graphics.read'), function(req, res) {
+        // The client has replaced the dots in the node id by underscores, since dots are not allowed in urls
+        var nodeId = req.params.nodeid.replace("_", ".");
+        
+        var svgNode = RED.nodes.getNode(nodeId);
+        
+        if (!svgNode) {
+            res.writeHead(404);
+            return res.end("Svg node with id=" + nodeId + " cannot be found");
         }
+        
+        if (!svgNode.directory || svgNode.directory === "") {
+            res.writeHead(404);
+            return res.end("No local image directory has been specified for node with id = " + nodeId);
+        }
+        
+        var absoluteFilePath = path.join(svgNode.directory, req.params.relativefilepath);
+
+        if (fs.existsSync(absoluteFilePath)) {
+            fs.readFile(absoluteFilePath, function(err, data) {
+                if (err) {
+                    res.writeHead(404);
+                    return res.end("File not found.");
+                }
+                
+                var img = new Buffer(data).toString('base64');
+
+                res.setHeader("Content-Type", mime.getType(absoluteFilePath));
+                res.setHeader("Content-Length", img.length);
+                res.writeHead(200);
+
+                res.end(img);
+            });
+        } 
         else {
-            console.log("Only paths starting with 'lib' or 'image' are supported");
-            return;
+            res.writeHead(403);
+            return res.end("Forbidden.");
         }
     });
     
