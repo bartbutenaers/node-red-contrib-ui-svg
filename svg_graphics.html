@@ -1385,7 +1385,7 @@
             }
 
             function sendSVGtoEditor(){
-                // Since the external DrawSvg cloud editor cannot access local image files, we load the image bytes and convert it to a base64 encoded
+                // Since the external DrawSvg cloud editor cannot access local server image files, we load the image bytes and convert it to a base64 encoded
                 // data URL (which is stored into the SVG string).  The original (relative) local image path is stored in a data-xlink-href attribute 
                 // (on the same image element), so it can be restored when returning back from DrawSvg.
                 // For example: The image element has an attribute xlink:href="/someLocalImage.jpg"
@@ -1394,10 +1394,13 @@
                     var newUrl = "";
                     // This is the local file URL (without the '/' in front)
                     var relativeFilePath = $2;
+                    
+                    // Since dots are not allowed in an url, we will replace them by underscores
+                    var nodeId = node.id.replace(".", "_");
 
                     $.ajax({
                         type: "GET",
-                        url: "ui_svg_graphics/image/" + relativeFilePath, 
+                        url: "ui_svg_graphics/image/" + nodeId + "/" + relativeFilePath, 
                         async: false, // Synchronous call
                         success: function(response, status, xhr){ 
                             var contentType = xhr.getResponseHeader("content-type") || "";
@@ -1419,6 +1422,7 @@
                     method: "loadStringSVG",
                     params: {
                         'stringSVG' : svgString,
+                        //'backgroundImageURL' : '/background.jpg',
                         'nameSVG' : 'node-red',// svg name
                         // The name of the service which to be called 
                         // when user clicks on the save button of drawsvg
