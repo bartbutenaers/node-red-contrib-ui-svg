@@ -1388,11 +1388,11 @@
                 // Since the external DrawSvg cloud editor cannot access local server image files, we load the image bytes and convert it to a base64 encoded
                 // data URL (which is stored into the SVG string).  The original (relative) local image path is stored in a data-xlink-href attribute 
                 // (on the same image element), so it can be restored when returning back from DrawSvg.
-                // For example: The image element has an attribute xlink:href="/someLocalImage.jpg"
+                // For example: The image element has an attribute xlink:href="/someLocalImage.jpg" (linux) or xlink:href="\someLocalImage.jpg" (windows)
                 var svgString = window.node_ace_editor ? window.node_ace_editor.getValue() : "";
-                svgString = svgString.replace(/(xlink:href="\/{1})([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
+                svgString = svgString.replace(/(xlink:href="[\\\/]{1})([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
                     var newUrl = "";
-                    // This is the local file URL (without the '/' in front)
+                    // This is the local file URL, without the (back)slash in front
                     var relativeFilePath = $2;
                     
                     // Since dots are not allowed in an url, we will replace them by underscores
