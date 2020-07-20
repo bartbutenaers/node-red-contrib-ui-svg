@@ -112,14 +112,14 @@ module.exports = function(RED) {
         // string of that image.  Otherwise the Dashboard (i.e. the browser) would not have access to that image...  We could have also added
         // an extra httpNode endpoint for the dashboard, which could provided images (similar to the admin endpoint which is available for the
         // flow editor.  This function is very similar to the function (in the html file) for resolving local images for DrawSvg...
-        svgString = svgString.replace(/(xlink:href="\/{1})([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
+        svgString = svgString.replace(/(xlink:href="[\\\/]{1})([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
             if (!config.directory) {
                 console.log("For svg node with id=" + config.id + " no image directory has been specified");  
                 // Leave the local file path untouched, since we cannot load the specified image
                 return $1 + $2 + $3; 
             }
             
-            // This is the local file URL (without the '/' in front)
+            // This is the local file URL, without the (back)slash in front
             var relativeFilePath = $2;                    
             var absoluteFilePath = path.join(config.directory, relativeFilePath);
 
