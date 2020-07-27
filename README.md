@@ -251,6 +251,36 @@ The following flow shows the above binding example in action:
 [{"id":"c9ab8554.337588","type":"debug","z":"60ad596.8120ba8","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":1380,"y":440,"wires":[]},{"id":"56869c57.d65c74","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"d4ee73ea.a7676","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"http://drawsvg.org/drawsvg.html","directory":"","name":"","x":1180,"y":440,"wires":[["c9ab8554.337588"]]},{"id":"62a285fb.bd046c","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":980,"y":460,"wires":[["56869c57.d65c74"]]},{"id":"132d184e.ff0ab8","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":980,"y":420,"wires":[["56869c57.d65c74"]]},{"id":"d4ee73ea.a7676","type":"ui_group","z":"","name":"Floorplan test","tab":"b4bb5633.ba92b8","disp":true,"width":"14","collapse":false},{"id":"b4bb5633.ba92b8","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
 
+Note that there is another way to implement data binding (without using the *"Input Binding"* tabsheet), by using user attributes inside the SVG source:
+
++ Use a `data-bind-text` to set the text content of an element  For example:
+   ```
+   <svg ...>
+      <text data-bind-text="payload.SystemStateDesc" ...>Temporary text content</text>
+   </svg>
+   ```
+   Then the text content can be updated by injecting the following message:
+   ```
+   "payload": {
+      "SystemStateDesc": "Updated text content"},
+      "topic": "databind"
+   }
+   ```
++ Use `data-bind-attributes` to specify which SVG element attributes need to be binded to which message fields (specified in `data-bind-values`).  For example:
+   ```
+   <svg ...>
+      <circle data-bind-attributes="fill,r" data-bind-values="payload.circleColour,payload.size" ...>;
+   </svg>
+   ```
+   Then the circle fill color and radius attributes can be updated by injecting following message:
+   ```
+   "payload": {
+     "fill": "circleColour",
+     "size": 25
+   },
+   "topic":"databind"
+   ```
+
 ## "Settings" tab sheet
 
 ### Show coordinates
@@ -331,8 +361,8 @@ Most of the SVG information can be manipulated by sending input messages to this
         "elementId": "some_element_id",
         "textContent": "my title"
     }
-
-However it is also possible to specify one or more elements via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example, set all texts with class 'titleText' to value 'my title':
+   ```
+   However it is also possible to specify one or more elements via a [CSS selector](https://www.w3schools.com/cssref/css_selectors.asp).  This is a very powerful query mechanism that allows you to apply the control message to multiple SVG elements at once!  For example, set all texts with class 'titleText' to value 'my title':
    ```
    "payload": {
         "command": "update_text",
