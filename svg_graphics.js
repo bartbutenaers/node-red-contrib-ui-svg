@@ -216,6 +216,19 @@ module.exports = function(RED) {
             // Store the directory property, so it is available in the endpoint below
             node.directory = config.directory;
             
+            // Get all values of the custom attributes data-bind-text and data-bind-values.
+            var matches = config.svgString.matchAll(/data-bind-[text|values]* *= *"(.*?)"/g);
+            
+            // Those matched values will contain a "," separated list of msg field names, which need to be stored in an array of msg field names.
+            node.attributeBasedBindings = [];
+            for (const match of matches) {
+                // The match value (i.e. part between round brackets) is stored in match[1]
+                node.attributeBasedBindings = node.attributeBasedBindings.concat(match[1].split(","));
+            }
+            
+            // Remove all duplicate msg field names from the array
+            node.attributeBasedBindings.filter((item,index,self) => self.indexOf(item)==index);
+            
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
                                       "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute"];
@@ -239,7 +252,7 @@ module.exports = function(RED) {
                     convertBack: function (value) {
                         return value;
                     },
-                    beforeEmit: function(msg, value) {                    
+                    beforeEmit: function(msg, value) {          
                         // ******************************************************************************************
                         // Server side validation of input messages.
                         // ******************************************************************************************
@@ -253,10 +266,11 @@ module.exports = function(RED) {
                             msg.payload = null;
                         }
                         else {
-                            // TODO Does are not blocking in version 1.0.  Nu wel of toch naar ui sturen?
-                            if(msg.topic == "databind") {                                                                                                                   
-                                if (node.bindings.length === 0) {
-                                    node.error("Useless to send msg.topic 'databinding' since no bindings have been specified in the config screen.");
+                            if(msg.topic == "databind") {
+                                // The bindings can be specified both on the config screen and in the SVG source via custom user attributes.
+                                // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/67
+                                if (node.bindings.length === 0 && node.attributeBasedBindings.length === 0) {
+                                    node.error("No bindings have been specified in the config screen or via data-bind-text or via data-bind-values.");
                                     msg.payload = null;
                                 }
                                 else {
@@ -267,9 +281,15 @@ module.exports = function(RED) {
                                             counter++;
                                         }
                                     });
+                                    
+                                    node.attributeBasedBindings.forEach(function (binding, index) {
+                                        if (getNestedProperty(msg, binding)) {
+                                            counter++;
+                                        }
+                                    });
 
                                     if (counter === 0) {
-                                        node.error("Useless to send msg.topic 'databinding' since none of the bindings fields are available in this message.");
+                                        node.error("None of the specified bindings fields (in the config screen or data-bind-text or data-bind-values) are available in this message.");
                                         msg.payload = null;
                                     }
                                 }
@@ -292,7 +312,7 @@ module.exports = function(RED) {
                                         for (var i = 0; i < msg.payload.length; i++) {
                                             var part = msg.payload[i];
 
-                                            if(typeof part != "object" && !part.command) {
+                                            if(typeof part === "object" && !part.command) {
                                                 node.error("The msg.payload array should contain objects which all have a 'command' property.");
                                                 msg.payload = null;
                                                 break;
@@ -307,7 +327,7 @@ module.exports = function(RED) {
                                         }
                                     }
                                     else {
-                                        if(typeof msg.payload != "object" && !msg.payload.command) {
+                                        if(typeof msg.payload === "object" && !msg.payload.command) {
                                             node.error("The msg.payload should contain an object which has a 'command' property.");
                                             msg.payload = null;
                                         }
@@ -733,7 +753,7 @@ module.exports = function(RED) {
                             if (!msg) {
                                 return;
                             }
-                                
+             
                             function getValueByName(obj, path, def) {
                                 path = path.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
                                 path = path.replace(/^\./, '');           // strip a leading dot
@@ -785,7 +805,16 @@ module.exports = function(RED) {
                                                 });
                                             });
 
-                                            //Bind elements with custom attributes data-bind-text and data-bind-attributes/data-bind-values
+                                            // Bind elements with custom attributes (data-bind-text).  For example:
+                                            //
+                                            //    <svg ...>
+                                            //       <text data-bind-text="payload.SystemStateDesc" ...>Temporary text content</text>
+                                            //    </svg>
+                                            //
+                                            // Then the text content can be updated by injecting the following message:
+                                            //
+                                            //    {"payload":{"SystemStateDesc":"testing testing"}, "topic":"databind"}
+                                            //
                                             textElements = $scope.rootDiv.querySelectorAll("[data-bind-text]");
                                             if (!textElements || !textElements.length) {
                                                 //console.log("No SVG elements found for selector data-bind-text");
@@ -805,6 +834,15 @@ module.exports = function(RED) {
                                                 });
                                             }
                                             
+                                            // Bind elements with custom attributes (data-bind-attributes/data-bind-values).  For example:
+                                            //
+                                            //    <svg ...>
+                                            //       <circle data-bind-attributes="fill,r" data-bind-values="payload.circleColour,payload.size" ...>;
+                                            //    </svg>
+                                            //
+                                            // Then the circle fill color and radius attributes can be updated by injecting following message:
+                                            //    {"payload":{"fill":"circleColour", "size":25}, "topic":"databind"}
+                                            //
                                             attrElements = $scope.rootDiv.querySelectorAll("[data-bind-attributes]");
                                             if (!attrElements || !attrElements.length) {
                                                 //console.log("No SVG elements found for selector data-bind-attribute");
@@ -816,7 +854,7 @@ module.exports = function(RED) {
                                                         var attrNames = attributesCSV.split(",");
                                                         var attrBindTos = attrBindToCSV.split(",");
                                                         if(attrNames.length != attrBindTos.length){
-                                                            console.warn("data-bind-attributes count is different to data-bind-values count")
+                                                            logError("data-bind-attributes count is different to data-bind-values count")
                                                             return;
                                                         }    
                                                         var index;
