@@ -213,22 +213,29 @@ module.exports = function(RED) {
             RED.nodes.createNode(this, config);
             node.outputField = config.outputField;
             node.bindings = config.bindings;
+            node.attributeBasedBindings = [];
             // Store the directory property, so it is available in the endpoint below
             node.directory = config.directory;
-            
+         
             // Get all values of the custom attributes data-bind-text and data-bind-values.
-            var matches = config.svgString.matchAll(/data-bind-[text|values]* *= *"(.*?)"/g);
-            
-            // Those matched values will contain a "," separated list of msg field names, which need to be stored in an array of msg field names.
-            node.attributeBasedBindings = [];
-            for (const match of matches) {
-                // The match value (i.e. part between round brackets) is stored in match[1]
+            // Don't use matchAll, since that is only available starting from NodeJs version 12.0.0
+            var regularExpression = /data-bind-[text|values]* *= *"(.*?)"/g;
+            var match;
+            while((match = regularExpression.exec(config.svgString)) !== null) {
+                // The matched values will contain a "," separated list of msg field names, which need to be stored in an array of msg field names.
                 node.attributeBasedBindings = node.attributeBasedBindings.concat(match[1].split(","));
             }
             
-            // Remove all duplicate msg field names from the array
-            node.attributeBasedBindings.filter((item,index,self) => self.indexOf(item)==index);
+            // Trim the whitespaces from all the field names in the array
+            for (var i = 0; i < node.attributeBasedBindings.length; i++) {
+                node.attributeBasedBindings[i] = node.attributeBasedBindings[i].trim()
+            }
             
+            // Remove all duplicate msg field names from the array
+            node.attributeBasedBindings = node.attributeBasedBindings.filter(function(item,index) {
+                return node.attributeBasedBindings.indexOf(item) === index;
+            });
+
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
                                       "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute"];
