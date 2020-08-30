@@ -189,11 +189,11 @@ module.exports = function(RED) {
     function getNestedProperty(obj, key) {
         // Get property array from key string
         var properties = key.split(".");
-
+        
         // Iterate through properties, returning undefined if object is null or property doesn't exist
         for (var i = 0; i < properties.length; i++) {
             if (!obj || !obj.hasOwnProperty(properties[i])) {
-                return;
+                return undefined;
             }
             obj = obj[properties[i]];
         }
@@ -284,13 +284,12 @@ module.exports = function(RED) {
                                     var counter = 0;
 
                                     node.bindings.forEach(function (binding, index) {
-                                        if (getNestedProperty(msg, binding.bindSource)) {
+                                        if (getNestedProperty(msg, binding.bindSource) !== undefined) {
                                             counter++;
                                         }
                                     });
-                                    
                                     node.attributeBasedBindings.forEach(function (binding, index) {
-                                        if (getNestedProperty(msg, binding)) {
+                                        if (getNestedProperty(msg, binding) !== undefined) {
                                             counter++;
                                         }
                                     });
