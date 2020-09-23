@@ -68,7 +68,18 @@ module.exports = function(RED) {
 
     function HTML(config) {       
         // The configuration is a Javascript object, which needs to be converted to a JSON string
-        var configAsJson = JSON.stringify(config);
+        var configAsJson = JSON.stringify(config, function (key,value) {
+            // Make sure the config.svgString value is not serialized in the JSON string because:
+            // - that field is already being passed as innerHtml for the SVG element.
+            // - that field would be passed unchanged to the client, while the same svgString would be changed for the innerHtml
+            //   (e.g. when the &quot; would still be available in the configAsJson, then the AngularJs client would still give parser errors).
+            // - for performance is it useless to send the same SVG string twice to the client, where it is never used via configAsJson
+            if (key=="svgString") {
+                return undefined;
+            }
+            
+            return value;
+        });
 
         // Fill the map once
         if (!faMapping) {
@@ -147,9 +158,11 @@ module.exports = function(RED) {
             }
         })
         
-        // Seems that the SVG string sometimes contains "&quot;" instead of normal quotes.
-        // Those need to be removed, otherwise AngularJs will throw a parse error
-        //svgString = svgString.replace(/&quot;/g, "'");
+        // Seems that the SVG string sometimes contains "&quot;" instead of normal quotes.  For example:
+        //    <text style="fill:firebrick; font-family: &quot;Arial Black&quot;; font-size: 50pt;"
+        // Those need to be removed, otherwise AngularJs will throw a parse error.
+        // Since those seem to occur between the double quotes of an attribute value, we will remove them (instead of replacing by single quotes) 
+        svgString = svgString.replace(/&quot;/g, "");
       
         var html = String.raw`
 <style>
