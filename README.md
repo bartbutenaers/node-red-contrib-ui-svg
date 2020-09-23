@@ -370,6 +370,7 @@ Most of the SVG information can be manipulated by sending input messages to this
         "textContent": "my title"
     }
    ```
+   This can be used to do the ***same update on multiple elements with a single message***.
    Note that a `selector` can also be used to specify a single element id (similar to `elementId`), by using a hashtag like *"#some_element_id"*.
 + A message can contain a single command.  For example:
    ```
@@ -414,7 +415,7 @@ Most of the SVG information can be manipulated by sending input messages to this
    ],
    "topic": "update_attribute"
    ```
-  This way the command only needs to be specified once.
+  This can be used to do ***multiple commands with a single message***.
   
 + To further simplify the message, the CSS selector - when it is required - can also be added to the topic (separated by `|`):
    ```
