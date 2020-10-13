@@ -457,6 +457,20 @@ module.exports = function(RED) {
                         }
                         
                         function handleEvent(evt) {
+                            // Uncomment this section to troubleshoot events on mobile devices
+                            //function stringifyEvent(e) {
+                            //    const obj = {};
+                            //    for (let k in e) {
+                            //        obj[k] = e[k];
+                            //    }
+                            //    return JSON.stringify(obj, (k, v) => {
+                            //        if (v instanceof Node) return 'Node';
+                            //        if (v instanceof Window) return 'Window';
+                            //        return v;
+                            //    }, ' ');
+                            //}
+                            //logError("evt = " + stringifyEvent(evt));
+                            
                             var userData = this.getAttribute("data-event_" + evt.type);
                                         
                             if (!userData) {
@@ -476,24 +490,40 @@ module.exports = function(RED) {
                                 topic      : userData.topic
                             }
                             
+                            msg.event = {
+                                type: evt.type
+                            }
+
+                            if (evt.targetTouches) {
+                                // For touch events, the coordinates are stored inside the targetTouches field.
+                                // See https://stackoverflow.com/a/33756703
+                                var touchEvent = evt.targetTouches[0];
+                                
+                                msg.event.pageX   = Math.trunc(touchEvent.pageX);
+                                msg.event.pageY   = Math.trunc(touchEvent.pageY);
+                                msg.event.screenX = Math.trunc(touchEvent.screenX);
+                                msg.event.screenY = Math.trunc(touchEvent.screenY);
+                                msg.event.clientX = Math.trunc(touchEvent.clientX);
+                                msg.event.clientY = Math.trunc(touchEvent.clientY);
+                            }
+                            else {
+                                msg.event.pageX   = Math.trunc(evt.pageX);
+                                msg.event.pageY   = Math.trunc(evt.pageY);
+                                msg.event.screenX = Math.trunc(evt.screenX);
+                                msg.event.screenY = Math.trunc(evt.screenY);
+                                msg.event.clientX = Math.trunc(evt.clientX);
+                                msg.event.clientY = Math.trunc(evt.clientY);
+                            }
+
                             // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                            if(evt.pageX !== undefined && evt.pageY !== undefined){
+                            if(msg.event.pageX !== undefined && msg.event.pageY !== undefined){
                                 var pt = $scope.svg.createSVGPoint();
-                                pt.x = evt.pageX;
-                                pt.y = evt.pageY;
+                                pt.x = msg.event.pageX;
+                                pt.y = msg.event.pageY;
                                 pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
                                 
-                                msg.event = {
-                                    type    : evt.type,
-                                    svgX    : pt.x,
-                                    svgY    : pt.y,
-                                    pageX   : evt.pageX,
-                                    pageY   : evt.pageY,
-                                    screenX : evt.screenX,
-                                    screenY : evt.screenY,
-                                    clientX : evt.clientX,
-                                    clientY : evt.clientY
-                                }
+                                msg.event.svgX = Math.trunc(pt.x);
+                                msg.event.svgY = Math.trunc(pt.y);
                                 
                                 // Get the SVG element where the event has occured (e.g. which has been clicked)
                                 var svgElement = $(event.target)[0];
@@ -516,10 +546,10 @@ module.exports = function(RED) {
                                 }
                                 
                                 msg.event.bbox = [
-                                    bbox.left,
-                                    bbox.bottom,
-                                    bbox.right,
-                                    bbox.top
+                                    Math.trunc(bbox.left),
+                                    Math.trunc(bbox.bottom),
+                                    Math.trunc(bbox.right),
+                                    Math.trunc(bbox.top)
                                 ]
                             }
                             
