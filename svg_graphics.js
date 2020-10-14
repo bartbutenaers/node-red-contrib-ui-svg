@@ -251,7 +251,7 @@ module.exports = function(RED) {
 
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
-                                      "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute"];
+                                      "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", "replace_svg"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -601,6 +601,134 @@ module.exports = function(RED) {
                             }); 
                         }
                         
+                        function initializeSvg(scope) {
+                            // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
+                            // the SVG elements that match the specified CSS selectors.
+                            applyEventHandlers(scope.rootDiv);                           
+                            
+                            // Apply the animations to the SVG elements (i.e. in the DIV subtree), by adding <animation> elements
+                            scope.config.smilAnimations.forEach(function(smilAnimation) {
+                                if (!smilAnimation.targetId) {
+                                    return;
+                                }
+                                
+                                var element = scope.rootDiv.querySelector("#" + smilAnimation.targetId);
+                                
+                                if (element) {
+                                    var animationElement;
+
+                                    // For attribute "transform" an animateTransform element should be created
+                                    if (smilAnimation.attributeName === "transform") {
+                                        animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animateTransform');
+                                        animationElement.setAttribute("type"     , smilAnimation.transformType); 
+                                    }
+                                    else {
+                                        animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animate');
+                                    }
+                                    
+                                    animationElement.setAttribute("id"           , smilAnimation.id); 
+                                    animationElement.setAttribute("attributeType", "XML");  // TODO what is this used for ???
+                                    animationElement.setAttribute("class", smilAnimation.classValue); 
+                                    animationElement.setAttribute("attributeName", smilAnimation.attributeName); 
+                                    if(smilAnimation.fromValue != "")
+                                        animationElement.setAttribute("from"     , smilAnimation.fromValue); //permit transition from current value if not specified
+                                    animationElement.setAttribute("to"           , smilAnimation.toValue); 
+                                    animationElement.setAttribute("dur"          , smilAnimation.duration + (smilAnimation.durationUnit || "s")); // Seconds e.g. "2s"
+                                    
+                                    if (smilAnimation.repeatCount === "0") {
+                                        animationElement.setAttribute("repeatCount"  , "indefinite");
+                                    }
+                                    else {
+                                        animationElement.setAttribute("repeatCount"  , smilAnimation.repeatCount);
+                                    }
+                                    
+                                    if (smilAnimation.end) {
+                                        animationElement.setAttribute("fill"     , "freeze");
+                                    }
+                                    else {
+                                        animationElement.setAttribute("fill"     , "remove");
+                                    }
+                                    
+                                    switch (smilAnimation.trigger) {
+                                        case 'time':
+                                            // Set the number of seconds (e.g. 2s) after which the animation needs to be started
+                                            animationElement.setAttribute("begin", smilAnimation.delay + (smilAnimation.delayUnit || "s"));                                   
+                                            break;
+                                        case 'cust':
+                                            animationElement.setAttribute("begin", smilAnimation.custom);
+                                            break;
+                                        default:
+                                            // A message will trigger the animation
+                                            // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin
+                                            animationElement.setAttribute("begin", "indefinite");
+                                    }                                
+                                    // By appending the animation as a child of the SVG element, that parent SVG element will be animated.
+                                    // So there is no need to specify explicit the xlink:href attribute on the animation element.
+                                    element.appendChild(animationElement);
+                                }
+                                else {
+                                    logError("No animatable element found for selector '" + smilAnimation.targetId + "'");
+                                }
+                            });                  
+
+                            // Remark: it is not possible to show the coordinates when there is no svg element
+                            if (scope.config.showCoordinates && scope.svg) {
+                                scope.tooltip = document.getElementById("tooltip_" + scope.config.id);
+                                scope.svg.addEventListener("mousemove", function(evt) {
+                                    // Make sure the tooltip becomes visible, when inside the SVG drawing
+                                    scope.tooltip.style.display = "block";
+
+                                    // Get the mouse coordinates (with origin at left top of the SVG drawing)
+                                    var pt = scope.svg.createSVGPoint();
+                                    pt.x = evt.pageX;
+                                    pt.y = evt.pageY;
+                                    pt = pt.matrixTransform(scope.svg.getScreenCTM().inverse());
+                                    pt.x = Math.round(pt.x);
+                                    pt.y = Math.round(pt.y);
+                                    
+                                    // Make sure the tooltip follows the mouse cursor (very near).
+                                    // Fix https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/28
+                                    // - Tooltip not always readable
+                                    // - Tooltip doesn't stick to the mouse cursor on Firefox
+                                    // - Tooltip should flip when reaching the right and bottom borders of the drawing
+                                    
+                                    scope.tooltip.innerHTML = `<span style='color:#000000'>${pt.x},${pt.y}</span>`;
+                                    
+                                    // Strangely enough ClientX/ClientY result in a tooltip on the wrong location ...
+                                    //var target = e.target || e.srcElement;
+                                    var tooltipX = evt.layerX;
+                                    var tooltipY = evt.layerY;
+
+                                    // We need the visible height and width of the SVG element, to have the tooltip flip when getting
+                                    // near the right and bottom border.  In case scrollbars are available around our SVG, the 
+                                    // clientHeight should represent the visible part of the SVG.  However that is not the case, because
+                                    // it seems to represent the entire SVG, instead of only the visible part.  
+                                    // Workaround: Get the "md-card" element (generated by the Node-RED dashboard) which is wrapping our
+                                    // SVG-node.  The height of that element is exactly the visible height of our SVG drawing.
+                                    // See also https://stackoverflow.com/questions/13122790/how-to-get-svg-element-dimensions-in-firefox
+                                    var mdCardElement = scope.rootDiv.parentElement;            
+
+                                    if (tooltipX > (mdCardElement.clientWidth - scope.tooltip.clientWidth - 20)) {
+                                        // When arriving near the right border of the drawing, flip the tooltip to the left side of the cursor
+                                        tooltipX = tooltipX - scope.tooltip.clientWidth - 20;
+                                    }
+                                    
+                                    if (tooltipY > (mdCardElement.clientHeight - scope.tooltip.clientHeight - 20)) {
+                                        // When arriving near the bottom border of the drawing, flip the tooltip to the upper side of the cursor
+                                        tooltipY = tooltipY - scope.tooltip.clientHeight - 20;
+                                    }
+
+                                    scope.tooltip.style.left = (tooltipX + 10) + 'px';
+                                    scope.tooltip.style.top  = (tooltipY + 10) + 'px';
+                                }, false);
+
+                                scope.svg.addEventListener("mouseout", function(evt) {
+                                    // The tooltip should be invisible, when leaving the SVG drawing
+                                    scope.tooltip.style.display = "none";
+                                }, false);
+                            } 
+                        }
+                        
                         $scope.flag = true;
                         $scope.init = function (config) {
                             $scope.config = config;
@@ -668,133 +796,9 @@ module.exports = function(RED) {
                                         }
                                     });
                                 }
-                            }   
-
-                            // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
-                            // the SVG elements that match the specified CSS selectors.
-                            applyEventHandlers($scope.rootDiv);                           
-                            
-                            // Apply the animations to the SVG elements (i.e. in the DIV subtree), by adding <animation> elements
-                            config.smilAnimations.forEach(function(smilAnimation) {
-                                if (!smilAnimation.targetId) {
-                                    return;
-                                }
-                                
-                                var element = $scope.rootDiv.querySelector("#" + smilAnimation.targetId);
-                                
-                                if (element) {
-                                    var animationElement;
-
-                                    // For attribute "transform" an animateTransform element should be created
-                                    if (smilAnimation.attributeName === "transform") {
-                                        animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animateTransform');
-                                        animationElement.setAttribute("type"     , smilAnimation.transformType); 
-                                    }
-                                    else {
-                                        animationElement = document.createElementNS("http://www.w3.org/2000/svg", 'animate');
-                                    }
-                                    
-                                    animationElement.setAttribute("id"           , smilAnimation.id); 
-                                    animationElement.setAttribute("attributeType", "XML");  // TODO what is this used for ???
-                                    animationElement.setAttribute("class", smilAnimation.classValue); 
-                                    animationElement.setAttribute("attributeName", smilAnimation.attributeName); 
-                                    if(smilAnimation.fromValue != "")
-                                        animationElement.setAttribute("from"     , smilAnimation.fromValue); //permit transition from current value if not specified
-                                    animationElement.setAttribute("to"           , smilAnimation.toValue); 
-                                    animationElement.setAttribute("dur"          , smilAnimation.duration + (smilAnimation.durationUnit || "s")); // Seconds e.g. "2s"
-                                    
-                                    if (smilAnimation.repeatCount === "0") {
-                                        animationElement.setAttribute("repeatCount"  , "indefinite");
-                                    }
-                                    else {
-                                        animationElement.setAttribute("repeatCount"  , smilAnimation.repeatCount);
-                                    }
-                                    
-                                    if (smilAnimation.end) {
-                                        animationElement.setAttribute("fill"     , "freeze");
-                                    }
-                                    else {
-                                        animationElement.setAttribute("fill"     , "remove");
-                                    }
-                                    
-                                    switch (smilAnimation.trigger) {
-                                        case 'time':
-                                            // Set the number of seconds (e.g. 2s) after which the animation needs to be started
-                                            animationElement.setAttribute("begin", smilAnimation.delay + (smilAnimation.delayUnit || "s"));                                   
-                                            break;
-                                        case 'cust':
-                                            animationElement.setAttribute("begin", smilAnimation.custom);
-                                            break;
-                                        default:
-                                            // A message will trigger the animation
-                                            // See https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/begin
-                                            animationElement.setAttribute("begin", "indefinite");
-                                    }                                
-                                    // By appending the animation as a child of the SVG element, that parent SVG element will be animated.
-                                    // So there is no need to specify explicit the xlink:href attribute on the animation element.
-                                    element.appendChild(animationElement);
-                                }
-                                else {
-                                    logError("No animatable element found for selector '" + smilAnimation.targetId + "'");
-                                }
-                            });                  
-
-                            // Remark: it is not possible to show the coordinates when there is no svg element
-                            if (config.showCoordinates && $scope.svg) {
-                                $scope.tooltip = document.getElementById("tooltip_" + config.id);
-                                $scope.svg.addEventListener("mousemove", function(evt) {
-                                    // Make sure the tooltip becomes visible, when inside the SVG drawing
-                                    $scope.tooltip.style.display = "block";
-
-                                    // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                                    var pt = $scope.svg.createSVGPoint();
-                                    pt.x = evt.pageX;
-                                    pt.y = evt.pageY;
-                                    pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
-                                    pt.x = Math.round(pt.x);
-                                    pt.y = Math.round(pt.y);
-                                    
-                                    // Make sure the tooltip follows the mouse cursor (very near).
-                                    // Fix https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/28
-                                    // - Tooltip not always readable
-                                    // - Tooltip doesn't stick to the mouse cursor on Firefox
-                                    // - Tooltip should flip when reaching the right and bottom borders of the drawing
-                                    
-                                    $scope.tooltip.innerHTML = `<span style='color:#000000'>${pt.x},${pt.y}</span>`;
-                                    
-                                    // Strangely enough ClientX/ClientY result in a tooltip on the wrong location ...
-                                    //var target = e.target || e.srcElement;
-                                    var tooltipX = evt.layerX;
-                                    var tooltipY = evt.layerY;
-
-                                    // We need the visible height and width of the SVG element, to have the tooltip flip when getting
-                                    // near the right and bottom border.  In case scrollbars are available around our SVG, the 
-                                    // clientHeight should represent the visible part of the SVG.  However that is not the case, because
-                                    // it seems to represent the entire SVG, instead of only the visible part.  
-                                    // Workaround: Get the "md-card" element (generated by the Node-RED dashboard) which is wrapping our
-                                    // SVG-node.  The height of that element is exactly the visible height of our SVG drawing.
-                                    // See also https://stackoverflow.com/questions/13122790/how-to-get-svg-element-dimensions-in-firefox
-                                    var mdCardElement = $scope.rootDiv.parentElement;            
-
-                                    if (tooltipX > (mdCardElement.clientWidth - $scope.tooltip.clientWidth - 20)) {
-                                        // When arriving near the right border of the drawing, flip the tooltip to the left side of the cursor
-                                        tooltipX = tooltipX - $scope.tooltip.clientWidth - 20;
-                                    }
-                                    
-                                    if (tooltipY > (mdCardElement.clientHeight - $scope.tooltip.clientHeight - 20)) {
-                                        // When arriving near the bottom border of the drawing, flip the tooltip to the upper side of the cursor
-                                        tooltipY = tooltipY - $scope.tooltip.clientHeight - 20;
-                                    }
-
-                                    $scope.tooltip.style.left = (tooltipX + 10) + 'px';
-                                    $scope.tooltip.style.top  = (tooltipY + 10) + 'px';
-                                }, false);
-
-                                $scope.svg.addEventListener("mouseout", function(evt) {
-                                    // The tooltip should be invisible, when leaving the SVG drawing
-                                    $scope.tooltip.style.display = "none";
-                                }, false);
                             }
+                            debugger;
+                            initializeSvg($scope);
                         }
 
                         $scope.$watch('msg', function(msg) {
@@ -950,6 +954,50 @@ module.exports = function(RED) {
                                     // !!!!!!!!!!!!! When adding a case statement, add the option also to node.availableCommands above !!!!!!!!!!!!!
                                     // Make sure the commands are not case sensitive anymore
                                     switch (op.toLowerCase()) {
+                                        case "replace_svg":
+                                            if (!payload.svg || (typeof payload.svg !== "string")) {
+                                                logError("Invalid payload. The payload should be an SVG string");
+                                                return;
+                                            }
+                                            
+                                            try {
+                                                // Try to load the SVG string in the msg.payload.svg
+                                                var parser = new DOMParser();
+                                                var document = parser.parseFromString(payload.svg, "image/svg+xml");
+                                                var newSvg = document.children[0];
+                                            }
+                                            catch (err) {
+                                                logError("Invalid payload.svg.  No valid SVG string: " + err);
+                                                return;
+                                            }
+                                            
+                                            if (newSvg.tagName !== "svg") {
+                                                logError("Invalid payload. The tag of the first element should be 'svg'");
+                                                return;
+                                            }
+                                            
+                                            // We won't replace the current $scope.svg element by the newSvg element.
+                                            // Because the current $scope.svg element is already in use in a couple of places (e.g. in the panzoom library).
+                                            // Instead we will clone all attributes and children from the newSvg element to the current $scope.svg element:
+                                            
+                                            // Remove the current attributes from the current $scope.svg element
+                                            while($scope.svg.attributes.length > 0) {
+                                                $scope.svg.removeAttribute($scope.svg.attributes[0].name);
+                                            }
+                                            
+                                            // Add the new attributes from the new SVG element, to the current $scope.svg element
+                                            for(var i = 0; i < newSvg.attributes.length; i++) {
+                                                var newAttribute = newSvg.attributes[0];
+                                                $scope.svg.setAttribute(newAttribute.name, newAttribute.value);
+                                            }
+                                            
+                                            // Add the children of the new SVG element to the current current $scope.svg element.
+                                            // Caution: don't use appendChild, because then they won't show up!
+                                            // https://stackoverflow.com/questions/35784290/how-to-add-a-svg-object-created-with-domparser-from-a-string-into-a-div-elemen
+                                            $scope.svg.innerHTML = newSvg.innerHTML;
+                                            
+                                            initializeSvg($scope);
+                                            break;                                        
                                         case "add_element": // Add elements, or replace them if they already exist
                                             if (!payload.elementType) {
                                                 logError("Invalid payload. A property named .elementType is not specified");
