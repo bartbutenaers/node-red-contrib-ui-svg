@@ -477,9 +477,9 @@ module.exports = function(RED) {
                                 logError("No user data available for this " + evt.type + " event");
                                 return;
                             }
-                            
+
                             userData = JSON.parse(userData);
-                            
+
                             // In version 1.x.x there was a bug (msg.elementId contained the selector instead of the elementId).
                             // This was fixed in version 2.0.0
                             var msg = {
@@ -494,11 +494,13 @@ module.exports = function(RED) {
                                 type: evt.type
                             }
 
-                            if (evt.targetTouches) {
-                                // For touch events, the coordinates are stored inside the targetTouches field.
-                                // See https://stackoverflow.com/a/33756703
-                                var touchEvent = evt.targetTouches[0];
-                                
+                            if (evt.changedTouches) {
+                                // For touch events, the coordinates are stored inside the changedTouches field
+                                // - touchstart event: list of the touch points that became active with this event (fingers started touching the surface).
+                                // - touchmove event: list of the touch points that have changed since the last event.
+                                // - touchend event: list of the touch points that have been removed from the surface (fingers no longer touching the surface).
+                                var touchEvent = evt.changedTouches[0];
+                                    
                                 msg.event.pageX   = Math.trunc(touchEvent.pageX);
                                 msg.event.pageY   = Math.trunc(touchEvent.pageY);
                                 msg.event.screenX = Math.trunc(touchEvent.screenX);
