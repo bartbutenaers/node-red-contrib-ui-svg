@@ -629,6 +629,15 @@ module.exports = function(RED) {
                                     disableZoom       : zooming === "disabled",
                                     panOnlyWhenZoomed : config.panOnlyWhenZoomed
                                 }
+
+                                panZoomOptions.handleStartEvent = function(event) {
+                                    // On the first pointer event (when panning starts) the default Panzoom behavior is:
+                                    //   1.- Call event.preventDefault()
+                                    //   2.- Call event.stopPropagation(): to enable Panzoom elements within Panzoom elements.
+                                    // We will override that behaviour by not calling event.preventDefault(), otherwise our svg
+                                    // event handler won't be triggered (so no output message would be send).
+                                    event.stopPropagation();
+                                }
                                 
                                 /*var isTouchDevice = 'ontouchstart' in document.documentElement;
                                 if (!isTouchDevice) {
