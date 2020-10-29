@@ -75,7 +75,7 @@ By default, this node will use the free online DrawSvg service (see *"Editor URL
 ![editor](https://user-images.githubusercontent.com/14224149/65357446-5faba400-dbf7-11e9-9824-886238dba228.png)
 
 Enter you (XML-based) SVG graphics in this editor.  This can be done in different ways:
-+ If you are a die-hard SVG fanatic, you can enter the SVG string manually in the *"SVG Source"* tab sheet.
++ If you are a die-hard SVG fanatic, you can enter the SVG string manually in the *"SVG"* tab sheet.
 + If you prefer to use an SVG drawing editor, you can use the embedded [DrawSvg](#DrawSvg-drawing-editor) editor.
 + If you need very specific types of drawings, you can use a third party SVG editor to create your drawing (and simple paste the generated SVG string into this tab sheet).  Multiple (online) editors are free available, each with their own dedicated speciality:
    + [Floorplanner](http://floorplanner.com)
@@ -93,14 +93,14 @@ At the bottom of the "SVG source" tab sheet, a series of buttons are available:
 + *Expand source*: show the SVG source in full screen mode.
 + *Format SVG*: by formatting the SVG source, the source will be beatified.  This means the empty lines will be removed, each line will get a single SVG element, indents will be corrected ...
 
-### "Animations" tab sheet
+### "Animation" tab sheet
 
-![animations](https://user-images.githubusercontent.com/14224149/65359120-d2b71980-dbfb-11e9-83ea-5bbc6e155673.png)
+![animation](https://user-images.githubusercontent.com/14224149/65359120-d2b71980-dbfb-11e9-83ea-5bbc6e155673.png)
 
 SVG allows users to animate element attributes over time.  For example, you can make the radius of a circle grow in 3 seconds from 10 pixels to 40 pixels. 
 
 Adding animations to your SVG graphics can be done in different ways:
-+ *Via the "SVG Source" tab sheet* manually, for die-hard SVG fanatics:
++ *Via the "SVG" tab sheet* manually, for die-hard SVG fanatics:
    ```
    <circle id="mycircle" ... r="5" ...>
       <animate id="myanimation" attributeName="r" begin="0s" dur="3s" repeatCount="1" from="10" to="40"/>
@@ -113,7 +113,7 @@ Adding animations to your SVG graphics can be done in different ways:
    <animate xlink:href="#mycircle" id="myanimation" attributeName="r" begin="0s" dur="3s" repeatCount="1" from="10" to="40"/>
    ```
 
-+ *Via the "Animations" tab sheet*, to keep the drawing and the animations separated.  Click the *'add'* button to create a new animation record, where following properties need to be entered:
++ *Via the "Animation" tab sheet*, to keep the drawing and the animations separated.  Click the *'add'* button to create a new animation record, where following properties need to be entered:
    + ***Animation id***: The id of this SVG animate element (in this example *"myanimation"*).
    + ***Target element id***: The id of the SVG element that you want to animate (in this example *"mycircle"*).
    + ***Class***: By setting a value in class, you can use a selector to start or stop multiple animations. 
@@ -141,9 +141,9 @@ Adding animations to your SVG graphics can be done in different ways:
    
 + *Via an input message* as explained in the [Control via messages](#control-via-messages) section below.  
 
-### "Events" tab sheet
+### "Event" tab sheet
 
-![events](https://user-images.githubusercontent.com/14224149/65360241-70f8ae80-dbff-11e9-8c6a-65f3a14e22a7.png)
+![event tabsheet](https://user-images.githubusercontent.com/14224149/65360241-70f8ae80-dbff-11e9-8c6a-65f3a14e22a7.png)
 
 An SVG element can be added here, to make that element able to intercept one of the following events:
 + *Click*: when a mouse-down and mouse-up on the same element.
@@ -215,7 +215,50 @@ Two things will happen when an event occurs on such an SVG element:
 
 Instead of specifying events in the config screen, it is also possible to add or remove events via input messages.  This is explained in the [Control via messages](#control-via-messages) section below.
 
-### "Input Binding" tab sheet
+### "JS" tab sheet
+
+![JS tabsheet](https://user-images.githubusercontent.com/14224149/97640631-7864cb00-1a41-11eb-94b8-742a526978fa.gif)
+
+An SVG element can be added here, to make that element able to intercept one of the events: see "Event" tabsheet section above.
+
+When adding a new line in this tab sheet, several properties need to be entered:
++ ***Selector***: the selection of (one or more) SVG elements that needs to intercept events. See the syntax of [CSS  selectors](https://www.w3schools.com/cssref/css_selectors.asp).
++ ***Action***: the event that the shape needs to intercept.
++ ***Javascript code***: the Javascript code that needs to be executed on the client side (i.e. inside the dashboard), when the event occurs.
+
+Note that there is a *'fullscreen"* button at every row, to show the Javascript code in a fullscreen editor with syntax highlighting!
+
+Two things will happen when an event occurs on such an SVG element:
+1. The mouse ***cursor*** will change when hoovering above the element, to visualize that an element responds to events.
+1. The Javascript code will be executed in the dashboard.
+
+Instead of specifying Javascript events in the config screen, it is also possible to add or remove events via input messages.  This is explained in the [Control via messages](#control-via-messages) section below.
+
+The following example flow shows how to change the color of the circle, every time the circle has been clicked.  The flow also shows that the Javascript event handler can be removed, and another Javascript event handler (to show an alert) can be injected via an input message:
+
+![javascript flow](https://user-images.githubusercontent.com/14224149/97640744-b95cdf80-1a41-11eb-8183-6c45f5e48bb9.png)
+```
+[{"id":"89244415.be9278","type":"ui_svg_graphics","z":"a03bd3cf.177578","group":"5ae1b679.de89c8","order":4,"width":"0","height":"0","svgString":"<svg x=\"0\" y=\"0\" height=\"350\" viewBox=\"-0.04032258064515237 0 250.0806451612903 350\" width=\"250\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" preserveAspectRatio=\"xMidYMid meet\">\n<circle id=\"my_circle\" cx=\"30\" cy=\"30\" r=\"25\" style=\"stroke: none; fill: #0000ff;\">\n</circle>\n</svg>","clickableShapes":[],"javascriptHandlers":[{"selector":"#my_circle","action":"click","sourceCode":"var letters = '0123456789ABCDEF';\n  var color = '#';\n  for (var i = 0; i < 6; i++) {\n    color += letters[Math.floor(Math.random() * 16)];\n  }\n\n$(\"#my_circle\")[0].style.fill = color;\n \n$scope.send({payload: color, topic: 'circle_color'})"}],"smilAnimations":[],"bindings":[],"showCoordinates":false,"autoFormatAfterEdit":true,"showBrowserErrors":true,"outputField":"payload","editorUrl":"http://drawsvg.org/drawsvg.html","directory":"","panning":"disabled","zooming":"disabled","panOnlyWhenZoomed":false,"doubleClickZoomEnabled":false,"mouseWheelZoomEnabled":false,"name":"SVG with Javascript","x":540,"y":180,"wires":[["e06da0e0.2c837"]]},{"id":"d9df6292.785bc","type":"inject","z":"a03bd3cf.177578","name":"Show alert at double click","props":[{"p":"payload"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"{\"command\":\"add_js_event\",\"event\":\"focus\",\"selector\":\"#my_circle\",\"script\":\"alert('Click event handled on the client ...')\"}","payloadType":"json","x":250,"y":140,"wires":[["89244415.be9278"]]},{"id":"5074f893.d378d8","type":"inject","z":"a03bd3cf.177578","name":"Remove clicked event","props":[{"p":"payload"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"{\"command\":\"remove_js_event\",\"event\":\"click\",\"selector\":\"#my_circle\"}","payloadType":"json","x":240,"y":180,"wires":[["89244415.be9278"]]},{"id":"e06da0e0.2c837","type":"debug","z":"a03bd3cf.177578","name":"","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","targetType":"full","statusVal":"","statusType":"auto","x":750,"y":180,"wires":[]},{"id":"5ae1b679.de89c8","type":"ui_group","name":"Press Demo","tab":"3667e211.c08f0e","order":1,"disp":true,"width":"5","collapse":false},{"id":"3667e211.c08f0e","type":"ui_tab","name":"Home","icon":"dashboard","order":1,"disabled":false,"hidden":false}]
+```
+Which will result in this:
+
+![javascript flow demo](https://user-images.githubusercontent.com/14224149/97641343-f83f6500-1a42-11eb-957e-4180e64f37cb.gif)
+
+The main ***difference*** between the events on the "Event" tabsheet and Javascript events on the "JS" tabsheet:
++ The "Event" tabsheet is used when an event simply needs to send an output message, which in turn can trigger some other nodes in the flow on the server.  E.g. click a light-bulb icon to turn on the lights in your smart home.
+
++ The "JS" tabsheet is used when an event simply needs to trigger some Javascript code, to trigger functionality directly in the SVG. 
+
+Note that there is some overlap between the events on both tabsheets:
++ The "Event" tabsheet could be used to trigger an output message on the server flow, which triggers in turn an input message for this SVG node.  That input message can manipulate the SVG.  However then we have an entire *roundtrip* (from dashboard via the server flow back to the dashboard) to trigger functionality on the dashboard.  Instead it is much easier to use a JS event handler to stay inside the dashboard and run some Javascript code immediately!
+
++ The "JS" tabsheet could be used to trigger some Javascript code to send a message to the server flow.  For example:
+   ```
+   $scope.send({payload: color, topic: 'circle_color'})
+   ```
+   However it is much easier to use a normal event handler, which sends a message (incl. bounding box and all coordinates) without any coding...
+
+### "Binding" tab sheet
 As explained in the section [Control via messages](#control-via-messages) below, this node can be controlled via input messages.  For example, to change the fill colour of circle with id "mycircle" to green.  As a result, the input messages need to contain a lot of information (element id, attribute name, attribute value ...), to let this node know what you want it to do.  This means the flow will become quite complex, since a lot of extra nodes are required to put all that information in the message.
 
 Another way to control this node is by using bindings.  This means that you must specify most of the information in the binding, so the input message will only need to contain the new value itself.  Since the input messages need to contain less information, the flow can be simplified ... 
@@ -251,7 +294,7 @@ The following flow shows the above binding example in action:
 [{"id":"c9ab8554.337588","type":"debug","z":"60ad596.8120ba8","name":"Floorplan output","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","x":1380,"y":440,"wires":[]},{"id":"56869c57.d65c74","type":"ui_svg_graphics","z":"60ad596.8120ba8","group":"d4ee73ea.a7676","order":1,"width":"14","height":"10","svgString":"<svg preserveAspectRatio=\"none\" x=\"0\" y=\"0\" viewBox=\"0 0 900 710\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <image width=\"889\" height=\"703\" id=\"background\" xlink:href=\"https://www.roomsketcher.com/wp-content/uploads/2016/10/1-Bedroom-Floor-Plans.jpg\" />\n  <text id=\"banner\" x=\"10\" y=\"16\" fill=\"black\" stroke=\"black\" font-size=\"35\" text-anchor=\"left\" alignment-baseline=\"middle\" stroke-width=\"1\">This is the #banner</text>\n  <circle id=\"pir_living\" cx=\"310\" cy=\"45\" r=\"5\" stroke-width=\"0\" fill=\"#FF0000\" />\n  <text id=\"camera_living\" x=\"310\" y=\"45\" font-family=\"FontAwesome\" fill=\"grey\" stroke=\"black\" font-size=\"35\" text-anchor=\"middle\" alignment-baseline=\"middle\" stroke-width=\"1\"></text>\n</svg> ","clickableShapes":[{"targetId":"#camera_living","action":"click","payload":"camera_living","payloadType":"str","topic":"camera_living"}],"smilAnimations":[],"bindings":[{"selector":"#banner","bindSource":"payload.title","bindType":"text","attribute":""},{"selector":"#camera_living","bindSource":"payload.position.x","bindType":"attr","attribute":"x"},{"selector":"#camera_living","bindSource":"payload.camera.colour","bindType":"attr","attribute":"fill"}],"showCoordinates":false,"autoFormatAfterEdit":false,"outputField":"","editorUrl":"http://drawsvg.org/drawsvg.html","directory":"","name":"","x":1180,"y":440,"wires":[["c9ab8554.337588"]]},{"id":"62a285fb.bd046c","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"yellow\"},\"position\":{\"x\":320},\"title\":\"databind strikes again\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":980,"y":460,"wires":[["56869c57.d65c74"]]},{"id":"132d184e.ff0ab8","type":"inject","z":"60ad596.8120ba8","name":"databind","topic":"databind","payload":"{\"camera\":{\"colour\":\"green\"},\"position\":{\"x\":250},\"title\":\"New banner title by databind\"}","payloadType":"json","repeat":"","crontab":"","once":false,"onceDelay":0.1,"x":980,"y":420,"wires":[["56869c57.d65c74"]]},{"id":"d4ee73ea.a7676","type":"ui_group","z":"","name":"Floorplan test","tab":"b4bb5633.ba92b8","disp":true,"width":"14","collapse":false},{"id":"b4bb5633.ba92b8","type":"ui_tab","z":"","name":"SVG","icon":"dashboard","disabled":false,"hidden":false}]
 ```
 
-Note that there is another way to implement data binding (without using the *"Input Binding"* tabsheet), by using user attributes inside the SVG source:
+Note that there is another way to implement data binding (without using the *"Binding"* tabsheet), by using user attributes inside the SVG source:
 
 + Use a `data-bind-text` to set the text content of an element  For example:
    ```
@@ -589,7 +632,7 @@ Such messages allow you to create dynamic effects like in the following demo:
 ```
 
 ### Add events via msg
-When SVG elements always need to respond to an event (e.g. click), those elements should be enumerated in the *"Events"* tab sheet.  However, in some cases it is required to make SVG elements to respond only temporary to events, which can be achieved by adding events to SVG elements via an input message.
+When SVG elements always need to respond server-side to an event (e.g. click), those elements should be enumerated in the *"Events"* tab sheet.  However, in some cases it is required to make SVG elements to respond only temporary to events, which can be achieved by adding events to SVG elements via an input message.
 ```
 "payload": {
    "command"  : "add_event",
@@ -613,8 +656,30 @@ An event (handler) can be removed from an SVG element via an input message:
 }
 ```
 
+### Add Javascript events via msg
+When SVG elements always need to respond client-side to an event (e.g. click), those elements should be enumerated in the *"JS"* tab sheet.  However, in some cases it is required to make SVG elements to respond only temporary via Javascript to events, which can be achieved by adding events to SVG elements via an input message.
+```
+"payload": {
+   "command"  : "add_js_event",
+   "event"    : "click",
+   "selector" : "#circle_2", 
+   "script"   : "alert('circle 2 has been clicked');" // The Javascript code that needs to be executed
+}]
+```
+By sending this input message, the circle will become clickable.  And the specified Javascript code will be executed on the client-side (i.e. inside the dashboard) as soon as the event occurs.
+
+### Remove Javascript events via msg
+A Javascript event (handler) can be removed from an SVG element via an input message:
+```
+"payload": {
+   "command"  : "remove_js_event",
+   "event"    : "click",
+   "selector" : "#circle_1"
+}
+```
+
 ### Add elements via msg
-Normally SVG elements need to exist all the time, by defining them in the *"SVG Source"* tab sheet.  However, it might be required to add SVG elements dynamically, which can be achieved via input messages:
+Normally SVG elements need to exist all the time, by defining them in the *"SVG"* tab sheet.  However, it might be required to add SVG elements dynamically, which can be achieved via input messages:
 ```
 "payload": {
    "command": "add_element", 
@@ -637,7 +702,7 @@ Some remarks about the input message:
 + A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can create multiple elements at once via a single command.  Note that it is not allowed in that case to specify an elementId property, since only one element can have the same id.
 + When an element with the same `elementId` already exists (for the same parent element), then that existing element will be *replaced* by this new element!
 
-When the *"Events"* tab sheet already contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
+When the *"Event"* tab sheet already contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
 
 The following demo shows how to create an icon every time the button is being clicked (and remove them afterwards):
 
