@@ -503,7 +503,7 @@ module.exports = function(RED) {
                                 payload    : userData.payload,
                                 payloadType: userData.payloadType,
                                 topic      : userData.topic
-			    }
+                            }
                             
                             msg.event = {
                                 type: evt.type
@@ -582,6 +582,8 @@ module.exports = function(RED) {
                                 logError("No user data available for this " + evt.type + " javascript event");
                                 return;
                             }
+                            
+                            userData = JSON.parse(userData);
 
                             try {
                                 // Make sure the $scope variable is being used once here inside the handleJsEvent function, to make
@@ -597,88 +599,92 @@ module.exports = function(RED) {
                         }
                         
                         function applyEventHandlers(rootElement) {
-                            // The event handlers that send a message to the server
-                            $scope.config.clickableShapes.forEach(function(clickableShape) {
-                                // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
-                                //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
-                                //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
-                                if (!clickableShape.targetId) {
-                                    return;
-                                }
-                                var elements = rootElement.querySelectorAll(clickableShape.targetId); // The "targetId" now contains the CSS selector!
+                            if ($scope.config.clickableShapes) {
+                                // The event handlers that send a message to the server
+                                $scope.config.clickableShapes.forEach(function(clickableShape) {
+                                    // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                                    //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                                    //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
+                                    if (!clickableShape.targetId) {
+                                        return;
+                                    }
+                                    var elements = rootElement.querySelectorAll(clickableShape.targetId); // The "targetId" now contains the CSS selector!
 
-                                if (elements.length === 0) {
-                                    logError("No elements found for selector '" + clickableShape.targetId + "'");
-                                }
-
-                                var action = clickableShape.action || "click" ;
-                                elements.forEach(function(element){
-                                    // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
-                                    // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
-                                    // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
-                                    //if (!config.showMouseLines) {
-                                        //element.style.cursor = "pointer";
-                                    //}
-
-                                    //if the cursor is NOT set and the action is click, set cursor
-                                    if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
-                                        element.style.cursor = "pointer";
+                                    if (elements.length === 0) {
+                                        logError("No elements found for selector '" + clickableShape.targetId + "'");
                                     }
 
-                                    // Store all the user data in a "data-event_<event>" element attribute, to have it available in the handleEvent function
-                                    element.setAttribute("data-event_" + action,  JSON.stringify({
-                                        elementId  : element.id,
-                                        selector   : clickableShape.targetId, // The "targetId" now contains the CSS selector! 
-                                        payload    : clickableShape.payload, 
-                                        payloadType: clickableShape.payloadType, 
-                                        topic      : clickableShape.topic
-                                    }));
+                                    var action = clickableShape.action || "click" ;
+                                    elements.forEach(function(element){
+                                        // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
+                                        // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
+                                        // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
+                                        //if (!config.showMouseLines) {
+                                            //element.style.cursor = "pointer";
+                                        //}
 
-                                    // Make sure we don't end up with multiple handlers for the same event
-                                    element.removeEventListener(action, handleEvent, false);
-                                    
-                                    element.addEventListener(action, handleEvent, false);
+                                        //if the cursor is NOT set and the action is click, set cursor
+                                        if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
+                                            element.style.cursor = "pointer";
+                                        }
+
+                                        // Store all the user data in a "data-event_<event>" element attribute, to have it available in the handleEvent function
+                                        element.setAttribute("data-event_" + action,  JSON.stringify({
+                                            elementId  : element.id,
+                                            selector   : clickableShape.targetId, // The "targetId" now contains the CSS selector! 
+                                            payload    : clickableShape.payload, 
+                                            payloadType: clickableShape.payloadType, 
+                                            topic      : clickableShape.topic
+                                        }));
+
+                                        // Make sure we don't end up with multiple handlers for the same event
+                                        element.removeEventListener(action, handleEvent, false);
+                                        
+                                        element.addEventListener(action, handleEvent, false);
+                                    })
                                 })
-                            }); 
+                            }
      
-                            // The Javascript event handlers
-                            $scope.config.javascriptHandlers.forEach(function(javascriptHandler) {
-                                var elements = rootElement.querySelectorAll(javascriptHandler.selector);
-                                
-                                if (elements.length === 0) {
-                                    logError("No elements found for selector '" + javascriptHandler.selector + "'");
-                                }
-                                
-                                var action = javascriptHandler.action || "click" ;
-                                elements.forEach(function(element){
-                                    // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
-                                    // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
-                                    // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
-                                    //if (!config.showMouseLines) {
-                                        //element.style.cursor = "pointer";
-                                    //}
+                            if ($scope.config.javascriptHandlers) {
+                                // The Javascript event handlers
+                                $scope.config.javascriptHandlers.forEach(function(javascriptHandler) {
+                                    var elements = rootElement.querySelectorAll(javascriptHandler.selector);
                                     
-                                    //if the cursor is NOT set and the action is click, set cursor
-                                    if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
-                                        element.style.cursor = "pointer";
+                                    if (elements.length === 0) {
+                                        logError("No elements found for selector '" + javascriptHandler.selector + "'");
                                     }
                                     
-                                    // The javascript event handler source code is base64 encoded, so let's decode it.
-                                    var sourceCode = atob(javascriptHandler.sourceCode);
-                                    
-                                    // Store the javascript code in a "data-js_event_<event>" element attribute, to have it available in the handleJsEvent function
-                                    element.setAttribute("data-js_event_" + action,  JSON.stringify({
-                                        elementId  : element.id,
-                                        selector   : javascriptHandler.selector,
-                                        sourceCode : sourceCode
-                                    }));
-                                    
-                                    // Make sure we don't end up with multiple handlers for the same event
-                                    element.removeEventListener(action, handleJsEvent, false);
-                                    
-                                    element.addEventListener(action, handleJsEvent, false);
+                                    var action = javascriptHandler.action || "click" ;
+                                    elements.forEach(function(element){
+                                        // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
+                                        // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
+                                        // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
+                                        //if (!config.showMouseLines) {
+                                            //element.style.cursor = "pointer";
+                                        //}
+                                        
+                                        //if the cursor is NOT set and the action is click, set cursor
+                                        if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
+                                            element.style.cursor = "pointer";
+                                        }
+                                        
+                                        // The javascript event handler source code is base64 encoded, so let's decode it.
+                                        var sourceCode = atob(javascriptHandler.sourceCode);
+                                        
+                                        // Store the javascript code in a "data-js_event_<event>" element attribute, to have it available in the handleJsEvent function
+                                        element.setAttribute("data-js_event_" + action,  JSON.stringify({
+                                            elementId  : element.id,
+                                            selector   : javascriptHandler.selector,
+                                            sourceCode : sourceCode
+                                        }));
+                                        
+                                        // Make sure we don't end up with multiple handlers for the same event
+                                        element.removeEventListener(action, handleJsEvent, false);
+                                        
+                                        element.addEventListener(action, handleJsEvent, false);
+                                    })
                                 })
-                            }); 
+                            }
                         }
 
                         function initializeSvg(scope) {
