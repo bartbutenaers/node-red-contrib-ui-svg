@@ -250,7 +250,13 @@ The main ***difference*** between the events on the "Event" tabsheet and Javascr
 + The "JS" tabsheet is used when an event simply needs to trigger some Javascript code, to trigger functionality directly in the SVG. 
 
 Note that there is some overlap between the events on both tabsheets:
-+ The "Event" tabsheet could be used to trigger an output message on the server flow, which triggers in turn an input message for this SVG node.  That input message can manipulate the SVG.  However then we have an entire *roundtrip* (from dashboard via the server flow back to the dashboard) to trigger functionality on the dashboard.  Instead it is much easier to use a JS event handler to stay inside the dashboard and run some Javascript code immediately!
++ The "Event" tabsheet could be used to trigger an output message on the server flow, which triggers in turn an input message for this SVG node.  That input message can manipulate the SVG.  However then we have an entire *roundtrip* (from dashboard via the server flow back to the dashboard) to trigger functionality on the dashboard:
+
+  ![roundtrip](https://user-images.githubusercontent.com/14224149/97758960-47979b00-1b00-11eb-8bda-c5aaec44102b.png)
+   
+  Instead it is much easier to use a JS event handler to stay inside the dashboard and run some Javascript code immediately:
+  
+  ![event handler](https://user-images.githubusercontent.com/14224149/97759364-2c795b00-1b01-11eb-926e-a3f66455daf8.png)
 
 + The "JS" tabsheet could be used to trigger some Javascript code to send a message to the server flow.  For example:
    ```
