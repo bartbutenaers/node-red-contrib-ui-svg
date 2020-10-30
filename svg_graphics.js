@@ -254,8 +254,8 @@ module.exports = function(RED) {
             });
 
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
-                                      "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage", 
-                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute"];
+                                      "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage",
+                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", "replace_svg"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -492,9 +492,9 @@ module.exports = function(RED) {
                                 logError("No user data available for this " + evt.type + " event");
                                 return;
                             }
-                            
+
                             userData = JSON.parse(userData);
-				
+
                             // In version 1.x.x there was a bug (msg.elementId contained the selector instead of the elementId).
                             // This was fixed in version 2.0.0
                             var msg = {
@@ -680,96 +680,19 @@ module.exports = function(RED) {
                                 })
                             }); 
                         }
-                        
-                        $scope.flag = true;
-                        $scope.init = function (config) {
-                            $scope.config = config;
-                            $scope.faMapping = {};
-                            $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
-                            $scope.svg = $scope.rootDiv.querySelector("svg");
-                            $scope.isObject = function(obj) {
-                                return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
-                            }
-                            $scope.events = ["click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", 
-                                             "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"];
-                            
-                            //$scope.svg.style.cursor = "crosshair";
 
-                            // Migrate old nodes which don't have pan/zoom functionality yet
-                            var panning = config.panning || "disabled";
-                            var zooming = config.zooming || "disabled";
-
-                            if (panning !== "disabled" || zooming !== "disabled") {
-                                var panZoomOptions = {
-                                    disablePan        : panning === "disabled",
-                                    disableXAxis      : panning === "y",
-                                    disableYAxis      : panning === "x",
-                                    disableZoom       : zooming === "disabled",
-                                    panOnlyWhenZoomed : config.panOnlyWhenZoomed
-                                }
-				
-                                panZoomOptions.handleStartEvent = function(event) {
-                                    // On the first pointer event (when panning starts) the default Panzoom behavior is:
-                                    //   1.- Call event.preventDefault()
-                                    //   2.- Call event.stopPropagation(): to enable Panzoom elements within Panzoom elements.
-                                    // We will override that behaviour by not calling event.preventDefault(), otherwise our svg
-                                    // event handler won't be triggered (so no output message would be send).
-                                    event.stopPropagation();
-                                }
-                                
-                                /*var isTouchDevice = 'ontouchstart' in document.documentElement;
-                                if (!isTouchDevice) {
-                                    console.log("No touch device functionality has been detected");
-                                }*/
-                                                    
-                                // Apply the @panzoom/panzoom library to the svg element (see https://github.com/timmywil/panzoom).
-                                $scope.panZoomModule = Panzoom($scope.svg, panZoomOptions);
-
-                                // Panning and pinch zooming are bound automatically (unless disablePan is true).
-                                // Other methods for zooming need to be added explicit, by using the provided functions.
-                                if (config.mouseWheelZoomEnabled) {
-                                    $scope.svg.parentElement.addEventListener('wheel', $scope.panZoomModule.zoomWithWheel);
-                                }
-                                
-                                if (config.doubleClickZoomEnabled) {
-                                    // Zoom in when double clicked, or zoom out when shift key down during double click
-                                    $scope.svg.parentElement.addEventListener('dblclick', function() {
-                                        if (event.shiftKey) {
-                                            $scope.panZoomModule.zoomOut();
-                                        } else {
-                                            $scope.panZoomModule.zoomIn();
-                                        }
-                                    });
-                                   
-                                    // Zoom in when tapped twice on a touch screen.  Next time zoom out, and so on ...
-                                    // We will need to use hammer.js for this (see https://github.com/timmywil/panzoom/issues/275).
-                                    // Make sure to pass the SVG element, instead of the parent DIV element (see https://github.com/hammerjs/hammer.js/issues/1119).
-                                    var mc = new Hammer.Manager($scope.svg);
-                                    mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
-                                    mc.on('doubletap', function (ev) {
-                                        if ($scope.previousTouchEvent === "zoomOut") {
-                                            $scope.panZoomModule.zoomIn();
-                                            $scope.previousTouchEvent = "zoomIn";
-                                        }
-                                        else {
-                                            $scope.panZoomModule.zoomOut();
-                                            $scope.previousTouchEvent = "zoomOut";
-                                        }
-                                    });
-                                }
-                            }   
-
+                        function initializeSvg(scope) {
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
                             // the SVG elements that match the specified CSS selectors.
-                            applyEventHandlers($scope.rootDiv);                           
+                            applyEventHandlers(scope.rootDiv);                           
                             
                             // Apply the animations to the SVG elements (i.e. in the DIV subtree), by adding <animation> elements
-                            config.smilAnimations.forEach(function(smilAnimation) {
+                            scope.config.smilAnimations.forEach(function(smilAnimation) {
                                 if (!smilAnimation.targetId) {
                                     return;
                                 }
                                 
-                                var element = $scope.rootDiv.querySelector("#" + smilAnimation.targetId);
+                                var element = scope.rootDiv.querySelector("#" + smilAnimation.targetId);
                                 
                                 if (element) {
                                     var animationElement;
@@ -829,17 +752,17 @@ module.exports = function(RED) {
                             });                  
 
                             // Remark: it is not possible to show the coordinates when there is no svg element
-                            if (config.showCoordinates && $scope.svg) {
-                                $scope.tooltip = document.getElementById("tooltip_" + config.id);
-                                $scope.svg.addEventListener("mousemove", function(evt) {
+                            if (scope.config.showCoordinates && scope.svg) {
+                                scope.tooltip = document.getElementById("tooltip_" + scope.config.id);
+                                scope.svg.addEventListener("mousemove", function(evt) {
                                     // Make sure the tooltip becomes visible, when inside the SVG drawing
-                                    $scope.tooltip.style.display = "block";
+                                    scope.tooltip.style.display = "block";
 
                                     // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                                    var pt = $scope.svg.createSVGPoint();
+                                    var pt = scope.svg.createSVGPoint();
                                     pt.x = evt.pageX;
                                     pt.y = evt.pageY;
-                                    pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                    pt = pt.matrixTransform(scope.svg.getScreenCTM().inverse());
                                     pt.x = Math.round(pt.x);
                                     pt.y = Math.round(pt.y);
                                     
@@ -849,7 +772,7 @@ module.exports = function(RED) {
                                     // - Tooltip doesn't stick to the mouse cursor on Firefox
                                     // - Tooltip should flip when reaching the right and bottom borders of the drawing
                                     
-                                    $scope.tooltip.innerHTML = `<span style='color:#000000'>${pt.x},${pt.y}</span>`;
+                                    scope.tooltip.innerHTML = `<span style='color:#000000'>${pt.x},${pt.y}</span>`;
                                     
                                     // Strangely enough ClientX/ClientY result in a tooltip on the wrong location ...
                                     //var target = e.target || e.srcElement;
@@ -863,27 +786,108 @@ module.exports = function(RED) {
                                     // Workaround: Get the "md-card" element (generated by the Node-RED dashboard) which is wrapping our
                                     // SVG-node.  The height of that element is exactly the visible height of our SVG drawing.
                                     // See also https://stackoverflow.com/questions/13122790/how-to-get-svg-element-dimensions-in-firefox
-                                    var mdCardElement = $scope.rootDiv.parentElement;            
+                                    var mdCardElement = scope.rootDiv.parentElement;            
 
-                                    if (tooltipX > (mdCardElement.clientWidth - $scope.tooltip.clientWidth - 20)) {
+                                    if (tooltipX > (mdCardElement.clientWidth - scope.tooltip.clientWidth - 20)) {
                                         // When arriving near the right border of the drawing, flip the tooltip to the left side of the cursor
-                                        tooltipX = tooltipX - $scope.tooltip.clientWidth - 20;
+                                        tooltipX = tooltipX - scope.tooltip.clientWidth - 20;
                                     }
                                     
-                                    if (tooltipY > (mdCardElement.clientHeight - $scope.tooltip.clientHeight - 20)) {
+                                    if (tooltipY > (mdCardElement.clientHeight - scope.tooltip.clientHeight - 20)) {
                                         // When arriving near the bottom border of the drawing, flip the tooltip to the upper side of the cursor
-                                        tooltipY = tooltipY - $scope.tooltip.clientHeight - 20;
+                                        tooltipY = tooltipY - scope.tooltip.clientHeight - 20;
                                     }
 
-                                    $scope.tooltip.style.left = (tooltipX + 10) + 'px';
-                                    $scope.tooltip.style.top  = (tooltipY + 10) + 'px';
+                                    scope.tooltip.style.left = (tooltipX + 10) + 'px';
+                                    scope.tooltip.style.top  = (tooltipY + 10) + 'px';
                                 }, false);
 
-                                $scope.svg.addEventListener("mouseout", function(evt) {
+                                scope.svg.addEventListener("mouseout", function(evt) {
                                     // The tooltip should be invisible, when leaving the SVG drawing
-                                    $scope.tooltip.style.display = "none";
+                                    scope.tooltip.style.display = "none";
                                 }, false);
+                            } 
+                        }
+                        
+                        $scope.flag = true;
+                        $scope.init = function (config) {
+                            $scope.config = config;
+                            $scope.faMapping = {};
+                            $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
+                            $scope.svg = $scope.rootDiv.querySelector("svg");
+                            $scope.isObject = function(obj) {
+                                return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
                             }
+                            $scope.events = ["click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", 
+                                             "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"];
+                            
+                            //$scope.svg.style.cursor = "crosshair";
+
+                            // Migrate old nodes which don't have pan/zoom functionality yet
+                            var panning = config.panning || "disabled";
+                            var zooming = config.zooming || "disabled";
+
+                            if (panning !== "disabled" || zooming !== "disabled") {
+                                var panZoomOptions = {
+                                    disablePan        : panning === "disabled",
+                                    disableXAxis      : panning === "y",
+                                    disableYAxis      : panning === "x",
+                                    disableZoom       : zooming === "disabled",
+                                    panOnlyWhenZoomed : config.panOnlyWhenZoomed
+                                }
+                                
+                                panZoomOptions.handleStartEvent = function(event) {
+                                    // On the first pointer event (when panning starts) the default Panzoom behavior is:
+                                    //   1.- Call event.preventDefault()
+                                    //   2.- Call event.stopPropagation(): to enable Panzoom elements within Panzoom elements.
+                                    // We will override that behaviour by not calling event.preventDefault(), otherwise our svg
+                                    // event handler won't be triggered (so no output message would be send).
+                                    event.stopPropagation();
+                                }
+                                
+                                /*var isTouchDevice = 'ontouchstart' in document.documentElement;
+                                if (!isTouchDevice) {
+                                    console.log("No touch device functionality has been detected");
+                                }*/
+                                                    
+                                // Apply the @panzoom/panzoom library to the svg element (see https://github.com/timmywil/panzoom).
+                                $scope.panZoomModule = Panzoom($scope.svg, panZoomOptions);
+
+                                // Panning and pinch zooming are bound automatically (unless disablePan is true).
+                                // Other methods for zooming need to be added explicit, by using the provided functions.
+                                if (config.mouseWheelZoomEnabled) {
+                                    $scope.svg.parentElement.addEventListener('wheel', $scope.panZoomModule.zoomWithWheel);
+                                }
+                                
+                                if (config.doubleClickZoomEnabled) {
+                                    // Zoom in when double clicked, or zoom out when shift key down during double click
+                                    $scope.svg.parentElement.addEventListener('dblclick', function() {
+                                        if (event.shiftKey) {
+                                            $scope.panZoomModule.zoomOut();
+                                        } else {
+                                            $scope.panZoomModule.zoomIn();
+                                        }
+                                    });
+                                   
+                                    // Zoom in when tapped twice on a touch screen.  Next time zoom out, and so on ...
+                                    // We will need to use hammer.js for this (see https://github.com/timmywil/panzoom/issues/275).
+                                    // Make sure to pass the SVG element, instead of the parent DIV element (see https://github.com/hammerjs/hammer.js/issues/1119).
+                                    var mc = new Hammer.Manager($scope.svg);
+                                    mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
+                                    mc.on('doubletap', function (ev) {
+                                        if ($scope.previousTouchEvent === "zoomOut") {
+                                            $scope.panZoomModule.zoomIn();
+                                            $scope.previousTouchEvent = "zoomIn";
+                                        }
+                                        else {
+                                            $scope.panZoomModule.zoomOut();
+                                            $scope.previousTouchEvent = "zoomOut";
+                                        }
+                                    });
+                                }
+                            }
+
+                            initializeSvg($scope);
                         }
 
                         $scope.$watch('msg', function(msg) {
@@ -1039,6 +1043,50 @@ module.exports = function(RED) {
                                     // !!!!!!!!!!!!! When adding a case statement, add the option also to node.availableCommands above !!!!!!!!!!!!!
                                     // Make sure the commands are not case sensitive anymore
                                     switch (op.toLowerCase()) {
+                                        case "replace_svg":
+                                            if (!payload.svg || (typeof payload.svg !== "string")) {
+                                                logError("Invalid payload. The payload should be an SVG string");
+                                                return;
+                                            }
+                                            
+                                            try {
+                                                // Try to load the SVG string in the msg.payload.svg
+                                                var parser = new DOMParser();
+                                                var document = parser.parseFromString(payload.svg, "image/svg+xml");
+                                                var newSvg = document.children[0];
+                                            }
+                                            catch (err) {
+                                                logError("Invalid payload.svg.  No valid SVG string: " + err);
+                                                return;
+                                            }
+                                            
+                                            if (newSvg.tagName !== "svg") {
+                                                logError("Invalid payload. The tag of the first element should be 'svg'");
+                                                return;
+                                            }
+                                            
+                                            // We won't replace the current $scope.svg element by the newSvg element.
+                                            // Because the current $scope.svg element is already in use in a couple of places (e.g. in the panzoom library).
+                                            // Instead we will clone all attributes and children from the newSvg element to the current $scope.svg element:
+                                            
+                                            // Remove the current attributes from the current $scope.svg element
+                                            while($scope.svg.attributes.length > 0) {
+                                                $scope.svg.removeAttribute($scope.svg.attributes[0].name);
+                                            }
+                                            
+                                            // Add the new attributes from the new SVG element, to the current $scope.svg element
+                                            for(var i = 0; i < newSvg.attributes.length; i++) {
+                                                var newAttribute = newSvg.attributes[0];
+                                                $scope.svg.setAttribute(newAttribute.name, newAttribute.value);
+                                            }
+                                            
+                                            // Add the children of the new SVG element to the current current $scope.svg element.
+                                            // Caution: don't use appendChild, because then they won't show up!
+                                            // https://stackoverflow.com/questions/35784290/how-to-add-a-svg-object-created-with-domparser-from-a-string-into-a-div-elemen
+                                            $scope.svg.innerHTML = newSvg.innerHTML;
+                                            
+                                            initializeSvg($scope);
+                                            break;                                        
                                         case "add_element": // Add elements, or replace them if they already exist
                                             if (!payload.elementType) {
                                                 logError("Invalid payload. A property named .elementType is not specified");

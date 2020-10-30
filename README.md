@@ -720,7 +720,26 @@ An SVG element can be removed via an input message:
 }
 ```
 By specifying a `selector` property (instead of an elementId property), it is possible to remove multiple elements at once via a single command.
-                                       
+
+### Set entire SVG via msg
+It is possible to set an entire SVG drawing via an input message, to replace the current drawing:
+```
+"payload": {
+    "command": "replace_svg",
+    "svg": "<svg height=\"140\" width=\"140\"><circle id=\"myShape\" cx=\"50\" cy=\"50\" r=\"40\" fill=\"yellow\"/></svg>"
+}
+```
+Note that it is required to ***escape*** all quotation marks (`"`) around the attribute names attributes, by a forward slash `\` in the ***"svg"*** message field.  For example replace `width="140"` by `width=\"140\"`.  If this isn't sufficient on some browsers, you can find extra tips [here](https://www.thorntech.com/2012/07/4-things-you-must-do-when-putting-html-in-json/).  Please report it to me, so I can update this documentation here!
+
+The following example flow demonstrates how the entire SVG can be replaced:
+
+![image](https://user-images.githubusercontent.com/14224149/96082450-86e8a980-0ebb-11eb-9a12-775eb5efa6b6.png)
+```
+[{"id":"16a953b2.21beec","type":"ui_svg_graphics","z":"5598090d.febad8","group":"925439b0.2863c8","order":0,"width":"3","height":"3","svgString":"<svg x=\"0\" y=\"0\" width=\"144\" height=\"144\" viewBox=\"0 0 144 144\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n<circle id=\"myShape\" cx=\"73\" cy=\"72\" r=\"20\" color=\"red\" outline=\"black\"/>\n</svg>","clickableShapes":[{"targetId":"#myShape","action":"click","payload":"myShape clicked","payloadType":"str","topic":"#myShape"}],"smilAnimations":[],"bindings":[],"showCoordinates":false,"autoFormatAfterEdit":false,"showBrowserErrors":true,"outputField":"payload","editorUrl":"//drawsvg.org/drawsvg.html","directory":"","panning":"both","zooming":"disabled","panOnlyWhenZoomed":false,"doubleClickZoomEnabled":false,"mouseWheelZoomEnabled":false,"name":"svg-graphics","x":590,"y":260,"wires":[["4672821a.2f296c"]]},{"id":"e105ccfb.c2849","type":"inject","z":"5598090d.febad8","name":"SVG with yellow circle","props":[{"p":"payload"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"{\"command\":\"replace_svg\",\"svg\":\"<svg height=\\\"140\\\" width=\\\"140\\\"><circle id=\\\"myShape\\\" cx=\\\"50\\\" cy=\\\"50\\\" r=\\\"40\\\" fill=\\\"yellow\\\"/></svg>\"}","payloadType":"json","x":380,"y":260,"wires":[["16a953b2.21beec"]]},{"id":"b232e2bf.52efb","type":"inject","z":"5598090d.febad8","name":"SVG with blue rectangle","props":[{"p":"payload"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"{\"command\":\"replace_svg\",\"svg\":\"<svg height=\\\"140\\\" width=\\\"140\\\"><rect id=\\\"myShape\\\" x=\\\"20\\\" y=\\\"30\\\" width=\\\"110\\\" height=\\\"70\\\" fill=\\\"blue\\\"/></svg>\"}","payloadType":"json","x":380,"y":320,"wires":[["16a953b2.21beec"]]},{"id":"5f208d4d.047af4","type":"inject","z":"5598090d.febad8","name":"SVG with pink ellipse","props":[{"p":"payload"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"{\"command\":\"replace_svg\",\"svg\":\"<svg height=\\\"140\\\" width=\\\"140\\\"><ellipse id=\\\"myShape\\\" cx=\\\"60\\\" cy=\\\"50\\\" rx=\\\"60\\\" ry=\\\"30\\\" fill=\\\"pink\\\"/></svg>\"}","payloadType":"json","x":380,"y":380,"wires":[["16a953b2.21beec"]]},{"id":"4672821a.2f296c","type":"debug","z":"5598090d.febad8","name":"log events","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","targetType":"full","statusVal":"","statusType":"auto","x":770,"y":260,"wires":[]},{"id":"925439b0.2863c8","type":"ui_group","z":"","name":"svg-panning-test","tab":"5c613937.fe7368","order":4,"disp":true,"width":"3","collapse":false},{"id":"5c613937.fe7368","type":"ui_tab","z":"","name":"Home","icon":"home","order":1,"disabled":false,"hidden":false}]
+```
+
+When event handlers or input msg bindings have been specified on the config screen, those will automatically be applied to the new SVG drawing.
+
 ### Zoom in/out via msg
 As explained above (in the [Pan and zoom](#pan-and-zoom) section), it is possible to zoom in/out via an input message:
 ```
