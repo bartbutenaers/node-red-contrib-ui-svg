@@ -329,6 +329,7 @@
             height: {value: 0},
             svgString: {value: '<svg x="0" y="0" height="100" viewBox="0 0 100 100" width="100" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg>'},
             clickableShapes: {value: []},
+            javascriptHandlers: {value: []},
             smilAnimations: {value: []},
             bindings: {value: []},
             showCoordinates: {value: false},
@@ -439,7 +440,7 @@
                     $("#" + tab.id).show();
                     updateEditorHeight(node,node.editor);
                     
-                    if(tab.id == "node-svg-tab-animations" || tab.id == "node-svg-tab-clickable" || tab.id == "node-svg-tab-binding"){
+                    if(tab.id == "node-svg-tab-animations" || tab.id == "node-svg-tab-clickable" || tab.id == "node-svg-tab-binding" || tab.id == "node-svg-tab-javascript"){
                         let svgStr = node.editor ? node.editor.getValue() : ""; 
                         try {
                             // When tabsheet changes, all autocomplete sources should be updated (since element ids, ... might have changed)
@@ -460,19 +461,23 @@
             });
             node.tabs.addTab({
                 id: "node-svg-tab-source",
-                label: "SVG source"
+                label: "SVG"
             });
             node.tabs.addTab({
                 id: "node-svg-tab-animations",
-                label: "Animations"
+                label: "Animate"
             });
             node.tabs.addTab({
                 id: "node-svg-tab-clickable",
-                label: "Events"
+                label: "Event"
+            });
+            node.tabs.addTab({
+                id: "node-svg-tab-javascript",
+                label: "JS"
             });
             node.tabs.addTab({
                 id: "node-svg-tab-binding",
-                label: "Input Bind"
+                label: "Binding"
             });
             node.tabs.addTab({
                 id: "node-svg-tab-settings",
@@ -562,6 +567,29 @@
             
             function extractLastTag(term) {
                 return tagSplit(term).pop();
+            }
+            
+            var actionOptions = {
+                //https://www.w3.org/TR/2015/WD-SVG2-20150407/interact.html#SVGEvents
+                'click':'Click',//A click is defined as a mousedown and mouseup over the same screen location. Works on tablet too.
+                'dblclick':'Double click',
+                'contextmenu':'Context menu',
+                'mousedown':'Mouse down',//Occurs when the pointing device button is pressed over an element.
+                'mouseup':'Mouse up',//Occurs when the pointing device button is released over an element.
+                'mouseover':'Mouse over',//Occurs when the pointing device is moved onto an element.
+                'mouseout':'Mouse out', //Occurs when the pointing device is moved away from an element
+                //'mousemove':'mousemove', //Occurs when the pointing device is moved while it is over an element.
+                'focus':'Focus',//Occurs when an element receives focus.
+                'focusin':'Focus in',//Occurs when an element is about to receive focus
+                'focusout':'Focus out',//Occurs when an element is about to lose focus.
+                'blur':'Blur',//Occurs when an element loses focus.
+                'keydown':'Key down',//Occurs when a key is pressed down
+                'keyup':'Key up',
+                //https://www.w3.org/TR/touch-events/#list-of-touchevent-types
+                'touchstart':'Touch start', //mobile/tablet only
+                'touchend':'Touch end', //mobile/tablet only
+                // 'touchmove':'touchmove',
+                // 'touchcancel':'touchcancel',
             }
             
             // Create a table of (SMIL) animations
@@ -967,28 +995,6 @@
                     
                     // Column 2 : Add an input field (type option) to the new row, that represents the action type 
                     var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
-                    var actionOptions = {
-                        //https://www.w3.org/TR/2015/WD-SVG2-20150407/interact.html#SVGEvents
-                        'click':'Click',//A click is defined as a mousedown and mouseup over the same screen location. Works on tablet too.
-                        'dblclick':'Double click',
-                        'contextmenu':'Context menu',
-                        'mousedown':'Mouse down',//Occurs when the pointing device button is pressed over an element.
-                        'mouseup':'Mouse up',//Occurs when the pointing device button is released over an element.
-                        'mouseover':'Mouse over',//Occurs when the pointing device is moved onto an element.
-                        'mouseout':'Mouse out', //Occurs when the pointing device is moved away from an element
-                        //'mousemove':'mousemove', //Occurs when the pointing device is moved while it is over an element.
-                        'focus':'Focus',//Occurs when an element receives focus.
-                        'focusin':'Focus in',//Occurs when an element is about to receive focus
-                        'focusout':'Focus out',//Occurs when an element is about to lose focus.
-                        'blur':'Blur',//Occurs when an element loses focus.
-                        'keydown':'Key down',//Occurs when a key is pressed down
-                        'keyup':'Key up',
-                        //https://www.w3.org/TR/touch-events/#list-of-touchevent-types
-                        'touchstart':'Touch start', //mobile/tablet only
-                        'touchend':'Touch end', //mobile/tablet only
-                        // 'touchmove':'touchmove',
-                        // 'touchcancel':'touchcancel',
-                    }
                     for(var val in actionOptions) {
                         $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
                     }
@@ -1030,6 +1036,89 @@
                     //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
                     //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
                     clickableShapesList.editableList('addItem', {selector:clickableShape.targetId, action:clickableShape.action, payload:clickableShape.payload, payloadType:clickableShape.payloadType, topic:clickableShape.topic});
+                });
+            }
+            
+            // Create a table of Javascript event handlers
+            var javascriptHandlersList = $("#node-input-javascript-container").css('min-height','150px').css('min-width','450px').editableList({
+                header: $("<div>").append($.parseHTML(
+                   "<div style='width:17%; margin-left:5px; display: inline-grid'><b>Selector</b></div>" +
+                   "<div style='width:20%; margin-left:5px; display: inline-grid'><b>Action</b></div>" +
+                   "<div style='width:60%; margin-left:5px; display: inline-grid'><b>Javascript code</b></div>")),
+                addItem: function(container, i, javascriptHandler) {
+                    // Add a new row to the editableList
+                    var row = $('<div/>').appendTo(container);
+                    
+                    // Column 1 : Add an input field (type string) to the new row, that represents the selector for this event to operate on.
+                    var selectorField = $('<input/>',{class:"node-input-javascript-selector",type:"text",placeholder:"Element Selector"}).css({"width":"17%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    selectorField.val(javascriptHandler.selector);
+                    selectorField.focusin(function() { // Only load autocomplete on selection (performance reasons)
+                        if(selectorField.data('ui-autocomplete') == undefined){ //only load if not already loaded
+                            selectorField.autocomplete({
+                                classes: {
+                                    "ui-autocomplete": "ui-svg-ui-autocomplete", //add custom class for styling the dropdown
+                                },
+                                source: function(req, add){
+                                    var list = [...node.nonAnimationIdSelectors,...node.nonAnimationClasses] || []
+                                    add($.ui.autocomplete.filter(list , req.term));
+                                }
+                            });
+                        }
+                    });                     
+                    
+                    // Column 2 : Add an input field (type option) to the new row, that represents the action type 
+                    var actionField = $('<select/>',{class:"node-input-javascript-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    for(var val in actionOptions) {
+                        $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
+                    }
+                    actionField.val(javascriptHandler.action || "click");
+
+                    // Column 3 : Add an input field (type option) to the new row, that represents the javascript event handler code
+                    var javascriptField = $('<textarea/>',{class:"node-input-javascript-sourceCode", type:"text"}).css({"width":"45%","margin-left":"5px","margin-right":"5px","min-height":"34px","resize":"vertical",}).appendTo(row);
+                    javascriptField.val(javascriptHandler.sourceCode);
+                    
+                    // Column 4 : Add a button to expand the Javascript editor
+                    var buttonField = $('<button title="Expand JS editor"><i class="fa fa-expand"></i></button>').css({"resize":"none","vertical-align":"top","width":"30px","height":"34px","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    // When the button is clicked, show an ACE editor (with the javascript code) in fullscreen
+                    buttonField.click(function(e) {
+                        var fullScrElement = $('#node-input-javascript-editor');
+                        fullScrElement.show();
+                        node.javascriptEditor = RED.editor.createEditor({
+                            id: 'node-input-javascript-editor',
+                            mode: 'ace/mode/javascript',
+                            value: javascriptField.val()
+                        });
+                        node.javascriptEditor.setFontSize(14); 
+                        
+                        var fullScrRequest = fullScrElement[0].requestFullscreen || fullScrElement[0].mozRequestFullScreen || fullScrElement[0].webkitRequestFullscreen || fullScrElement[0].msRequestFullScreen;
+                        if(fullScrRequest){
+                            $('#node-input-javascript-editor').on('webkitfullscreenchange mozfullscreenchange msRequestFullscreen fullscreenchange', function(e) {
+                                // When returning from fullscreen mode
+                                if (!document.fullscreenElement) {
+                                    // Store the javascript code from the ACE editor in this node
+                                    javascriptField.val(node.javascriptEditor.getValue());
+                                    
+                                    node.javascriptEditor.destroy();
+                                    fullScrElement[0].innerHTML = ''; // Remove all previous ACE editor DOM elements
+                                    fullScrElement.hide();
+                                }
+                            });
+                            
+                             // Expand the javascript editor parent DIV element to fullscreen
+                            fullScrRequest.call(fullScrElement[0]);
+                        } 
+                    });
+                },
+                removable: true
+            });
+
+            // Show all the clickable shapes (stored in this node) into the editableList
+            if (this.javascriptHandlers) {
+                this.javascriptHandlers.forEach(function (javascriptHandler, index) {
+                    // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
+                    //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
+                    //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
+                    javascriptHandlersList.editableList('addItem', {selector:javascriptHandler.selector, action:javascriptHandler.action, sourceCode:javascriptHandler.sourceCode});
                 });
             }
             
@@ -1566,6 +1655,7 @@
         },
         oneditsave: function() {
             var node = this;
+
             var annot = this.editor.getSession().getAnnotations();
             this.noerr = 0;
             $("#node-input-noerr").val(0);
@@ -1581,6 +1671,7 @@
             this.editor.destroy();
             delete this.editor;
             delete window.node_ace_editor;
+            
             // Copy all the animations from the editableList to this node
             node.smilAnimations = [];
             var smilAnimationsList = $("#node-input-animations-container").editableList('items');
@@ -1589,7 +1680,7 @@
                 node.smilAnimations.push(amin);
             });
             
-            // Copy all the clickable shapes from the editableList to this node
+            // Copy all the clickable shapes (i.e. events) from the editableList to this node
             node.clickableShapes = [];
             var clickableShapesList = $("#node-input-clickable-container").editableList('items');
             clickableShapesList.each(function(i) {
@@ -1605,6 +1696,19 @@
                 //          This is only the case for clickable shapes, not for animations (since there is no CSS selector possible)...
                 node.clickableShapes.push({targetId:selector, action:action, payload:payload, payloadType:payloadType, topic:topic});
             });
+            
+            // Copy all the javascript event handlers from the editableList to this node
+            node.javascriptHandlers = [];
+            var javascriptHandlersList = $("#node-input-javascript-container").editableList('items');
+            javascriptHandlersList.each(function(i) {
+                var javascriptHandler = $(this);
+                var selector = javascriptHandler.find(".node-input-javascript-selector").val();
+                var action = javascriptHandler.find(".node-input-javascript-action").val();
+                var sourceCode = javascriptHandler.find(".node-input-javascript-sourceCode").val();              
+
+                node.javascriptHandlers.push({selector:selector, action:action, sourceCode:sourceCode});
+            });
+            
             // Copy all the bindings from the editableList to this node
             node.bindings = [];
             var bindingList = $("#node-input-binding-container").editableList('items');
@@ -1700,6 +1804,13 @@
                 <ol id="node-input-clickable-container"></ol>
             </div>
         </div>
+        <div id="node-svg-tab-javascript" class="node-svg-tab-content">
+            <div id="node-input-javascript-editor" class="form-row" style="margin: 20px;"></div>
+            <div class="form-row form-row-auto-height">
+                <!-- Table with javascript event handlers -->
+                <ol id="node-input-javascript-container"></ol>
+            </div>
+        </div>
         <div id="node-svg-tab-binding" class="node-svg-tab-content">
             <div class="form-row form-row-auto-height">
                 <!-- Table with clickable shapes -->
@@ -1787,7 +1898,7 @@
             <p><i>NOTE: SVG Editor will not be available if the <code>Editor URL</code> on the settings tab is empty!</i></p>
             <p><strong>!!! DrawSvg is free software. DrawSvg IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED !!!</strong></p>
         </div>
-        <h4>SVG source</h4>
+        <h4>SVG</h4>
         <div style="padding-left: 15px">
             The raw SVG to be displayed. The SVG source can be edited directly here. 
             <p>Buttons...</p>
@@ -1802,7 +1913,7 @@
                 </li>
             </ul>
         </div>
-        <h4>Animations</h4>
+        <h4>Animation</h4>
         <div style="padding-left: 15px">
             A customisable list of animations. Each animation targets an element where you can specify an attribute to animate. 
             <p>Notes...</p>
@@ -1828,7 +1939,7 @@
             </ul>
             <p><i><strong>CAUTION</strong>: it is not possible to use CSS selectors here, but only a single SVG shape (via the Target Element Id field)!</i> It is only possible (in the input messages) to select multiple animations at once via CSS selectors (as explained below).</p>
         </div>        
-        <h4>Events</h4>
+        <h4>Event</h4>
         <div style="padding-left: 15px">
             A customisable list of events. Each event targets an element where you can specify what action (e.g. click, mouseover, focus, etc) and a payload/topic to send upon the specified action.
             Additionally, <code>Output to</code> permits you to specify what part of the <code>msg</code> to send the payload to.
@@ -1836,7 +1947,7 @@
         <div style="padding-left: 15px">
             <i>Note that (in the "Selector" field) it is possible to specify the id of a single SVG shape, or multiple SVG shapes via a <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a>!</i>  In the latter case, all the SVG shapes - that match the CSS selector - will respond to the specified event.
         </div>
-        <h4>Input Bind</h4>
+        <h4>Binding</h4>
         <div style="padding-left: 15px">
             A customisable list of bindings that permit the user to easily specify text and attribute binding.  
             e.g. it is possible to send a <code>msg</code> object with nested objects/properties to animate an elements' text and attributes as specified in this list.
@@ -1852,6 +1963,13 @@
                 </ul>
             </ul>
             <p>Notes: The <code>topic</code> must be set to <code>databind</code></p>
+        </div>
+        <h4>JS</h4>
+        <div style="padding-left: 15px">
+            A customisable list of Javascript event handlers. Each event targets an element where you can specify what action (e.g. click, mouseover, focus, etc) and a Javascript code snippet to execute upon the specified action.
+        </div>
+        <div style="padding-left: 15px">
+            <i>Note that (in the "Selector" field) it is possible to specify the id of a single SVG shape, or multiple SVG shapes via a <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a>!</i>  In the latter case, all the SVG shapes - that match the CSS selector - will respond to the specified event.
         </div>
     </dl>
     <h3>Output</h3>
@@ -1980,6 +2098,24 @@
                         <li>An event handler will be added to the selected elements, to handle the specified <code>event</code>.</li>
                         <li>As soon as the event occurs, an output message will be sent containing the specified <code>payload</code> and <code>topic</code>.</li>
                         <li>When command <i>"remove_event"</i> is used, only the <code>event</code> and <code>selector</code> are required.</li>
+                    </ul>
+                </p> 
+            </p>
+            
+            <p><b>Add or remove Javascript events</b><br>
+                <pre style="white-space: pre">"payload": [
+ {
+    "command": "add_js_event",
+    "event": "click",
+    "selector": "#circle_2", 
+    "script": "alert('Click event handled on the client ...')"
+ }
+]</pre>
+                <p><i>Notes:</i><br>
+                    <ul>
+                        <li>An event handler will be added to the selected elements, to handle the specified <code>event</code>.</li>
+                        <li>As soon as the event occurs, the specified javascript <code>script</code> will be executed on the client (i.e. inside the dashboard).</li>
+                        <li>When command <i>"remove_js_event"</i> is used, only the <code>event</code> and <code>selector</code> are required.</li>
                     </ul>
                 </p> 
             </p>

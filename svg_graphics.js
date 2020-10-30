@@ -69,13 +69,17 @@ module.exports = function(RED) {
     function HTML(config) {       
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config, function (key,value) {
-            // Make sure the config.svgString value is not serialized in the JSON string because:
-            // - that field is already being passed as innerHtml for the SVG element.
-            // - that field would be passed unchanged to the client, while the same svgString would be changed for the innerHtml
-            //   (e.g. when the &quot; would still be available in the configAsJson, then the AngularJs client would still give parser errors).
-            // - for performance is it useless to send the same SVG string twice to the client, where it is never used via configAsJson
-            if (key=="svgString") {
-                return undefined;
+            switch (key) {
+                case "svgString":
+                    // Make sure the config.svgString value is not serialized in the JSON string because:
+                    // - that field is already being passed as innerHtml for the SVG element.
+                    // - that field would be passed unchanged to the client, while the same svgString would be changed for the innerHtml
+                    //   (e.g. when the &quot; would still be available in the configAsJson, then the AngularJs client would still give parser errors).
+                    // - for performance is it useless to send the same SVG string twice to the client, where it is never used via configAsJson
+                    return undefined;
+                case "sourceCode":
+                    // Encode the javascript event handling source code as base64, otherwise AngularJs will not be able to parse it (due to unmatched quotes...)
+                    return new Buffer(value).toString('base64'); 
             }
             
             return value;
@@ -250,8 +254,8 @@ module.exports = function(RED) {
             });
 
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
-                                      "trigger_animation", "add_event", "remove_event", "zoom_in", "zoom_out", "zoom_by_percentage", "zoom_to_level",
-                                      "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", "replace_svg"];
+                                      "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage",
+                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", "replace_svg"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -378,13 +382,23 @@ module.exports = function(RED) {
                         }
                             
                         // Compose the output message    
-                        let newMsg = {
-                            topic: orig.msg.topic,
-                            elementId: orig.msg.elementId,
-                            selector: orig.msg.selector,
-                            event: orig.msg.event,
-                        };
+                        let newMsg = {};
                         
+                        // Copy some fields from the original output message.
+                        // Note that those fields are not always available, e.g. when a $scope.send(...) is being called from a javascript event handler.
+                        if (orig.msg.topic) {
+                            newMsg.topic = orig.msg.topic;
+                        }
+                        if (orig.msg.elementId) {
+                            newMsg.elementId = orig.msg.elementId;
+                        }                          
+                        if (orig.msg.selector) {
+                            newMsg.selector = orig.msg.selector;
+                        }  
+                        if (orig.msg.event) {
+                            newMsg.event = orig.msg.event;
+                        }
+
                         // In the editableList of the clickable shapes, the content of the node.outputField property has been specified.
                         // Apply that content to the node.outputField property in the output message
                         RED.util.evaluateNodeProperty(orig.msg.payload,orig.msg.payloadType,node,orig.msg,(err,value) => {
@@ -470,6 +484,7 @@ module.exports = function(RED) {
                             //    }, ' ');
                             //}
                             //logError("evt = " + stringifyEvent(evt));
+                            event.stopPropagation();
                             
                             var userData = this.getAttribute("data-event_" + evt.type);
                                         
@@ -488,7 +503,7 @@ module.exports = function(RED) {
                                 payload    : userData.payload,
                                 payloadType: userData.payloadType,
                                 topic      : userData.topic
-                            }
+			    }
                             
                             msg.event = {
                                 type: evt.type
@@ -558,7 +573,31 @@ module.exports = function(RED) {
                             $scope.send(msg);
                         }
                         
+                        function handleJsEvent(evt) {
+                            event.preventDefault();
+                            
+                            var userData = this.getAttribute("data-js_event_" + evt.type);
+                                        
+                            if (!userData) {
+                                logError("No user data available for this " + evt.type + " javascript event");
+                                return;
+                            }
+
+                            try {
+                                // Make sure the $scope variable is being used once here inside the handleJsEvent function, to make
+                                // sure it becomes available to be used inside the eval expression.
+                                $scope;
+
+                                // Execute the specified javascript function.
+                                eval(userData.sourceCode || "");
+                            }
+                            catch(err) {
+                                logError("Error in javascript event handler: " + err);
+                            }
+                        }
+                        
                         function applyEventHandlers(rootElement) {
+                            // The event handlers that send a message to the server
                             $scope.config.clickableShapes.forEach(function(clickableShape) {
                                 // CAUTION: The "targetId" now contains the CSS selector (instead of the element id).  
                                 //          But we cannot rename it anymore in the stored json, since we don't want to have impact on existing flows!!!
@@ -567,12 +606,50 @@ module.exports = function(RED) {
                                     return;
                                 }
                                 var elements = rootElement.querySelectorAll(clickableShape.targetId); // The "targetId" now contains the CSS selector!
+
+                                if (elements.length === 0) {
+                                    logError("No elements found for selector '" + clickableShape.targetId + "'");
+                                }
+
+                                var action = clickableShape.action || "click" ;
+                                elements.forEach(function(element){
+                                    // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
+                                    // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
+                                    // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
+                                    //if (!config.showMouseLines) {
+                                        //element.style.cursor = "pointer";
+                                    //}
+
+                                    //if the cursor is NOT set and the action is click, set cursor
+                                    if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
+                                        element.style.cursor = "pointer";
+                                    }
+
+                                    // Store all the user data in a "data-event_<event>" element attribute, to have it available in the handleEvent function
+                                    element.setAttribute("data-event_" + action,  JSON.stringify({
+                                        elementId  : element.id,
+                                        selector   : clickableShape.targetId, // The "targetId" now contains the CSS selector! 
+                                        payload    : clickableShape.payload, 
+                                        payloadType: clickableShape.payloadType, 
+                                        topic      : clickableShape.topic
+                                    }));
+
+                                    // Make sure we don't end up with multiple handlers for the same event
+                                    element.removeEventListener(action, handleEvent, false);
+                                    
+                                    element.addEventListener(action, handleEvent, false);
+                                })
+                            }); 
+     
+                            // The Javascript event handlers
+                            $scope.config.javascriptHandlers.forEach(function(javascriptHandler) {
+                                var elements = rootElement.querySelectorAll(javascriptHandler.selector);
                                 
                                 if (elements.length === 0) {
-                                    logError("No clickable elements found for selector '" + clickableShape.targetId + "'");
+                                    logError("No elements found for selector '" + javascriptHandler.selector + "'");
                                 }
                                 
-                                var action = clickableShape.action || "click" ;
+                                var action = javascriptHandler.action || "click" ;
                                 elements.forEach(function(element){
                                     // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
                                     // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
@@ -586,23 +663,24 @@ module.exports = function(RED) {
                                         element.style.cursor = "pointer";
                                     }
                                     
-                                    // Store all the user data in a "data-<event>" element attribute, to have it available in the handleEvent function
-                                    element.setAttribute("data-event_" + action,  JSON.stringify({
+                                    // The javascript event handler source code is base64 encoded, so let's decode it.
+                                    var sourceCode = atob(javascriptHandler.sourceCode);
+                                    
+                                    // Store the javascript code in a "data-js_event_<event>" element attribute, to have it available in the handleJsEvent function
+                                    element.setAttribute("data-js_event_" + action,  JSON.stringify({
                                         elementId  : element.id,
-                                        selector   : clickableShape.targetId, // The "targetId" now contains the CSS selector! 
-                                        payload    : clickableShape.payload, 
-                                        payloadType: clickableShape.payloadType, 
-                                        topic      : clickableShape.topic
+                                        selector   : javascriptHandler.selector,
+                                        sourceCode : sourceCode
                                     }));
                                     
                                     // Make sure we don't end up with multiple handlers for the same event
-                                    element.removeEventListener(action, handleEvent, false);
+                                    element.removeEventListener(action, handleJsEvent, false);
                                     
-                                    element.addEventListener(action, handleEvent, false);
+                                    element.addEventListener(action, handleJsEvent, false);
                                 })
                             }); 
                         }
-                        
+
                         function initializeSvg(scope) {
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
                             // the SVG elements that match the specified CSS selectors.
@@ -644,7 +722,7 @@ module.exports = function(RED) {
                                         animationElement.setAttribute("repeatCount"  , smilAnimation.repeatCount);
                                     }
                                     
-                                    if (smilAnimation.end) {
+                                    if (smilAnimation.end === "freeze") {
                                         animationElement.setAttribute("fill"     , "freeze");
                                     }
                                     else {
@@ -758,6 +836,15 @@ module.exports = function(RED) {
                                     panOnlyWhenZoomed : config.panOnlyWhenZoomed
                                 }
                                 
+                                panZoomOptions.handleStartEvent = function(event) {
+                                    // On the first pointer event (when panning starts) the default Panzoom behavior is:
+                                    //   1.- Call event.preventDefault()
+                                    //   2.- Call event.stopPropagation(): to enable Panzoom elements within Panzoom elements.
+                                    // We will override that behaviour by not calling event.preventDefault(), otherwise our svg
+                                    // event handler won't be triggered (so no output message would be send).
+                                    event.stopPropagation();
+                                }
+                                
                                 /*var isTouchDevice = 'ontouchstart' in document.documentElement;
                                 if (!isTouchDevice) {
                                     console.log("No touch device functionality has been detected");
@@ -799,7 +886,7 @@ module.exports = function(RED) {
                                     });
                                 }
                             }
-                            debugger;
+
                             initializeSvg($scope);
                         }
 
@@ -1294,6 +1381,68 @@ module.exports = function(RED) {
                                                         
                                                         // Remove all the user data in a "data-<event>" element attribute
                                                         element.removeAttribute("data-event_" + payload.event);
+                                                        
+                                                        element.style.cursor = "";
+                                                    }
+                                                }
+                                            });                                               
+                                            break;
+                                        case "add_js_event":// add the specified Javascript event(s) to the specified element(s)
+                                        case "remove_js_event":// remove the specified Javascript event(s) from the specified element(s)
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+
+                                            if (!payload.event) {
+                                                logError("No msg.payload.event has been specified");
+                                                return;
+                                            }
+
+                                            if (!$scope.events.includes(payload.event)) {
+                                                logError("The msg.payload.event contains an unsupported javascript event name");
+                                                return;
+                                            }
+
+                                            elements.forEach(function(element) {
+                                                // Get all the user data in a "data-js_event_<event>" element attribute
+                                                var userData = element.getAttribute("data-js_event_" + payload.event);
+                                            
+                                                if (op === "add_js_event") {
+                                                    if (userData) {
+                                                        logError("The javascript event " + payload.event + " already has been registered");
+                                                    }
+                                                    else {
+                                                        // Seems the event has been registered yet for this element, so let's do that now ...
+                                                        element.addEventListener(payload.event, handleJsEvent, false);
+                                                        
+                                                        // Store all the user data in a "data-event_<event>" element attribute, to have it available in the handleEvent function
+                                                        element.setAttribute("data-js_event_" + payload.event, JSON.stringify({
+                                                            elementId  : element.id,
+                                                            selector   : selector, 
+                                                            sourceCode : payload.script
+                                                        }));
+                                                        
+                                                        element.style.cursor = "pointer";
+                                                    }
+                                                }
+                                                else { // "remove_js_event"
+                                                    if (!userData) {
+                                                        logError("The javascript event " + payload.event + " was not registered yet");
+                                                    }
+                                                    else {
+                                                        element.removeEventListener(payload.event, handleJsEvent, false);
+                                                        
+                                                        // Remove all the user data in a "data-js_event_<event>" element attribute
+                                                        element.removeAttribute("data-js_event_" + payload.event);
                                                         
                                                         element.style.cursor = "";
                                                     }
