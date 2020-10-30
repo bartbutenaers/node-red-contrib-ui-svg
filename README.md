@@ -644,6 +644,8 @@ When SVG elements always need to respond server-side to an event (e.g. click), t
 ```
 By sending this input message, the circle will become clickable.
 
+The following events can be specified: *"click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
+
 Note carefully that the payload of the input message contains the payload and topic of the output message, that will be sent when the specified event occurs on the specified SVG element.
 
 ### Remove events via msg
@@ -667,6 +669,8 @@ When SVG elements always need to respond client-side to an event (e.g. click), t
 }]
 ```
 By sending this input message, the circle will become clickable.  And the specified Javascript code will be executed on the client-side (i.e. inside the dashboard) as soon as the event occurs.
+
+The following events can be specified: *"click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
 
 ### Remove Javascript events via msg
 A Javascript event (handler) can be removed from an SVG element via an input message:
