@@ -380,6 +380,16 @@ module.exports = function(RED) {
                             orig["_dontSend"] = true; 
                             return;
                         }
+                        
+                        // When an event message is being send from the client-side, just log the event
+                        if (orig.msg.hasOwnProperty("event")) {
+                            node.warn(orig.msg.event);
+                            
+                            // Dirty hack to avoid that the event message is being send on the output of this node
+                            orig["_fromInput"] = true; // Legacy code for older dashboard versions
+                            orig["_dontSend"] = true; 
+                            return;
+                        }
                             
                         // Compose the output message    
                         let newMsg = {};
@@ -421,6 +431,16 @@ module.exports = function(RED) {
                             // Send the error to the server-side to log it there, if requested
                             if ($scope.config.showBrowserErrors) {
                                 $scope.send({error: error});
+                            }
+                        }
+                        
+                        function logEvent(eventDescription) {
+                            // Log the eventDescription on the client-side in the browser console log
+                            console.log(eventDescription);
+                            
+                            // Send the event to the server-side to log it there, if requested
+                            if ($scope.config.showBrowserEvents) {
+                                $scope.send({event: eventDescription});
                             }
                         }
                      
@@ -485,6 +505,8 @@ module.exports = function(RED) {
                             //}
                             //logError("evt = " + stringifyEvent(evt));
                             event.stopPropagation();
+                            
+                            logEvent("Event " + evt.type + " has occured");
                             
                             var userData = this.getAttribute("data-event_" + evt.type);
                                         
@@ -575,6 +597,8 @@ module.exports = function(RED) {
                         
                         function handleJsEvent(evt) {
                             event.preventDefault();
+                            
+                            logEvent("JS event " + evt.type + " has occured");
                             
                             var userData = this.getAttribute("data-js_event_" + evt.type);
                                         
