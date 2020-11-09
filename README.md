@@ -349,6 +349,9 @@ Unfortunately, not all kind of errors can be validated on the server, but instea
 
 To simplify troubleshooting, the client-side errors will appear in the Node-RED debug panel when this checkbox is activated.  But keep in mind that if you have N drawings visible simultaneously (when your dashboard is currently displayed in N browsers), then you will get N errors instead of 1 ...
 
+### Show browser events on the server
+Rather similar to the previous option (about browser errors), except that here browser events (click, ...) are being logged instead of errors.
+
 ### Editor URL
 This is the URL where the [DrawSvg](#DrawSvg-drawing-editor) editor instance is being hosted.  By default this field contains a link to the official [DrawSvg cloud](http://drawsvg.org/drawsvg.html) system, but it can also contain a link to a local DrawSvg installation (hosted via a [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node).
 
