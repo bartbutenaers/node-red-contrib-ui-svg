@@ -613,7 +613,9 @@ module.exports = function(RED) {
                                 // Make sure the $scope variable is being used once here inside the handleJsEvent function, to make
                                 // sure it becomes available to be used inside the eval expression.
                                 $scope;
-
+                                
+                                if ($scope.config.enableJsDebugging) { debugger; }
+                                
                                 // Execute the specified javascript function.
                                 eval(userData.sourceCode || "");
                             }
