@@ -1084,8 +1084,8 @@ module.exports = function(RED) {
                                             try {
                                                 // Try to load the SVG string in the msg.payload.svg
                                                 var parser = new DOMParser();
-                                                var document = parser.parseFromString(payload.svg, "image/svg+xml");
-                                                var newSvg = document.children[0];
+                                                var newDocument = parser.parseFromString(payload.svg, "image/svg+xml");
+                                                var newSvg = newDocument.children[0];
                                             }
                                             catch (err) {
                                                 logError("Invalid payload.svg.  No valid SVG string: " + err);
@@ -1357,6 +1357,8 @@ module.exports = function(RED) {
                                             break;    
                                         case "add_event":// add the specified event(s) to the specified element(s)
                                         case "remove_event":// remove the specified event(s) from the specified element(s)
+                                        
+                                        debugger;
                                             if (!payload.elementId && !payload.selector) {
                                                 logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
