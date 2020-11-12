@@ -920,6 +920,13 @@ module.exports = function(RED) {
                             }
 
                             initializeSvg($scope);
+                            
+                            if (config.sendMsgWhenLoaded) {
+                                $scope.send({
+                                    payload: config.id,
+                                    topic: "loaded"
+                                });    
+                            }
                         }
 
                         $scope.$watch('msg', function(msg) {
