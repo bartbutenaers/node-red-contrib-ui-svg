@@ -352,6 +352,16 @@ To simplify troubleshooting, the client-side errors will appear in the Node-RED 
 ### Show browser events on the server
 Rather similar to the previous option (about browser errors), except that here browser events (click, ...) are being logged instead of errors.
 
+### Enable JS event debugging
+When this setting is active (and you have opened your browser's development tools), the browser's debugger will automatically halt when a JS event handler will be executed.  This allows you to experiment live with your Javascript code, to troubleshoot problems with that code.
+
+### Send output msg when the client is (re)loaded
+When this setting is active, an output message will be send every time the client side widget is (re)loaded.  This can be useful to trigger the flow to start ***preloading data*** into the SVG drawing when it is opened.  The output msg will look like this:
+```
+   "payload": <the id of the SVG node>,
+   "topic": "loaded"
+```
+
 ### Editor URL
 This is the URL where the [DrawSvg](#DrawSvg-drawing-editor) editor instance is being hosted.  By default this field contains a link to the official [DrawSvg cloud](http://drawsvg.org/drawsvg.html) system, but it can also contain a link to a local DrawSvg installation (hosted via a [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node).
 
