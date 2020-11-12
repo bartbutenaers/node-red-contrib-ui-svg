@@ -337,6 +337,7 @@
             showBrowserErrors: {value: false},
             showBrowserEvents: {value: false},
             enableJsDebugging: {value: false},
+            sendMsgWhenLoaded: {value: false},
             outputField: {value: "payload"},
             editorUrl: {value: "//drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
@@ -1839,6 +1840,10 @@
             <div class="form-row">
                 <input type="checkbox" id="node-input-enableJsDebugging" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-enableJsDebugging" style="width:70%;"> Enable JS event debugging</label>
+            </div>
+            <div class="form-row">
+                <input type="checkbox" id="node-input-sendMsgWhenLoaded" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-sendMsgWhenLoaded" style="width:70%;"> Send output msg when the client is (re)loaded</label>
             </div>
             <div class="form-row" id="div-editorUrl">
                 <label for="node-input-editorUrl"><i class="fa fa-globe"></i> Editor URL</label>
