@@ -232,7 +232,7 @@ Two things will happen when an event occurs on such an SVG element:
 1. The mouse ***cursor*** will change when hoovering above the element, to visualize that an element responds to events.
 1. The Javascript code will be executed in the dashboard.
 
-Instead of specifying Javascript events in the config screen, it is also possible to add or remove events via input messages.  This is explained in the [Control via messages](#control-via-messages) section below.
+Instead of specifying Javascript events in the config screen, it is also possible to add or remove events via input messages.  This is explained in the [Control via messages](#control-via-messages) section below.  When your Javascript code doesn't work correctly, the wiki [page](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Troubleshooting-JS-event-handlers) contains some tips and tricks.
 
 The following example flow shows how to change the color of the circle, every time the circle has been clicked.  The flow also shows that the Javascript event handler can be removed, and another Javascript event handler (to show an alert) can be injected via an input message:
 
@@ -350,10 +350,14 @@ Unfortunately, not all kind of errors can be validated on the server, but instea
 To simplify troubleshooting, the client-side errors will appear in the Node-RED debug panel when this checkbox is activated.  But keep in mind that if you have N drawings visible simultaneously (when your dashboard is currently displayed in N browsers), then you will get N errors instead of 1 ...
 
 ### Show browser events on the server
-Rather similar to the previous option (about browser errors), except that here browser events (click, ...) are being logged instead of errors.
+Rather similar to the previous option (about browser errors), except that here browser events (click, ...) are being logged on the server:
+
+https://user-images.githubusercontent.com/14224149/98601227-08770000-22df-11eb-8373-4083a6fce5b6.png
 
 ### Enable JS event debugging
 When this setting is active (and you have opened your browser's development tools), the browser's debugger will automatically halt when a JS event handler will be executed.  This allows you to experiment live with your Javascript code, to troubleshoot problems with that code.
+
+See the wiki [page](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Troubleshooting-JS-event-handlers) for more information about debugging JS code.
 
 ### Send output msg when the client is (re)loaded
 When this setting is active, an output message will be send every time the client side widget is (re)loaded.  This can be useful to trigger the flow to start ***preloading data*** into the SVG drawing when it is opened.  The output msg will look like this:
@@ -663,9 +667,10 @@ When SVG elements always need to respond server-side to an event (e.g. click), t
 ```
 By sending this input message, the circle will become clickable.
 
-The following events can be specified: *"click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
-
-Note carefully that the payload of the input message contains the payload and topic of the output message, that will be sent when the specified event occurs on the specified SVG element.
+Remarks:
++ The payload of the input message contains both the payload and topic of the output message (which will be sent in when the specified event occurs on the specified SVG element).
++ The following events can be specified: *"click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
++ You need to remove the previous event handler (via the center inject node), before you add a new event handler.  Otherwise an error will occur.
 
 ### Remove events via msg
 An event (handler) can be removed from an SVG element via an input message:
@@ -689,13 +694,9 @@ When SVG elements always need to respond client-side to an event (e.g. click), t
 ```
 By sending this input message, the circle will become clickable.  And the specified Javascript code will be executed on the client-side (i.e. inside the dashboard) as soon as the event occurs.
 
-The following events can be specified: *"click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
-
 Remarks:
-+ Previous event handlers need to be removed first (e.g. by adding both *remove_js_event* and *add_js_event* commands inside a single message), before you can specify a new event handler.  Otherwise the following error will occur:
-
-   ![duplicate event error](https://user-images.githubusercontent.com/14224149/98599876-fbf1a800-22dc-11eb-9844-dd14332af8a2.png)
-   
++ The following events can be specified: *"click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
++ You need to remove the previous event handler first (e.g. by adding both *remove_js_event* and *add_js_event* commands inside a single message), before you can specify a new event handler.  Otherwise an error will occur.
 + When the *"show browser errors on the server"* option is activated, an error will be displayed in the Debug sidebar when the injected Javascript code contains errors.  For example we inject the code snippet *"var x=1 var y=2;"*, which doesn't contain a `;` between the two statements.  As soon as the event occurs (and the Javascript code is executed), this error will be displayed:
 
    ![javascript errors](https://user-images.githubusercontent.com/14224149/98600695-4889b300-22de-11eb-9c14-6bd928a46d24.png)
