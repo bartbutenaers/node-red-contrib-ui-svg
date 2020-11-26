@@ -352,7 +352,7 @@ To simplify troubleshooting, the client-side errors will appear in the Node-RED 
 ### Show browser events on the server
 Rather similar to the previous option (about browser errors), except that here browser events (click, ...) are being logged on the server:
 
-https://user-images.githubusercontent.com/14224149/98601227-08770000-22df-11eb-8373-4083a6fce5b6.png
+![Browser event](https://user-images.githubusercontent.com/14224149/98601227-08770000-22df-11eb-8373-4083a6fce5b6.png)
 
 ### Enable JS event debugging
 When this setting is active (and you have opened your browser's development tools), the browser's debugger will automatically halt when a JS event handler will be executed.  This allows you to experiment live with your Javascript code, to troubleshoot problems with that code.
