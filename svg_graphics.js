@@ -382,8 +382,10 @@ module.exports = function(RED) {
                         }
                         
                         // When an event message is being send from the client-side, just log the event
-                        if (orig.msg.hasOwnProperty("event")) {
-                            node.warn(orig.msg.event);
+                        // Bug fix: use "browser_event" instead of "event" because normal message (like e.g. on click) also contain an "event".
+                        // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/77
+                        if (orig.msg.hasOwnProperty("browser_event")) {
+                            node.warn(orig.msg.browser_event);
                             
                             // Dirty hack to avoid that the event message is being send on the output of this node
                             orig["_fromInput"] = true; // Legacy code for older dashboard versions
@@ -440,7 +442,7 @@ module.exports = function(RED) {
                             
                             // Send the event to the server-side to log it there, if requested
                             if ($scope.config.showBrowserEvents) {
-                                $scope.send({event: eventDescription});
+                                $scope.send({browser_event: eventDescription});
                             }
                         }
                      
