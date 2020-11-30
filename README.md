@@ -148,6 +148,7 @@ Adding animations to your SVG graphics can be done in different ways:
 An SVG element can be added here, to make that element able to intercept one of the following events:
 + *Click*: when a mouse-down and mouse-up on the same element.
 + *Double click*: when a double mouse click on an element.
++ *Change*: when the value of a (foreign) input element is changed.
 + *Context menu*: when a right mouse click on an element.
 + *Mouse down*: when a mouse button is pressed down on an element. 
 + *Mouse up*: when a mouse button is released on an element.
@@ -669,7 +670,7 @@ By sending this input message, the circle will become clickable.
 
 Remarks:
 + The payload of the input message contains both the payload and topic of the output message (which will be sent in when the specified event occurs on the specified SVG element).
-+ The following events can be specified: *"click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
++ The following events can be specified: *"click", "dblclick", "change", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
 + You need to remove the previous event handler (via the center inject node), before you add a new event handler.  Otherwise an error will occur.
 
 ### Remove events via msg
@@ -695,7 +696,7 @@ When SVG elements always need to respond client-side to an event (e.g. click), t
 By sending this input message, the circle will become clickable.  And the specified Javascript code will be executed on the client-side (i.e. inside the dashboard) as soon as the event occurs.
 
 Remarks:
-+ The following events can be specified: *"click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
++ The following events can be specified: *"click", "dblclick", "change", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"*
 + You need to remove the previous event handler first (e.g. by adding both *remove_js_event* and *add_js_event* commands inside a single message), before you can specify a new event handler.  Otherwise an error will occur.
 + When the *"show browser errors on the server"* option is activated, an error will be displayed in the Debug sidebar when the injected Javascript code contains errors.  For example we inject the code snippet *"var x=1 var y=2;"*, which doesn't contain a `;` between the two statements.  As soon as the event occurs (and the Javascript code is executed), this error will be displayed:
 
@@ -753,6 +754,17 @@ An SVG element can be removed via an input message:
 }
 ```
 By specifying a `selector` property (instead of an elementId property), it is possible to remove multiple elements at once via a single command.
+
+### Update (input) value via msg
+The value of a (foreign) input element can be update via an input message:
+```
+"payload": {
+    "command": "update_value",
+    "selector": "#temp_living",
+    "value": 17
+}
+```
+By specifying a `selector` property (instead of an elementId property), it is possible to update the value of multiple (foreign) input elements at once via a single command.
 
 ### Set entire SVG via msg
 It is possible to set an entire SVG drawing via an input message, to replace the current drawing:
