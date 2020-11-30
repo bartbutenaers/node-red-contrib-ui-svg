@@ -192,6 +192,7 @@
                     node.nonAnimationIdSelectors.push("#"+id)
                     node.nonAnimationIdsAndActions.push(id + ".click");
                     node.nonAnimationIdsAndActions.push(id + ".dblclick");
+                    node.nonAnimationIdsAndActions.push(id + ".change");
                     node.nonAnimationIdsAndActions.push(id + ".contextmenu");
                     node.nonAnimationIdsAndActions.push(id + ".mouseover");
                     node.nonAnimationIdsAndActions.push(id + ".mouseout");
@@ -593,6 +594,7 @@
                 'touchend':'Touch end', //mobile/tablet only
                 // 'touchmove':'touchmove',
                 // 'touchcancel':'touchcancel',
+                'change':'Change'
             }
             
             // Create a table of (SMIL) animations
