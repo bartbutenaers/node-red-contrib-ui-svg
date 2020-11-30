@@ -255,7 +255,8 @@ module.exports = function(RED) {
 
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage",
-                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", "replace_svg"];
+                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", 
+                                      "replace_svg", "update_value"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -533,65 +534,76 @@ module.exports = function(RED) {
                                 type: evt.type
                             }
 
-                            if (evt.changedTouches) {
-                                // For touch events, the coordinates are stored inside the changedTouches field
-                                // - touchstart event: list of the touch points that became active with this event (fingers started touching the surface).
-                                // - touchmove event: list of the touch points that have changed since the last event.
-                                // - touchend event: list of the touch points that have been removed from the surface (fingers no longer touching the surface).
-                                var touchEvent = evt.changedTouches[0];
-                                    
-                                msg.event.pageX   = Math.trunc(touchEvent.pageX);
-                                msg.event.pageY   = Math.trunc(touchEvent.pageY);
-                                msg.event.screenX = Math.trunc(touchEvent.screenX);
-                                msg.event.screenY = Math.trunc(touchEvent.screenY);
-                                msg.event.clientX = Math.trunc(touchEvent.clientX);
-                                msg.event.clientY = Math.trunc(touchEvent.clientY);
+                            if (evt.type === "change") {
+                                // Get the new value from the target element
+                                if (event.target.type === "number") {
+                                    msg.event.value = event.target.valueAsNumber;
+                                }
+                                else {
+                                    msg.event.value = event.target.value;
+                                }
                             }
                             else {
-                                msg.event.pageX   = Math.trunc(evt.pageX);
-                                msg.event.pageY   = Math.trunc(evt.pageY);
-                                msg.event.screenX = Math.trunc(evt.screenX);
-                                msg.event.screenY = Math.trunc(evt.screenY);
-                                msg.event.clientX = Math.trunc(evt.clientX);
-                                msg.event.clientY = Math.trunc(evt.clientY);
-                            }
+                                if (evt.changedTouches) {
+                                    // For touch events, the coordinates are stored inside the changedTouches field
+                                    // - touchstart event: list of the touch points that became active with this event (fingers started touching the surface).
+                                    // - touchmove event: list of the touch points that have changed since the last event.
+                                    // - touchend event: list of the touch points that have been removed from the surface (fingers no longer touching the surface).
+                                    var touchEvent = evt.changedTouches[0];
+                                        
+                                    msg.event.pageX   = Math.trunc(touchEvent.pageX);
+                                    msg.event.pageY   = Math.trunc(touchEvent.pageY);
+                                    msg.event.screenX = Math.trunc(touchEvent.screenX);
+                                    msg.event.screenY = Math.trunc(touchEvent.screenY);
+                                    msg.event.clientX = Math.trunc(touchEvent.clientX);
+                                    msg.event.clientY = Math.trunc(touchEvent.clientY);
+                                }
+                                else {
+                                    msg.event.pageX   = Math.trunc(evt.pageX);
+                                    msg.event.pageY   = Math.trunc(evt.pageY);
+                                    msg.event.screenX = Math.trunc(evt.screenX);
+                                    msg.event.screenY = Math.trunc(evt.screenY);
+                                    msg.event.clientX = Math.trunc(evt.clientX);
+                                    msg.event.clientY = Math.trunc(evt.clientY);
+                                }
 
-                            // Get the mouse coordinates (with origin at left top of the SVG drawing)
-                            if(msg.event.pageX !== undefined && msg.event.pageY !== undefined){
-                                var pt = $scope.svg.createSVGPoint();
-                                pt.x = msg.event.pageX;
-                                pt.y = msg.event.pageY;
-                                pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
-                                
-                                msg.event.svgX = Math.trunc(pt.x);
-                                msg.event.svgY = Math.trunc(pt.y);
-                                
-                                // Get the SVG element where the event has occured (e.g. which has been clicked)
-                                var svgElement = $(event.target)[0];
-                                
-                                if (!svgElement) {
-                                    logError("No SVG element has been found for this " + evt.type + " event");
-                                    return;
+                                // Get the mouse coordinates (with origin at left top of the SVG drawing)
+                                if(msg.event.pageX !== undefined && msg.event.pageY !== undefined){
+                                    var pt = $scope.svg.createSVGPoint();
+                                    pt.x = msg.event.pageX;
+                                    pt.y = msg.event.pageY;
+                                    pt = pt.matrixTransform($scope.svg.getScreenCTM().inverse());
+                                    
+                                    msg.event.svgX = Math.trunc(pt.x);
+                                    msg.event.svgY = Math.trunc(pt.y);
+                                    
+                                    // Get the SVG element where the event has occured (e.g. which has been clicked)
+                                    var svgElement = $(event.target)[0];
+                                    
+                                    if (!svgElement) {
+                                        logError("No SVG element has been found for this " + evt.type + " event");
+                                        return;
+                                    }
+                                    
+                                    var bbox;
+                                    
+                                    try {
+                                        // Use getBoundingClientRect instead of getBBox to have an array like [left, bottom, right, top].
+                                        // See https://discourse.nodered.org/t/contextmenu-location/22780/64?u=bartbutenaers
+                                        bbox = svgElement.getBoundingClientRect();
+                                    }
+                                    catch (err) {
+                                        logError("No bounding client rect has been found for this " + evt.type + " event");
+                                        return;  
+                                    }
+                                    
+                                    msg.event.bbox = [
+                                        Math.trunc(bbox.left),
+                                        Math.trunc(bbox.bottom),
+                                        Math.trunc(bbox.right),
+                                        Math.trunc(bbox.top)
+                                    ]
                                 }
-                                
-                                var bbox;
-                                
-                                try {
-                                    // Use getBoundingClientRect instead of getBBox to have an array like [left, bottom, right, top].
-                                    // See https://discourse.nodered.org/t/contextmenu-location/22780/64?u=bartbutenaers
-                                    bbox = svgElement.getBoundingClientRect();
-                                }
-                                catch (err) {
-                                    logError("No bounding client rect has been found for this " + evt.type + " event");
-                                    return;  
-                                }
-                                
-                                msg.event.bbox = [
-                                    Math.trunc(bbox.left),
-                                    Math.trunc(bbox.bottom),
-                                    Math.trunc(bbox.right),
-                                    Math.trunc(bbox.top)
-                                ]
                             }
                             
                             $scope.send(msg);
@@ -852,8 +864,8 @@ module.exports = function(RED) {
                             $scope.isObject = function(obj) {
                                 return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
                             }
-                            $scope.events = ["click", "dblclick", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", 
-                                             "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend"];
+                            $scope.events = ["click", "dblclick", "change", "contextmenu", "mouseover", "mouseout", "mouseup", "mousedown", 
+                                             "focus", "focusin", "focusout", "blur", "keyup", "keydown", "touchstart", "touchend", "change"];
                             
                             //$scope.svg.style.cursor = "crosshair";
 
@@ -1276,6 +1288,30 @@ module.exports = function(RED) {
                                                 return;
                                             }
                                             break;
+                                        case "update_value":  
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }  
+                                            
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+                                            elements.forEach(function(element){
+                                                if(element.value === undefined) {
+                                                    logError("An SVG element selected by '" + selector + "' has no 'value' property");
+                                                    return
+                                                }
+                                                element.value = payload.value;
+                                                
+                                                // Force the onChange event handlers on the element to be called.  The setAttribute doesn't trigger 
+                                                // those event handlers, because they are only triggered when the element looses focus.
+                                                element.dispatchEvent(new Event('change'));
+                                            });
+                                            break;
                                         case "update_attribute":
                                         case "set_attribute": //fall through 
                                             if (!payload.elementId && !payload.selector) {
@@ -1298,12 +1334,10 @@ module.exports = function(RED) {
                                                 }
                                                 if(!payload.attributeValue){
                                                     element.removeAttribute(payload.attributeName);
-                                                } else {
+                                                }
+                                                else {
                                                     element.setAttribute(payload.attributeName, payload.attributeValue);
                                                 }
-                                            });
-                                            elements.forEach(function(element){
-                                                element.setAttribute(payload.attributeName, payload.attributeValue);
                                             });
                                             break;
                                         case "remove_attribute":
@@ -1366,8 +1400,6 @@ module.exports = function(RED) {
                                             break;    
                                         case "add_event":// add the specified event(s) to the specified element(s)
                                         case "remove_event":// remove the specified event(s) from the specified element(s)
-                                        
-                                        debugger;
                                             if (!payload.elementId && !payload.selector) {
                                                 logError("Invalid payload. A property named .elementId or .selector is not specified");
                                                 return;
