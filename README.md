@@ -381,9 +381,7 @@ A series of options are available to allow panning and zooming, which is useful 
 + ***"Zooming"***:  enable zooming.
 + ***"Pan only when zoomed"***: when this option is activated, the SVG drawing can only be panned when it has been zoomed previously.  Indeed, when the drawing is at its original size, it might in some cases be pointless to allow panning.
 + ***"Enable mouse-wheel zooming"***: allow zooming in/out by rotating the mouse wheel.
-+ ***"Enable double click zooming"***: the behaviour of this option differs on a touch screen.
-   + When a mouse is being used, every double click will trigger zooming in.  Or it will trigger zooming out when the SHIFT key is being pressed meanwhile.
-   + On a touch screen the first double tap will trigger zooming in.  The second double tap will trigger zooming out.  And so on ...
++ ***"Enable double click/tap zooming"***: the first double mouse click (or double tap on a touch screen) will trigger zooming in.  The second double tap will trigger zooming out.  And so on ...
 
 The following demo shows how to pan and zoom via the mouse (mouse-wheel and dragging):
 
