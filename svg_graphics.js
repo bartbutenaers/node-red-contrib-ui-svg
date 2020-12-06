@@ -894,21 +894,12 @@ module.exports = function(RED) {
                                 }
                                 
                                 if (config.doubleClickZoomEnabled) {
-                                    // Zoom in when double clicked, or zoom out when shift key down during double click
-                                    $scope.svg.parentElement.addEventListener('dblclick', function() {
-                                        if (event.shiftKey) {
-                                            $scope.panZoomModule.zoomOut();
-                                        } else {
-                                            $scope.panZoomModule.zoomIn();
-                                        }
-                                    });
-                                   
                                     // Zoom in when tapped twice on a touch screen.  Next time zoom out, and so on ...
                                     // We will need to use hammer.js for this (see https://github.com/timmywil/panzoom/issues/275).
                                     // Make sure to pass the SVG element, instead of the parent DIV element (see https://github.com/hammerjs/hammer.js/issues/1119).
-                                    var mc = new Hammer.Manager($scope.svg);
-                                    mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
-                                    mc.on('doubletap', function (ev) {
+                                    $scope.mc = new Hammer.Manager($scope.svg);
+                                    $scope.mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
+                                    $scope.mc.on('doubletap', function (ev) {
                                         if ($scope.previousTouchEvent === "zoomOut") {
                                             $scope.panZoomModule.zoomIn();
                                             $scope.previousTouchEvent = "zoomIn";
