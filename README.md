@@ -819,6 +819,14 @@ Or it is also possible to pan relative in a specified direction:
 }
 ```
 
+### Reset pan/zoom via msg
+Reset the pan to the original x and y position, and reset the zoom to the initial scale via an input message:
+```
+"payload": {
+   "command": "reset_panzoom"
+}
+```
+
 ## Various stuff
 
 ### Fontawesome icons
