@@ -327,7 +327,10 @@
                     return valid;
                 }},
             height: {value: 0},
-            svgString: {value: '<svg x="0" y="0" height="100" viewBox="0 0 100 100" width="100" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg>'},
+            svgString: {value: '<svg x="0" y="0" height="100" viewBox="0 0 100 100" width="100" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n' +
+                                    '<!-- Add here your SVG shapes (circles, rectangles, ...) -->\n' +
+                                    '<!-- Or remove everything, if you want to paste an entire drawing (<svg...>...</svg>).-->\n' +
+                                '</svg>'},
             clickableShapes: {value: []},
             javascriptHandlers: {value: []},
             smilAnimations: {value: []},
