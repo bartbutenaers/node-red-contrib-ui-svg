@@ -180,7 +180,7 @@ module.exports = function(RED) {
 </style>
 <script src= "ui_svg_graphics/lib/panzoom"></script>
 <script src= "ui_svg_graphics/lib/hammer"></script>
-<div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
+<div id='tooltip_` + config.id + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
         return html;
