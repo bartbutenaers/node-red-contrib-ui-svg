@@ -350,6 +350,7 @@
             panOnlyWhenZoomed: {value: false},
             doubleClickZoomEnabled: {value: false}, 
             mouseWheelZoomEnabled: {value: false}, 
+            dblClickZoomPercentage: {value: 150, validate: function(v) { return !v || (!isNaN(v) && v >= 100)} },
             name: {value: ''}
         },
         inputs:1,
@@ -362,6 +363,9 @@
         },
         oneditprepare: function() {
             var node = this;
+            
+            // Old nodes might not have a dblClickZoomPercentage
+            $('#node-input-dblClickZoomPercentage').val(this.dblClickZoomPercentage || 150);
 
             // Make sure the autocomplete fields at least refer to Iterable node fields...
             // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/33
@@ -595,7 +599,7 @@
                 'touchstart':'Touch start', //mobile/tablet only
                 'touchend':'Touch end', //mobile/tablet only
                 // 'touchmove':'touchmove',
-                // 'touchcancel':'touchcancel',
+                // 'touchcancel':'touchcancel'
             }
             
             // Create a table of (SMIL) animations
@@ -1658,6 +1662,17 @@
                 }
             });
             $("#node-input-zooming").change();
+            
+            $("#node-input-doubleClickZoomEnabled").on("change", function(){
+                var dblClickZoomPercentage = $("#node-input-dblClickZoomPercentage")[0];
+                if ($(this)[0].checked) {
+                    dblClickZoomPercentage.disabled = false;
+                }
+                else {
+                    dblClickZoomPercentage.disabled = true;
+                }
+            });
+            $("#node-input-doubleClickZoomEnabled").change();
         },
         oneditsave: function() {
             var node = this;
@@ -1886,8 +1901,10 @@
             </div>
             <div class="form-row">
                 <label>&nbsp;</label>
-                <input type="checkbox" id="node-input-doubleClickZoomEnabled" style="display: inline-block; width: auto; vertical-align: top;">
-                <label for="node-input-doubleClickZoomEnabled" style="width:70%;"> Enable double click/tap zooming</label>
+                <input type="checkbox" id="node-input-doubleClickZoomEnabled" style="display: inline-block; width: auto; vertical-align: super;">
+                <span style="vertical-align: super;"> Enable double click zooming by</span>
+                <input type="number" id="node-input-dblClickZoomPercentage" style="width:55px;vertical-align:super;margin-left:5px" min="100">
+                <span style="vertical-align:super;super;margin-left:5px"> %</span>
             </div>            
         </div>
     </div>
