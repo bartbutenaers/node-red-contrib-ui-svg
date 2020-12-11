@@ -899,15 +899,33 @@ module.exports = function(RED) {
                                     // Make sure to pass the SVG element, instead of the parent DIV element (see https://github.com/hammerjs/hammer.js/issues/1119).
                                     $scope.mc = new Hammer.Manager($scope.svg);
                                     $scope.mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
-                                    $scope.mc.on('doubletap', function (ev) {
-                                        if ($scope.previousTouchEvent === "zoomOut") {
-                                            $scope.panZoomModule.zoomIn();
+                                    $scope.mc.on('doubletap', function (evt) {
+                                        var dblClickZoomFactor;
+                                        // Old nodes might not have a, so use a default value of 100%
+                                        var dblClickZoomPercentage = parseInt($scope.config.dblClickZoomPercentage || 100);
+
+                                        if (dblClickZoomPercentage < 100) {
+                                            logError("The double click percentage should be >= 100%");
+                                            return;
+                                        }
+                                      
+                                        if (!$scope.previousTouchEvent || $scope.previousTouchEvent === "zoomOut") {
+                                            // Convert e.g. 130% to a factor 1.3
+                                            dblClickZoomFactor = dblClickZoomPercentage / 100;
+
                                             $scope.previousTouchEvent = "zoomIn";
                                         }
                                         else {
-                                            $scope.panZoomModule.zoomOut();
+                                            // Use zoom factor 1 to restore the original status
+                                            dblClickZoomFactor = 1;
+
                                             $scope.previousTouchEvent = "zoomOut";
                                         }
+                                        
+                                        // Zoom in by the specified percentage, at the location of the double click/tap.
+                                        // Which means that the center of the transform is the location of the double click/tap.
+                                        // So the SVG object below the double click/tap will become the center of the transformation.
+                                        $scope.panZoomModule.zoomToPoint(dblClickZoomFactor, {clientX: evt.center.x, clientY: evt.center.y});
                                     });
                                 }
                             }
