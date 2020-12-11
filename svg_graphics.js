@@ -925,6 +925,7 @@ module.exports = function(RED) {
                                         // Zoom in by the specified percentage, at the location of the double click/tap.
                                         // Which means that the center of the transform is the location of the double click/tap.
                                         // So the SVG object below the double click/tap will become the center of the transformation.
+					// Because by default the PanZoom library takes the upper left (0,0) corner as center of the transformation...
                                         $scope.panZoomModule.zoomToPoint(dblClickZoomFactor, {clientX: evt.center.x, clientY: evt.center.y});
                                     });
                                 }
@@ -1533,8 +1534,12 @@ module.exports = function(RED) {
                                             
                                             // Optionally point coordinates can be specified in the input message
                                             if (payload.x && payload.y) {
+                                                // The msg contains svg coordinates, while the zoomToPoint function expects client coordinates.
+                                                var clientX = $scope.svg.getBoundingClientRect().x + payload.x;
+                                                var clientY = $scope.svg.getBoundingClientRect().y + payload.y;
+ 
                                                 // When a point has been specified, zoom by the specified percentage at the specified point
-                                                $scope.panZoomModule.zoomToPoint(factor, {clientX: payload.x, clientY: payload.y});
+                                                $scope.panZoomModule.zoomToPoint(factor, {clientX: clientX, clientY: clientY});
                                             }
                                             else {
                                                 // No point has been specified, so zoom by the specified percentage
