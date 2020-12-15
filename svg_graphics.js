@@ -255,7 +255,8 @@ module.exports = function(RED) {
 
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage",
-                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", "replace_svg"];
+                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", 
+                                      "get_svg", "replace_svg"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -1137,7 +1138,15 @@ module.exports = function(RED) {
                                             $scope.svg.innerHTML = newSvg.innerHTML;
                                             
                                             initializeSvg($scope);
-                                            break;                                        
+                                            break;
+                                        case "get_svg":
+                                            var xml = (new XMLSerializer()).serializeToString($scope.svg);
+                                            
+                                            $scope.send({
+                                                payload: xml,
+                                                topic:"get_svg"
+                                            }); 
+                                            break;
                                         case "add_element": // Add elements, or replace them if they already exist
                                             if (!payload.elementType) {
                                                 logError("Invalid payload. A property named .elementType is not specified");
@@ -1243,7 +1252,8 @@ module.exports = function(RED) {
                                             });  
 
                                             $scope.send({
-                                                payload: elementArray
+                                                payload: elementArray,
+                                                topic:"get_text"
                                             });                                             
                                             break;
                                         case "update_text":
