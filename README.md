@@ -382,9 +382,7 @@ A series of options are available to allow panning and zooming, which is useful 
 + ***"Zooming"***:  enable zooming.
 + ***"Pan only when zoomed"***: when this option is activated, the SVG drawing can only be panned when it has been zoomed previously.  Indeed, when the drawing is at its original size, it might in some cases be pointless to allow panning.
 + ***"Enable mouse-wheel zooming"***: allow zooming in/out by rotating the mouse wheel.
-+ ***"Enable double click zooming"***: the behaviour of this option differs on a touch screen.
-   + When a mouse is being used, every double click will trigger zooming in.  Or it will trigger zooming out when the SHIFT key is being pressed meanwhile.
-   + On a touch screen the first double tap will trigger zooming in.  The second double tap will trigger zooming out.  And so on ...
++ ***"Enable double click/tap zooming"***: the first double mouse click (or double tap on a touch screen) will trigger zooming in.  The second double tap will trigger zooming out.  And so on ...
 
 The following demo shows how to pan and zoom via the mouse (mouse-wheel and dragging):
 
@@ -785,6 +783,20 @@ The following example flow demonstrates how the entire SVG can be replaced:
 
 When event handlers or input msg bindings have been specified on the config screen, those will automatically be applied to the new SVG drawing.
 
+### Get entire SVG
+It is possible to get the entire SVG drawing via an input message.  
+
+Note that the command will be get from the frontend, which means that N output messages will arrive when N drawings are currently simultaneously visible (i.e. one output message per frontend session).  Which means it is advised to trigger this feature from the dashboard, e.g. using a button on the dashboard.
+
+The following example flow shows how to update a drawing (e.g. update the circle color to blue), and get the entire SVG (containing the updated color).  When the Inject-node is triggered, N output messages will be send (when the drawing is visible in N dashboard sessions).  When the dashboard button is used, 1 output message will be send (arriving from the dashboard session where the button is being clicked):
+
+![Get SVG](https://user-images.githubusercontent.com/14224149/102276144-aedda300-3f26-11eb-8cc9-cbc1ee82fdea.png)
+```
+[{"id":"37ea8471.28b61c","type":"inject","z":"a03bd3cf.177578","name":"Get SVG","props":[{"p":"payload"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"{\"command\":\"get_svg\"}","payloadType":"json","x":520,"y":820,"wires":[["87305ca4.779a6"]]},{"id":"87305ca4.779a6","type":"ui_svg_graphics","z":"a03bd3cf.177578","group":"28a39865.fa3608","order":0,"width":0,"height":0,"svgString":"<svg x=\"0\" y=\"0\" height=\"100\" viewBox=\"0 0 100 100\" width=\"100\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n  <circle id=\"my_circle\" cx=\"50\" cy=\"50\" r=\"40\" stroke=\"black\" stroke-width=\"3\" fill=\"red\" />\n</svg>","clickableShapes":[],"javascriptHandlers":[],"smilAnimations":[],"bindings":[],"showCoordinates":false,"autoFormatAfterEdit":false,"showBrowserErrors":true,"showBrowserEvents":false,"enableJsDebugging":false,"sendMsgWhenLoaded":false,"outputField":"payload","editorUrl":"//drawsvg.org/drawsvg.html","directory":"","panning":"disabled","zooming":"disabled","panOnlyWhenZoomed":false,"doubleClickZoomEnabled":false,"mouseWheelZoomEnabled":false,"dblClickZoomPercentage":150,"name":"","x":730,"y":780,"wires":[["fe183d94.7e362"]]},{"id":"3acd9c13.254b54","type":"inject","z":"a03bd3cf.177578","name":"Update SVG","props":[{"p":"payload"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"{\"command\":\"set_attribute\",\"selector\":\"#my_circle\",\"attributeName\":\"fill\",\"attributeValue\":\"blue\"}","payloadType":"json","x":510,"y":780,"wires":[["87305ca4.779a6"]]},{"id":"fe183d94.7e362","type":"debug","z":"a03bd3cf.177578","name":"","active":true,"tosidebar":true,"console":false,"tostatus":false,"complete":"true","targetType":"full","statusVal":"","statusType":"auto","x":910,"y":780,"wires":[]},{"id":"109883d2.04e3cc","type":"ui_button","z":"a03bd3cf.177578","name":"Get SVG","group":"28a39865.fa3608","order":1,"width":0,"height":0,"passthru":false,"label":"Get SVG","tooltip":"","color":"","bgcolor":"","icon":"","payload":"","payloadType":"str","topic":"","x":360,"y":740,"wires":[["7ff2e386.cacdac"]]},{"id":"7ff2e386.cacdac","type":"change","z":"a03bd3cf.177578","name":"get_svg","rules":[{"t":"set","p":"payload","pt":"msg","to":"{\"command\":\"get_svg\"}","tot":"json"}],"action":"","property":"","from":"","to":"","reg":false,"x":520,"y":740,"wires":[["87305ca4.779a6"]]},{"id":"28a39865.fa3608","type":"ui_group","name":"Default","tab":"d8520920.0128d8","order":1,"disp":true,"width":"6","collapse":false},{"id":"d8520920.0128d8","type":"ui_tab","name":"Home","icon":"dashboard","disabled":false,"hidden":false}]
+```
+The output message will contain the SVG as XML in the payload field:
+![SVG in output](https://user-images.githubusercontent.com/14224149/102276453-1ac00b80-3f27-11eb-8fc5-b6bf6e36ed2d.png)
+
 ### Zoom in/out via msg
 As explained above (in the [Pan and zoom](#pan-and-zoom) section), it is possible to zoom in/out via an input message:
 ```
@@ -830,6 +842,14 @@ Or it is also possible to pan relative in a specified direction:
    "command": "pan_to_direction",
    "x": 300,
    "y": 400
+}
+```
+
+### Reset pan/zoom via msg
+Reset the pan to the original x and y position, and reset the zoom to the initial scale via an input message:
+```
+"payload": {
+   "command": "reset_panzoom"
 }
 ```
 

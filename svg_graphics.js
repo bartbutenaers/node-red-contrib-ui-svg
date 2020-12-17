@@ -180,7 +180,7 @@ module.exports = function(RED) {
 </style>
 <script src= "ui_svg_graphics/lib/panzoom"></script>
 <script src= "ui_svg_graphics/lib/hammer"></script>
-<div id='tooltip_` + config.id + `' display='none' style='position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
+<div id='tooltip_` + config.id + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
         return html;
@@ -255,8 +255,8 @@ module.exports = function(RED) {
 
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage",
-                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute", 
-                                      "replace_svg", "update_value"];
+                                      "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute",
+                                      "get_svg", "replace_svg", "update_value"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -906,29 +906,39 @@ module.exports = function(RED) {
                                 }
                                 
                                 if (config.doubleClickZoomEnabled) {
-                                    // Zoom in when double clicked, or zoom out when shift key down during double click
-                                    $scope.svg.parentElement.addEventListener('dblclick', function() {
-                                        if (event.shiftKey) {
-                                            $scope.panZoomModule.zoomOut();
-                                        } else {
-                                            $scope.panZoomModule.zoomIn();
-                                        }
-                                    });
-                                   
                                     // Zoom in when tapped twice on a touch screen.  Next time zoom out, and so on ...
                                     // We will need to use hammer.js for this (see https://github.com/timmywil/panzoom/issues/275).
                                     // Make sure to pass the SVG element, instead of the parent DIV element (see https://github.com/hammerjs/hammer.js/issues/1119).
-                                    var mc = new Hammer.Manager($scope.svg);
-                                    mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
-                                    mc.on('doubletap', function (ev) {
-                                        if ($scope.previousTouchEvent === "zoomOut") {
-                                            $scope.panZoomModule.zoomIn();
+                                    $scope.mc = new Hammer.Manager($scope.svg);
+                                    $scope.mc.add(new Hammer.Tap({ event: 'doubletap', taps: 2 }));
+                                    $scope.mc.on('doubletap', function (evt) {
+                                        var dblClickZoomFactor;
+                                        // Old nodes might not have a, so use a default value of 100%
+                                        var dblClickZoomPercentage = parseInt($scope.config.dblClickZoomPercentage || 100);
+
+                                        if (dblClickZoomPercentage < 100) {
+                                            logError("The double click percentage should be >= 100%");
+                                            return;
+                                        }
+                                      
+                                        if (!$scope.previousTouchEvent || $scope.previousTouchEvent === "zoomOut") {
+                                            // Convert e.g. 130% to a factor 1.3
+                                            dblClickZoomFactor = dblClickZoomPercentage / 100;
+
                                             $scope.previousTouchEvent = "zoomIn";
                                         }
                                         else {
-                                            $scope.panZoomModule.zoomOut();
+                                            // Use zoom factor 1 to restore the original status
+                                            dblClickZoomFactor = 1;
+
                                             $scope.previousTouchEvent = "zoomOut";
                                         }
+                                        
+                                        // Zoom in by the specified percentage, at the location of the double click/tap.
+                                        // Which means that the center of the transform is the location of the double click/tap.
+                                        // So the SVG object below the double click/tap will become the center of the transformation.
+					// Because by default the PanZoom library takes the upper left (0,0) corner as center of the transformation...
+                                        $scope.panZoomModule.zoomToPoint(dblClickZoomFactor, {clientX: evt.center.x, clientY: evt.center.y});
                                     });
                                 }
                             }
@@ -1139,7 +1149,15 @@ module.exports = function(RED) {
                                             $scope.svg.innerHTML = newSvg.innerHTML;
                                             
                                             initializeSvg($scope);
-                                            break;                                        
+                                            break;
+                                        case "get_svg":
+                                            var xml = (new XMLSerializer()).serializeToString($scope.svg);
+                                            
+                                            $scope.send({
+                                                payload: xml,
+                                                topic:"get_svg"
+                                            }); 
+                                            break;
                                         case "add_element": // Add elements, or replace them if they already exist
                                             if (!payload.elementType) {
                                                 logError("Invalid payload. A property named .elementType is not specified");
@@ -1245,7 +1263,8 @@ module.exports = function(RED) {
                                             });  
 
                                             $scope.send({
-                                                payload: elementArray
+                                                payload: elementArray,
+                                                topic:"get_text"
                                             });                                             
                                             break;
                                         case "update_text":
@@ -1556,8 +1575,12 @@ module.exports = function(RED) {
                                             
                                             // Optionally point coordinates can be specified in the input message
                                             if (payload.x && payload.y) {
+                                                // The msg contains svg coordinates, while the zoomToPoint function expects client coordinates.
+                                                var clientX = $scope.svg.getBoundingClientRect().x + payload.x;
+                                                var clientY = $scope.svg.getBoundingClientRect().y + payload.y;
+ 
                                                 // When a point has been specified, zoom by the specified percentage at the specified point
-                                                $scope.panZoomModule.zoomToPoint(factor, {clientX: payload.x, clientY: payload.y});
+                                                $scope.panZoomModule.zoomToPoint(factor, {clientX: clientX, clientY: clientY});
                                             }
                                             else {
                                                 // No point has been specified, so zoom by the specified percentage
