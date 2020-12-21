@@ -137,7 +137,7 @@ Most of the SVG information can be manipulated by sending input messages to this
    ```
    This way the message becomes yet shorter, but you can only use 1 selector or command value (even when the payload contains an array).
 
-The following commands are supported:
+### Supported commands:
 
 + [Update/set an attribute value](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/msg_control.md#updateset-an-attribute-value-via-msg) via msg
 + [Update/set a style attribute value](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/msg_control.md#updateset-a-style-attribute-value-via-msg) via msg
