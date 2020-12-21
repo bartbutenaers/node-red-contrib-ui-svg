@@ -139,24 +139,24 @@ Most of the SVG information can be manipulated by sending input messages to this
 
 The following commands are supported:
 
-+ [Update/set an attribute value](./docs/msg_control.md##updateset-an-attribute-value-via-msg) via msg
-+ [Update/set a style attribute value](./docs/msg_control.md##updateset-a-style-attribute-value-via-msg) via msg
-+ [Remove an attribute](./docs/msg_control.md##remove-an-attribute-via-msg) via msg
-+ [Set text content](./docs/msg_control.md##set-text-content-via-msg) via msg
-+ [Get text content](./docs/msg_control.md##get-text-content-via-msg) via msg
-+ [Start/stop animations](./docs/msg_control.md##startstop-animations-via-msg) via msg
-+ [Add events](./docs/msg_control.md##add-events-via-msg) via msg
-+ [Remove events](./docs/msg_control.md##remove-events-via-msg) via msg
-+ [Add Javascript events](./docs/msg_control.md##add-javascript-events-via-msg) via msg
-+ [Remove Javascript events](./docs/msg_control.md##remove-javascript-events-via-msg) via msg
-+ [Add elements](./docs/msg_control.md##add-elements-via-msg) via msg
-+ [Remove elements](./docs/msg_control.md##remove-elements-via-msg) via msg
-+ [Update (input) value](./docs/msg_control.md##update-input-value-via-msg) via msg
-+ [Set entire SVG](./docs/msg_control.md##set-entire-svg-via-msg) via msg
-+ [Get entire SVG](./docs/msg_control.md##get-entire-svg) via msg
-+ [Zoom in/out](./docs/msg_control.md##zoom-inout-via-msg) via msg
-+ [Panning](./docs/msg_control.md##panning-via-msg) via msg 
-+ [Reset pan/zoom](./docs/msg_control.md##reset-panzoom-via-msg) via msg
++ [Update/set an attribute value](./docs/msg_control.md#updateset-an-attribute-value-via-msg) via msg
++ [Update/set a style attribute value](./docs/msg_control.md#updateset-a-style-attribute-value-via-msg) via msg
++ [Remove an attribute](./docs/msg_control.md#remove-an-attribute-via-msg) via msg
++ [Set text content](./docs/msg_control.md#set-text-content-via-msg) via msg
++ [Get text content](./docs/msg_control.md#get-text-content-via-msg) via msg
++ [Start/stop animations](./docs/msg_control.md#startstop-animations-via-msg) via msg
++ [Add events](./docs/msg_control.md#add-events-via-msg) via msg
++ [Remove events](./docs/msg_control.md#remove-events-via-msg) via msg
++ [Add Javascript events](./docs/msg_control.md#add-javascript-events-via-msg) via msg
++ [Remove Javascript events](./docs/msg_control.md#remove-javascript-events-via-msg) via msg
++ [Add elements](./docs/msg_control.md#add-elements-via-msg) via msg
++ [Remove elements](./docs/msg_control.md#remove-elements-via-msg) via msg
++ [Update (input) value](./docs/msg_control.md#update-input-value-via-msg) via msg
++ [Set entire SVG](./docs/msg_control.md#set-entire-svg-via-msg) via msg
++ [Get entire SVG](./docs/msg_control.md#get-entire-svg) via msg
++ [Zoom in/out](./docs/msg_control.md#zoom-inout-via-msg) via msg
++ [Panning](./docs/msg_control.md#panning-via-msg) via msg 
++ [Reset pan/zoom](./docs/msg_control.md#reset-panzoom-via-msg) via msg
 
 ## Various stuff
 
