@@ -1,23 +1,17 @@
+### "Editor" tab sheet
 
-# "Editor" tab sheet
+[DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSvg into this node, to allow users to edit their SVG source via a nice drawing program.
 
-![editor](https://user-images.githubusercontent.com/14224149/65357446-5faba400-dbf7-11e9-9824-886238dba228.png)
+***!!! DrawSvg is free software.  Note that DrawSvg and the online service is used as is without warranty of bugs !!!***
 
-Enter you (XML-based) SVG graphics in this editor.  This can be done in different ways:
-+ If you are a die-hard SVG fanatic, you can enter the SVG string manually in the *"SVG"* tab sheet.
-+ If you prefer to use an SVG drawing editor, you can use the embedded [DrawSvg](#DrawSvg-drawing-editor) editor.
-+ If you need very specific types of drawings, you can use a third party SVG editor to create your drawing (and simple paste the generated SVG string into this tab sheet).  Multiple (online) editors are free available, each with their own dedicated speciality:
-   + [Floorplanner](http://floorplanner.com)
-   + [Floorplancreator](https://floorplancreator.net/#pricing)
-   + ...
+![launch_editor](https://user-images.githubusercontent.com/44235289/66716981-f40ac000-edcb-11e9-96b5-69e11220b71d.gif)
 
-However:
-   + Be aware that those third-party SVG editors could create rather complex SVG strings, which are harder to understand when you want to change them manually afterwards.
-   + Be aware that the browser has a lot of work to render all the SVG elements in the drawing!  In some cases, it might be useful - to gain performance - to convert your SVG once to an image and use that as a background image in this SVG node (and draw other shapes on top of that image).  For example, in Floorplanner website, the SVG drawing can be saved as a JPEG/PNG image.  That image can be loaded into an SVG *'image'* element, like I have done in the example flows on this readme page ...
-      
-At the bottom of the "SVG source" tab sheet, a series of buttons are available:
+Steps to use DrawSvg:
+1. Click the *"Open SVG editor"*, to show the SVG in the [DrawSvg](#DrawSvg-drawing-editor) drawing editor.
+2. DrawSvg will be opened in a popup dialog window, and it will visualize the SVG source (from this node).
+3. The SVG drawing can be edited.
+4. You can intermediately save your changes (to this node), using the *"Save"* button in the upper right corner of the popup dialog window.
+5. As soon as the popup dialog window is being closed, a notification will appear.  There you can choose to ignore all changes (i.e. you do not need them anymore), or to save all the changes (to this node).
+6. The updated SVG source will appear in the *"SVG source"* tab sheet of this node.
 
-![buttons](https://user-images.githubusercontent.com/14224149/66707892-5621e180-ed48-11e9-8d66-e3add751e7c8.png)
-
-+ *Expand source*: show the SVG source in full screen mode.
-+ *Format SVG*: by formatting the SVG source, the source will be beatified.  This means the empty lines will be removed, each line will get a single SVG element, indents will be corrected ...
+By default, this node will use the free online DrawSvg service (see *"Editor URL"* in the "Settings" tab sheet).  However we it is also possible to use the [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node, which can host a DrawSvg service locally for offline systems.
