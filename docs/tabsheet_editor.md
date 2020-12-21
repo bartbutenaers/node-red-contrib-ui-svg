@@ -1,4 +1,4 @@
-### "Editor" tab sheet
+# "Editor" tab sheet
 
 [DrawSvg](http://drawsvg.org/) is a free SVG drawing editor that will run entirely in your browser, so no installation required.  We have integrated DrawSvg into this node, to allow users to edit their SVG source via a nice drawing program.
 
