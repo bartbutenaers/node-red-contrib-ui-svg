@@ -54,7 +54,7 @@ But what if you are not familiar with the SVG syntax.  Do not worry, we have int
 The node's config screen consists of a series of tab sheets:
 
 + [Editor](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_editor.md) tab sheet
-+ [SVG](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_svg.md) tab sheet
++ [SVG](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_SVG.md) tab sheet
 + [Animation](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_animation.md) tab sheet
 + [Event](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_event.md) tab sheet
 + [JS](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_js.md) tab sheet
