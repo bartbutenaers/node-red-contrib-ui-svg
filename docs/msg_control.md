@@ -104,6 +104,20 @@ The following demo shows to set an attribute *"visibility"* (with value *"hidden
 ```
 Although of course it would make more sense to achieve the same effect, by keeping the attribute and update its value from *"visible"* to *"hidden"*.
 
+## Replace attribute value(s) via msg
+A part of the SVG elements' attribute values can be replaced by another string via an input message.
+ ```
+ "payload": {
+    "command": "replace_attribute",
+    "selector": "#some_path",
+    "attributeName": "d",
+    "regex": "[a-z][^a-z]*",
+    "replaceValue": "v20"
+}
+ ```
+ 
+The previous command will change `<path d="M256.409,423.964v48" ...>` into `<path d="M256.409,423.964v20" ...>`.
+
 ## Set text content via msg
 The text content (or inner html) of an SVG element can be set via an input message:
 ```
