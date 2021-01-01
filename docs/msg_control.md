@@ -104,7 +104,7 @@ The following demo shows to set an attribute *"visibility"* (with value *"hidden
 ```
 Although of course it would make more sense to achieve the same effect, by keeping the attribute and update its value from *"visible"* to *"hidden"*.
 
-## Replace attribute value(s) via msg
+## Replace an attribute value via msg
 A part of the SVG elements' attribute values can be replaced by another string via an input message.
  ```
  "payload": {
