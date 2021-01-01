@@ -256,7 +256,7 @@ module.exports = function(RED) {
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage",
                                       "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute",
-                                      "get_svg", "replace_svg", "update_value"];
+                                      "get_svg", "replace_svg", "update_value", "replace_attribute", "replace_all_attribute"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -1375,6 +1375,45 @@ module.exports = function(RED) {
                                                 if(element.hasAttribute(payload.attributeName)) {
                                                     element.removeAttribute(payload.attributeName);
                                                 }
+                                            });
+                                            break;
+                                        case "replace_attribute":
+                                        case "replace_all_attribute":
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                return;
+                                            }
+                                            if (!payload.regex) {
+                                                logError("Invalid payload. A regular expression should be specified");
+                                                return;
+                                            }   
+                                            if (!payload.replaceValue) {
+                                                logError("Invalid payload. A replace value should be specified");
+                                                return;
+                                            }   
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                return;
+                                            }
+                                            elements.forEach(function(element){
+                                                if(!element.hasAttribute(payload.attributeName)) {
+                                                    logError("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"'");
+                                                    return;
+                                                }
+                                                
+                                                var attributeValue = element.getAttribute(payload.attributeName);
+                                                
+                                                var regex = (op == "replace_attribute") ? new RegExp(payload.regex) : new RegExp(payload.regex, 'g');
+                                                
+                                                if (!regex.test(attributeValue)) {
+                                                    logError("The value of attribute " + payload.attributeName + " does not match the regex");
+                                                    return;
+                                                }
+                                                
+                                                var replacedAttribute = attributeValue.replace(regex, payload.replaceValue)
+                                                element.setAttribute(payload.attributeName, replacedAttribute);
                                             });
                                             break;
                                         case "trigger_animation":
