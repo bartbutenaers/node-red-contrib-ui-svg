@@ -167,6 +167,16 @@ module.exports = function(RED) {
         // Those need to be removed, otherwise AngularJs will throw a parse error.
         // Since those seem to occur between the double quotes of an attribute value, we will remove them (instead of replacing by single quotes) 
         svgString = svgString.replace(/&quot;/g, "");
+        
+        // Migrate old nodes which don't have pan/zoom functionality yet
+        var panning = config.panning || "disabled";
+        var zooming = config.zooming || "disabled";
+
+        var panzoomScripts = "";
+        if (panning !== "disabled" || zooming !== "disabled") {
+            panzoomScripts = String.raw`<script src= "ui_svg_graphics/lib/panzoom"></script>
+                                        <script src= "ui_svg_graphics/lib/hammer"></script>`
+        }
       
         var html = String.raw`
 <style>
@@ -177,9 +187,8 @@ module.exports = function(RED) {
     .nr-dashboard-theme .nr-dashboard-template div.ui-svg path {
         fill: inherit;
     }
-</style>
-<script src= "ui_svg_graphics/lib/panzoom"></script>
-<script src= "ui_svg_graphics/lib/hammer"></script>
+</style>`
+    + panzoomScripts + `
 <div id='tooltip_` + config.id + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
 <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)'>` + svgString + `</div>
 `;              
