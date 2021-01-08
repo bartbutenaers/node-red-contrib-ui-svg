@@ -148,6 +148,22 @@
         node.nonAnimationIdSelectors = [];
         node.nonAnimationIdsAndActions = [];
         node.animationIdsAndActions = [];
+
+        // To be able to parse the string to a DOM, the SVG element needs to be in the svg namespace (i.e. it needs to have an
+        // xmlns attribute with the appropriate value).  Otherwise the DOMParser doesn't know how to handle the SVG tags.
+        // Otherwise the querySelectorAll will not work, which means the autocomplete would be empty ...
+        svgStr = svgStr.replace(/^<svg([^>]*[^>]*)>/g, function(match, $1, offset, input_string) {
+            if ($1.indexOf("http://www.w3.org/2000/svg") < 0) {
+                $1 += ' xmlns="http://www.w3.org/2000/svg"';
+                $1 += ' xmlns:svg="http://www.w3.org/2000/svg"';
+            }
+
+            if ($1.indexOf("http://www.w3.org/1999/xlink") < 0) {
+                $1 += ' xmlns:xlink="http://www.w3.org/1999/xlink"';
+            }
+
+            return "<svg " + $1 + ">";
+        })
         
         // Convert the SVG string into a temporary DOM tree, which allows us to search easily through the SVG.
         // See https://discourse.nodered.org/t/temporary-dom-elements-somewhere-cached/15520
