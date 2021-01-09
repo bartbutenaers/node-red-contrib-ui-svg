@@ -1798,7 +1798,14 @@ module.exports = function(RED) {
     //     //ui: { path: "ui" },
     // But as soon as the user has specified a custom UI path there, we will need to use that path:
     //     ui: { path: "mypath" },
-    var uiPath = ((RED.settings.ui || {}).path) || 'ui';
+    var uiPath = (RED.settings.ui || {}).path;
+
+    // When there was no ui path specified (i.e. '//ui: { path: "ui" }' not commented out in the settings.js file), then
+    // we need to apply the default 'ui' path.  However, when an empty ui path has been specified (i.e. '//ui: { path: "" }'), then
+    // we should also use an empty ui path...  See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/86
+    if (uiPath == undefined) {
+        uiPath = 'ui';
+    }
 	
     // Create the complete server-side path
     uiPath = '/' + uiPath + '/ui_svg_graphics';
