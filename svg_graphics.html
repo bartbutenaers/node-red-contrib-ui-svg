@@ -991,15 +991,18 @@
                     smilAnimationsList.editableList('addItem', smilAnimation);
                 });
             }
+
             // Create a table of clickable shapes
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
             var clickableShapesList = $("#node-input-clickable-container").css('min-height','150px').css('min-width','450px').editableList({
-                header: $("<div>").append($.parseHTML(
-                   "<div style='width:17%; margin-left:5px; display: inline-grid'><b>Selector</b></div>" +
-                   "<div style='width:20%; margin-left:5px; display: inline-grid'><b>Action</b></div>" +
-                   "<div style='width:38%; margin-left:4px; display: inline-grid' id='node-input-columnPayload'><b>msg.payload</b></div>" +
-                   "<div style='width:17%; margin-left:-3px; display: inline-grid'><b>msg.topic</b></div>")),
+                // Apply css to the parent div to have margins, to make sure the percentages of the headers match those of the html elements below.
+                // Thanks to hotNipi for this tip !!!
+                header: $("<div>").css({"margin-left":"28px","margin-right":"10x","padding-right":"0px"}).append($.parseHTML(
+                   "<div style='width:17%; display: inline-grid'><b>Selector</b></div>" +
+                   "<div style='width:25%; display: inline-grid'><b>Action</b></div>" +
+                   "<div style='width:30%; display: inline-grid' id='node-input-columnPayload'><b>msg.payload</b></div>" +
+                   "<div style='width:17%; display: inline-grid'><b>msg.topic</b></div>")),
                 addItem: function(container, i, clickableShape) {
                     // Add a new row to the editableList
                     var row = $('<div/>').appendTo(container);
@@ -1022,13 +1025,13 @@
                     });                     
                     
                     // Column 2 : Add an input field (type option) to the new row, that represents the action type 
-                    var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"20%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var actionField = $('<select/>',{class:"node-input-clickable-action",type:"text",placeholder:"click"}).css({"width":"25%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     for(var val in actionOptions) {
                         $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
                     }
                     actionField.val(clickableShape.action || "click");
                     // Column 3 : Add a input field (type string) to the new row, that represents the msg.payload content 
-                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"payload"}).css({"width":"38%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
+                    var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"payload"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
                     var payloadType = supportedPayloadTypes.includes(clickableShape.payloadType) ? clickableShape.payloadType : defaultPayloadType;
                     payloadField.typedInput({
@@ -1054,7 +1057,8 @@
                         }
                     });
                 },
-                removable: true
+                removable: true,
+                sortable: true
             });
             
             // Show all the clickable shapes (stored in this node) into the editableList
