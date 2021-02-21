@@ -1,6 +1,6 @@
 {
     "name": "node-red-contrib-ui-svg",
-    "version": "2.2.0",
+    "version": "2.2.1",
     "description": "A Node-RED widget node to show interactive SVG (vector graphics) in the dashboard",
     "dependencies": {
        "mime": "^2.4.4",
