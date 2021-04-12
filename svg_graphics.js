@@ -516,7 +516,8 @@ module.exports = function(RED) {
                             //    }, ' ');
                             //}
                             //logError("evt = " + stringifyEvent(evt));
-                            event.stopPropagation();
+                            evt.preventDefault();
+                            evt.stopPropagation();
                             
                             logEvent("Event " + evt.type + " has occured");
                             
