@@ -1456,8 +1456,9 @@
                         params: {
                             // enable samples sub-menu
                             'enableSamples' : true,
-                            // disable save (handled manually)
-                            'disableTasks' : 'save new open'
+                            // Disable 'save' (handled manually) and 'new', but allow users to 'open' an svg file via DrawSvg.
+                            // See demo https://discourse.nodered.org/t/unable-to-load-svg-with-draw-svg/48206/8?u=bartbutenaers
+                            'disableTasks' : 'save new'
                         },
                         // jsChannel callbacks
                         error: function(error, message) { 
