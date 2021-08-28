@@ -502,7 +502,7 @@ module.exports = function(RED) {
                             }                           
                         }
                         
-                        function handleEvent(evt) {
+                        function handleEvent(evt, proceedWithoutTimer) {
                             // Uncomment this section to troubleshoot events on mobile devices
                             //function stringifyEvent(e) {
                             //    const obj = {};
@@ -516,12 +516,57 @@ module.exports = function(RED) {
                             //    }, ' ');
                             //}
                             //logError("evt = " + stringifyEvent(evt));
-                            evt.preventDefault();
-                            evt.stopPropagation();
+
+                            // No need to do this twice: for proceedWithoutTimer=true the click event has already passed here before (with proceedWithoutTimer=null)
+                            if (!proceedWithoutTimer) {
+                                evt.stopPropagation();
+                                
+                                logEvent("Event " + evt.type + " has occured");
+                            }
                             
-                            logEvent("Event " + evt.type + " has occured");
+                            // Get the SVG element where the event has occured (e.g. which has been clicked)
+                            var svgElement = $(evt.target)[0];
                             
-                            var userData = this.getAttribute("data-event_" + evt.type);
+                            if (!svgElement) {
+                                logError("No SVG element has been found for this " + evt.type + " event");
+                                return;
+                            }
+                            
+                            // When a shape has both a single-click and a double-click event handler.  Then a double click will result in in two single click events,
+                            // followed by a double click event.  See https://discourse.nodered.org/t/node-red-contrib-ui-svg-click-and-dblclick-in-same-element/50203/6?u=bartbutenaers
+                            // To prevent the single-clicks from occuring in this case, we start a timer of 400 msec.  If more than 1 click event occurs during
+                            // that interval, it is considered as a double click (so the single clicks are ignored).
+                            if (evt.type == "click" && !proceedWithoutTimer) {
+                                // Only do this if a double click handler has been registered, to avoid that all click events would become delayed.
+                                if (svgElement.hasAttribute("data-event_dblclick")) {
+                                    if ($scope.clickTimer && $scope.clickTimerTarget != evt.target) {
+                                        $scope.clickCount = 0;
+                                        clearTimeout($scope.clickTimer);
+                                        $scope.clickTimerTarget = null;
+                                        $scope.clickTimer = null;                                        
+                                    }
+                                    
+                                    $scope.clickCount++;
+                                                                    
+                                    if (!$scope.clickTimer) {
+                                        $scope.clickTimerTarget = evt.target;
+                                        $scope.clickTimer = setTimeout(function() {
+                                            if ($scope.clickCount < 2) {
+                                                handleEvent(evt, true);
+                                            }
+                                            
+                                            $scope.clickCount = 0;
+                                            clearTimeout($scope.clickTimer);
+                                            $scope.clickTimerTarget = null;
+                                            $scope.clickTimer = null;
+                                        }, 400);
+                                    }
+                                }
+                                
+                                return;
+                            }
+                            
+                            var userData = svgElement.getAttribute("data-event_" + evt.type);
                                         
                             if (!userData) {
                                 logError("No user data available for this " + evt.type + " event");
@@ -588,7 +633,7 @@ module.exports = function(RED) {
                                     msg.event.svgY = Math.trunc(pt.y);
                                     
                                     // Get the SVG element where the event has occured (e.g. which has been clicked)
-                                    var svgElement = $(event.target)[0];
+                                    var svgElement = $(evt.target)[0];
                                     
                                     if (!svgElement) {
                                         logError("No SVG element has been found for this " + evt.type + " event");
@@ -619,12 +664,57 @@ module.exports = function(RED) {
                             $scope.send(msg);
                         }
                         
-                        function handleJsEvent(evt) {
-                            event.preventDefault();
+                        function handleJsEvent(evt, proceedWithoutTimer) {
+                            // No need to do this twice: for proceedWithoutTimer=true the click event has already passed here before (with proceedWithoutTimer=null)
+                            if (!proceedWithoutTimer) {
+                                evt.preventDefault();
+                                
+                                logEvent("JS event " + evt.type + " has occured");
+                            }
                             
-                            logEvent("JS event " + evt.type + " has occured");
+                            // Get the SVG element where the event has occured (e.g. which has been clicked)
+                            var svgElement = $(evt.target)[0];
                             
-                            var userData = this.getAttribute("data-js_event_" + evt.type);
+                            if (!svgElement) {
+                                logError("No SVG element has been found for this " + evt.type + " event");
+                                return;
+                            }
+
+                            // When a shape has both a single-click and a double-click event handler.  Then a double click will result in in two single click events,
+                            // followed by a double click event.  See https://discourse.nodered.org/t/node-red-contrib-ui-svg-click-and-dblclick-in-same-element/50203/6?u=bartbutenaers
+                            // To prevent the single-clicks from occuring in this case, we start a timer of 400 msec.  If more than 1 click event occurs during
+                            // that interval, it is considered as a double click (so the single clicks are ignored).
+                            if (evt.type == "click" && !proceedWithoutTimer) {
+                                // Only do this if a double click handler has been registered, to avoid that all click events would become delayed.
+                                if (svgElement.hasAttribute("data-js_event_dblclick")) {
+                                    if ($scope.clickJsTimer && $scope.clickJsTimerTarget != evt.target) {
+                                        $scope.clickJsCount = 0;
+                                        clearTimeout($scope.clickJsTimer);
+                                        $scope.clickJsTimerTarget = null;
+                                        $scope.clickJsTimer = null;                                        
+                                    }
+                                    
+                                    $scope.clickJsCount++;
+                                                                    
+                                    if (!$scope.clickJsTimer) {
+                                        $scope.clickJsTimerTarget = evt.target;
+                                        $scope.clickJsTimer = setTimeout(function() {
+                                            if ($scope.clickJsCount < 2) {
+                                                handleJsEvent(evt, true);
+                                            }
+                                            
+                                            $scope.clickJsCount = 0;
+                                            clearTimeout($scope.clickJsTimer);
+                                            $scope.clickJsTimerTarget = null;
+                                            $scope.clickJsTimer = null;
+                                        }, 400);
+                                    }
+                                }
+                                
+                                return;
+                            }
+                            
+                            var userData = svgElement.getAttribute("data-js_event_" + evt.type);
                                         
                             if (!userData) {
                                 logError("No user data available for this " + evt.type + " javascript event");
@@ -647,7 +737,7 @@ module.exports = function(RED) {
                                 logError("Error in javascript event handler: " + err);
                             }
                         }
-                        
+
                         function applyEventHandlers(rootElement) {
                             if ($scope.config.clickableShapes) {
                                 // The event handlers that send a message to the server
@@ -738,6 +828,9 @@ module.exports = function(RED) {
                         }
 
                         function initializeSvg(scope) {
+                            $scope.clickCount = 0;
+                            $scope.clickJsCount = 0;
+                            
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
                             // the SVG elements that match the specified CSS selectors.
                             applyEventHandlers(scope.rootDiv);                           
@@ -1671,7 +1764,8 @@ module.exports = function(RED) {
                                             }
 
                                             $scope.panZoomModule.reset();
-                                            break;    
+                                            break;
+
                                         default:
                                             if (msg.topic) {
                                                 logError("Unsupported msg.topic '" + msg.topic + "'");
