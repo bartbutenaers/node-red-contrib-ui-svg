@@ -34,6 +34,19 @@ When this setting is active, an output message will be send every time the clien
    "topic": "loaded"
 ```
 
+## Don't send click events in case of a double click event
+This settings is useful when both a click and a double-click handler have been added to the same SVG shape, to achieve something like this:
++ If the shape is clicked, you want to perform action A.
++ If the shape is double clicked, you want to perform action B.
+
+The default behaviour of SVG DOM events, is that a double click will result in 3 events.  So 3 output messages will sent:
+
+![3 events](https://user-images.githubusercontent.com/14224149/131240459-01c30fae-a188-48fd-9c17-6be36a68e892.png)
+
+In the current use case we don't want the single click messages, in case a double click has been executed.  Otherwise both action A and action B would be executed.
+
+By activating this setting, the single-click messages won't be send in case of a double-click by the user.
+
 ## Editor URL
 This is the URL where the [DrawSvg](#DrawSvg-drawing-editor) editor instance is being hosted.  By default this field contains a link to the official [DrawSvg cloud](http://drawsvg.org/drawsvg.html) system, but it can also contain a link to a local DrawSvg installation (hosted via a [node-red-contrib-drawsvg](https://github.com/bartbutenaers/node-red-contrib-drawsvg) node).
 
