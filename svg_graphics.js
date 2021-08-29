@@ -531,39 +531,42 @@ module.exports = function(RED) {
                                 logError("No SVG element has been found for this " + evt.type + " event");
                                 return;
                             }
-                            
+
                             // When a shape has both a single-click and a double-click event handler.  Then a double click will result in in two single click events,
                             // followed by a double click event.  See https://discourse.nodered.org/t/node-red-contrib-ui-svg-click-and-dblclick-in-same-element/50203/6?u=bartbutenaers
                             // To prevent the single-clicks from occuring in this case, we start a timer of 400 msec.  If more than 1 click event occurs during
                             // that interval, it is considered as a double click (so the single clicks are ignored).
                             if (evt.type == "click" && !proceedWithoutTimer) {
-                                // Only do this if a double click handler has been registered, to avoid that all click events would become delayed.
-                                if (svgElement.hasAttribute("data-event_dblclick")) {
-                                    if ($scope.clickTimer && $scope.clickTimerTarget != evt.target) {
-                                        $scope.clickCount = 0;
-                                        clearTimeout($scope.clickTimer);
-                                        $scope.clickTimerTarget = null;
-                                        $scope.clickTimer = null;                                        
-                                    }
-                                    
-                                    $scope.clickCount++;
-                                                                    
-                                    if (!$scope.clickTimer) {
-                                        $scope.clickTimerTarget = evt.target;
-                                        $scope.clickTimer = setTimeout(function() {
-                                            if ($scope.clickCount < 2) {
-                                                handleEvent(evt, true);
-                                            }
-                                            
+                                // Only do this when this feature has been enabled in the Settings tabsheet
+                                if ($scope.config.noClickWhenDblClick) {
+                                    // Only do this if a double click handler has been registered, to avoid that all click events would become delayed.
+                                    if (svgElement.hasAttribute("data-event_dblclick")) {
+                                        if ($scope.clickTimer && $scope.clickTimerTarget != evt.target) {
                                             $scope.clickCount = 0;
                                             clearTimeout($scope.clickTimer);
                                             $scope.clickTimerTarget = null;
-                                            $scope.clickTimer = null;
-                                        }, 400);
+                                            $scope.clickTimer = null;                                        
+                                        }
+                                        
+                                        $scope.clickCount++;
+                                                                        
+                                        if (!$scope.clickTimer) {
+                                            $scope.clickTimerTarget = evt.target;
+                                            $scope.clickTimer = setTimeout(function() {
+                                                if ($scope.clickCount < 2) {
+                                                    handleEvent(evt, true);
+                                                }
+                                                
+                                                $scope.clickCount = 0;
+                                                clearTimeout($scope.clickTimer);
+                                                $scope.clickTimerTarget = null;
+                                                $scope.clickTimer = null;
+                                            }, 400);
+                                        }
                                     }
-                                }
                                 
-                                return;
+                                    return;
+                                }
                             }
                             
                             var userData = svgElement.getAttribute("data-event_" + evt.type);
@@ -685,33 +688,36 @@ module.exports = function(RED) {
                             // To prevent the single-clicks from occuring in this case, we start a timer of 400 msec.  If more than 1 click event occurs during
                             // that interval, it is considered as a double click (so the single clicks are ignored).
                             if (evt.type == "click" && !proceedWithoutTimer) {
-                                // Only do this if a double click handler has been registered, to avoid that all click events would become delayed.
-                                if (svgElement.hasAttribute("data-js_event_dblclick")) {
-                                    if ($scope.clickJsTimer && $scope.clickJsTimerTarget != evt.target) {
-                                        $scope.clickJsCount = 0;
-                                        clearTimeout($scope.clickJsTimer);
-                                        $scope.clickJsTimerTarget = null;
-                                        $scope.clickJsTimer = null;                                        
-                                    }
-                                    
-                                    $scope.clickJsCount++;
-                                                                    
-                                    if (!$scope.clickJsTimer) {
-                                        $scope.clickJsTimerTarget = evt.target;
-                                        $scope.clickJsTimer = setTimeout(function() {
-                                            if ($scope.clickJsCount < 2) {
-                                                handleJsEvent(evt, true);
-                                            }
-                                            
+                                // Only do this when this feature has been enabled in the Settings tabsheet
+                                if ($scope.config.noClickWhenDblClick) {
+                                    // Only do this if a double click handler has been registered, to avoid that all click events would become delayed.
+                                    if (svgElement.hasAttribute("data-js_event_dblclick")) {
+                                        if ($scope.clickJsTimer && $scope.clickJsTimerTarget != evt.target) {
                                             $scope.clickJsCount = 0;
                                             clearTimeout($scope.clickJsTimer);
                                             $scope.clickJsTimerTarget = null;
-                                            $scope.clickJsTimer = null;
-                                        }, 400);
+                                            $scope.clickJsTimer = null;                                        
+                                        }
+                                        
+                                        $scope.clickJsCount++;
+                                                                        
+                                        if (!$scope.clickJsTimer) {
+                                            $scope.clickJsTimerTarget = evt.target;
+                                            $scope.clickJsTimer = setTimeout(function() {
+                                                if ($scope.clickJsCount < 2) {
+                                                    handleJsEvent(evt, true);
+                                                }
+                                                
+                                                $scope.clickJsCount = 0;
+                                                clearTimeout($scope.clickJsTimer);
+                                                $scope.clickJsTimerTarget = null;
+                                                $scope.clickJsTimer = null;
+                                            }, 400);
+                                        }
                                     }
-                                }
                                 
-                                return;
+                                    return;
+                                }
                             }
                             
                             var userData = svgElement.getAttribute("data-js_event_" + evt.type);
