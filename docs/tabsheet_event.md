@@ -4,7 +4,7 @@
 
 An SVG element can be added here, to make that element able to intercept one of the following events:
 + *Click*: when a mouse-down and mouse-up on the same element.
-+ *Double click*: when a double mouse click on an element.
++ *Double click*: when a double mouse click on an element.  Note that there is a [setting](https://github.com/bartbutenaers/node-red-contrib-ui-svg/blob/master/docs/tabsheet_settings.md#send-output-msg-when-the-client-is-reloaded) to configure this event.
 + *Change*: when the value of a (foreign) input element is changed.
 + *Context menu*: when a right mouse click on an element.
 + *Mouse down*: when a mouse button is pressed down on an element. 
