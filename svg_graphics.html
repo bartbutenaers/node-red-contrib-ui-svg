@@ -358,6 +358,7 @@
             showBrowserEvents: {value: false},
             enableJsDebugging: {value: false},
             sendMsgWhenLoaded: {value: false},
+            noClickWhenDblClick: {value: false},
             outputField: {value: "payload"},
             editorUrl: {value: "//drawsvg.org/drawsvg.html"},
             //showMouseLines: {value: false},
@@ -991,7 +992,7 @@
                     smilAnimationsList.editableList('addItem', smilAnimation);
                 });
             }
-
+debugger;
             // Create a table of clickable shapes
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
@@ -1058,7 +1059,17 @@
                     });
                 },
                 removable: true,
-                sortable: true
+                sortable: true,
+                buttons: [{
+                    label: "<script>alert('hi');<\/script>",
+                    icon: "fa fa-star"
+                },
+                {
+                    icon: "fa fa-star",
+                    click: function(evt) { 
+                        alert("without icon");
+                    }
+                }]
             });
             
             // Show all the clickable shapes (stored in this node) into the editableList
@@ -1456,9 +1467,8 @@
                         params: {
                             // enable samples sub-menu
                             'enableSamples' : true,
-                            // Disable 'save' (handled manually) and 'new', but allow users to 'open' an svg file via DrawSvg.
-                            // See demo https://discourse.nodered.org/t/unable-to-load-svg-with-draw-svg/48206/8?u=bartbutenaers
-                            'disableTasks' : 'save new'
+                            // disable save (handled manually)
+                            'disableTasks' : 'save'
                         },
                         // jsChannel callbacks
                         error: function(error, message) { 
@@ -1886,6 +1896,10 @@
                 <input type="checkbox" id="node-input-sendMsgWhenLoaded" style="display: inline-block; width: auto; vertical-align: top;">
                 <label for="node-input-sendMsgWhenLoaded" style="width:70%;"> Send output msg when the client is (re)loaded</label>
             </div>
+            <div class="form-row">
+                <input type="checkbox" id="node-input-noClickWhenDblClick" style="display: inline-block; width: auto; vertical-align: top;">
+                <label for="node-input-noClickWhenDblClick" style="width:70%;"> Don't send click events in case of a double click event</label>
+            </div>
             <div class="form-row" id="div-editorUrl">
                 <label for="node-input-editorUrl"><i class="fa fa-globe"></i> Editor URL</label>
                 <input type="text" id="node-input-editorUrl">
@@ -1928,7 +1942,7 @@
                 <span style="vertical-align: super;"> Enable double click zooming by</span>
                 <input type="number" id="node-input-dblClickZoomPercentage" style="width:55px;vertical-align:super;margin-left:5px" min="100">
                 <span style="vertical-align:super;super;margin-left:5px"> %</span>
-            </div>            
+            </div>
         </div>
     </div>
 </script>
