@@ -563,9 +563,9 @@ module.exports = function(RED) {
                                                 $scope.clickTimer = null;
                                             }, 400);
                                         }
+                                        
+                                        return;
                                     }
-                                
-                                    return;
                                 }
                             }
                             
@@ -714,9 +714,9 @@ module.exports = function(RED) {
                                                 $scope.clickJsTimer = null;
                                             }, 400);
                                         }
+
+                                        return;
                                     }
-                                
-                                    return;
                                 }
                             }
                             
