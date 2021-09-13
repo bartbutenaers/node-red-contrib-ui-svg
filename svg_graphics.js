@@ -524,8 +524,15 @@ module.exports = function(RED) {
                                 logEvent("Event " + evt.type + " has occured");
                             }
                             
-                            // Get the SVG element where the event has occured (e.g. which has been clicked)
-                            var svgElement = $(evt.target)[0];
+                            // Get the SVG element where the event has occured (e.g. which has been clicked).
+                            // Caution: You can add an event handler to a group, which is called when one of the (sub)elements of that group receives that event (e.g. 
+                            // when that (sub)element is being clicked).  The event will bubble from the clicked (sub)element, up until the group element is reached.
+                            // At that point we will arrive in this event handler:
+                            // - evt.target will refer to the (sub)element that received the event
+                            // - evt.currentTarget will refer to the group element to which the event handler is attached.
+                            // Since our data-event_xxx attributes are available in the element that has the event handler, we will need to use evt.currentTarget !!
+                            // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/97
+                            var svgElement = $(evt.currentTarget)[0];
                             
                             if (!svgElement) {
                                 logError("No SVG element has been found for this " + evt.type + " event");
