@@ -1255,7 +1255,7 @@ module.exports = function(RED) {
                                             
                                             // Add the new attributes from the new SVG element, to the current $scope.svg element
                                             for(var i = 0; i < newSvg.attributes.length; i++) {
-                                                var newAttribute = newSvg.attributes[0];
+                                                var newAttribute = newSvg.attributes[i];
                                                 $scope.svg.setAttribute(newAttribute.name, newAttribute.value);
                                             }
                                             
