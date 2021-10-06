@@ -1300,7 +1300,14 @@ module.exports = function(RED) {
                                         
                                             // Create a new SVG element (of the specified type) to every specified parent SVG element
                                             parentElements.forEach(function(parentElement){
-                                                var newElement = document.createElementNS("http://www.w3.org/2000/svg", payload.elementType);
+                                                var newElement;
+                                                
+                                                if (payload.foreignElement == true) {
+                                                    newElement = document.createElement(payload.elementType);
+                                                }
+                                                else {
+                                                    newElement = document.createElementNS("http://www.w3.org/2000/svg", payload.elementType);
+                                                }
                                                 
                                                 if (payload.elementId) {
                                                     newElement.setAttribute("id", payload.elementId);
