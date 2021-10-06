@@ -257,6 +257,7 @@ Some remarks about the input message:
 + A `parentElementId` property can be specified if the new element should be a child of the specified parent element.  If not available, the new element will be added directly under the root SVG element.
 + A `parentSelector` property can be specified, if an instance of this element should be added to all the parent elements that match the CSS selector.  This way you can create multiple elements at once via a single command.  Note that it is not allowed in that case to specify an elementId property, since only one element can have the same id.
 + When an element with the same `elementId` already exists (for the same parent element), then that existing element will be *replaced* by this new element!
++ A `foreignElement` property (with value `true`) can be specified, when a foreign element needs to be created.  In other words to create a standard HTML element, which means a non-SVG element (e.g. a `tr` element to add a table row in a foreign html table used inside the SVG drawing).
 
 When the *"Event"* tab sheet already contains a CSS selector that matches this new element, then this new element automatically gets those event handlers. 
 
