@@ -14,11 +14,14 @@
  * limitations under the License.
  **/
 module.exports = function(RED) {
-    var settings = RED.settings;
+    var settings   = RED.settings;
     const svgUtils = require('./svg_utils');
-    const fs = require('fs');
-    const path = require('path');
-    const mime = require('mime');
+    const fs       = require('fs');
+    const path     = require('path');
+    const mime     = require('mime');
+    const postcss  = require('postcss');
+    const prefixer = require('postcss-prefix-selector');
+    
     // Shared object between N instances of this node (caching for performance)
     var faMapping;
     
@@ -26,14 +29,28 @@ module.exports = function(RED) {
     // Determining the path to the files in the dependent js-beautify module once.
     // See https://discourse.nodered.org/t/use-files-from-dependent-npm-module/17978/5?u=bartbutenaers
     // -------------------------------------------------------------------------------------------------
-    var jsBeautifyPath = require.resolve("js-beautify");
+    var jsBeautifyHtmlPath = require.resolve("js-beautify");
     
-    // For example suppose the require.resolved results in jsBeautifyPath = /home/pi/.node-red/node_modules/js-beautify/js/index.js
-    jsBeautifyPath = jsBeautifyPath.replace("index.js", "lib" + path.sep + "beautify-html.js");
+    // For example suppose the require.resolved results in jsBeautifyHtmlPath = /home/pi/.node-red/node_modules/js-beautify/js/index.js
+    jsBeautifyHtmlPath = jsBeautifyHtmlPath.replace("index.js", "lib" + path.sep + "beautify-html.js");
 
-    if (!fs.existsSync(jsBeautifyPath)) {
-        console.log("Javascript file " + jsBeautifyPath + " does not exist");
-        jsBeautifyPath = null;
+    if (!fs.existsSync(jsBeautifyHtmlPath)) {
+        console.log("Javascript file " + jsBeautifyHtmlPath + " does not exist");
+        jsBeautifyHtmlPath = null;
+    }
+
+    // -------------------------------------------------------------------------------------------------
+    // Determining the path to the files in the dependent js-beautify module once.
+    // See https://discourse.nodered.org/t/use-files-from-dependent-npm-module/17978/5?u=bartbutenaers
+    // -------------------------------------------------------------------------------------------------
+    var jsBeautifyCssPath = require.resolve("js-beautify");
+    
+    // For example suppose the require.resolved results in jsBeautifyCssPath = /home/pi/.node-red/node_modules/js-beautify/js/index.js
+    jsBeautifyCssPath = jsBeautifyCssPath.replace("index.js", "lib" + path.sep + "beautify-css.js");
+
+    if (!fs.existsSync(jsBeautifyCssPath)) {
+        console.log("Javascript file " + jsBeautifyCssPath + " does not exist");
+        jsBeautifyCssPath = null;
     }
     
     // -------------------------------------------------------------------------------------------------
@@ -66,7 +83,12 @@ module.exports = function(RED) {
         hammerPath = null;
     }
 
-    function HTML(config) {       
+    function HTML(config) {
+        // The old node id's in Node-RED contained a dot.  However that dot causes problems when using it inside scopedCssString.
+        // Because the CSS will interpret the dot incorrectly, and will not apply the styles to the requested elements.
+        // Therefore we will replace the dot by an underscore.
+        config.nodeIdWithoutDot = config.id.replace(".", "_");
+        
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config, function (key,value) {
             switch (key) {
@@ -177,21 +199,36 @@ module.exports = function(RED) {
             panzoomScripts = String.raw`<script src= "ui_svg_graphics/lib/panzoom"></script>
                                         <script src= "ui_svg_graphics/lib/hammer"></script>`
         }
+        
+        const DEFAULT_CSS_SVG_NODE = 
+`div.ui-svg svg{
+    color: var(--nr-dashboard-widgetColor);
+    fill: currentColor !important;
+}
+div.ui-svg path {
+    fill: inherit !important;
+}`;
+
+        // Apply a default CSS string to older nodes (version 2.2.4 and below)
+        var cssString = config.cssString || DEFAULT_CSS_SVG_NODE;
+        
+        // Create a scoped CSS string, i.e. CSS styles that are only applied to the SVG in this node.
+        // However scoped css has been removed from the specs (see https://github.com/whatwg/html/issues/552).
+        // As a workaround we apply a prefix to every css selector, to make sure it is only applied to this SVG. 
+        // A new outer div has been added with a unique class, to make prefixing easier.
+        const scopedCssString = postcss().use(prefixer({
+          prefix: ".svggraphics_" + config.nodeIdWithoutDot
+        })).process(cssString).css;
       
-        var html = String.raw`
-<style>
-    .nr-dashboard-theme .nr-dashboard-template div.ui-svg svg{
-        color: var(--nr-dashboard-widgetColor);
-        fill: currentColor;
-    }
-    .nr-dashboard-theme .nr-dashboard-template div.ui-svg path {
-        fill: inherit;
-    }
-</style>`
-    + panzoomScripts + `
-<div id='tooltip_` + config.id + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
-<div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)' style="width:100%; height:100%;">` + svgString + `</div>
-`;              
+        var html = String.raw
+`<style>` + scopedCssString + panzoomScripts + 
+`</style>
+<div id='tooltip_` + config.nodeIdWithoutDot + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'>
+</div>
+<div class='svggraphics_` + config.nodeIdWithoutDot + `' style="width:100%; height:100%;">
+   <div class='ui-svg' id='svggraphics_` + config.nodeIdWithoutDot + `' ng-init='init(` + configAsJson + `)' style="width:100%; height:100%;">` + svgString + `
+   </div>
+</div>`;              
         return html;
     };
 
@@ -922,7 +959,7 @@ module.exports = function(RED) {
 
                             // Remark: it is not possible to show the coordinates when there is no svg element
                             if (scope.config.showCoordinates && scope.svg) {
-                                scope.tooltip = document.getElementById("tooltip_" + scope.config.id);
+                                scope.tooltip = document.getElementById("tooltip_" + scope.config.nodeIdWithoutDot);
                                 scope.svg.addEventListener("mousemove", function(evt) {
                                     // Make sure the tooltip becomes visible, when inside the SVG drawing
                                     scope.tooltip.style.display = "block";
@@ -982,7 +1019,7 @@ module.exports = function(RED) {
                         $scope.init = function (config) {
                             $scope.config = config;
                             $scope.faMapping = {};
-                            $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
+                            $scope.rootDiv = document.getElementById("svggraphics_" + config.nodeIdWithoutDot);
                             $scope.svg = $scope.rootDiv.querySelector("svg");
                             $scope.isObject = function(obj) {
                                 return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
@@ -1858,8 +1895,16 @@ module.exports = function(RED) {
         // Send the requested js library file to the client
         switch (req.params.libraryname) {
             case "beautify-html.js":
-                if (jsBeautifyPath) {
-                    res.sendFile(jsBeautifyPath);
+                // The html beautifier is used to beautify the SVG source
+                if (jsBeautifyHtmlPath) {
+                    res.sendFile(jsBeautifyHtmlPath);
+                    return;
+                }
+                break;
+            case "beautify-css.js":
+                // The css beautifier is used to beautify the CSS source
+                if (jsBeautifyCssPath) {
+                    res.sendFile(jsBeautifyCssPath);
                     return;
                 }
                 break;

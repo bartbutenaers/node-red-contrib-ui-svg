@@ -60,6 +60,7 @@ The node's config screen consists of a series of tab sheets:
 + [JS](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_js.md) tab sheet
 + [Binding](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_binding.md) tab sheet
 + [Settings](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_settings.md) tab sheet
++ [CSS](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/tabsheet_css.md) tab sheet
 
 ## Control via messages
 Most of the SVG information can be manipulated by sending input messages to this node.  

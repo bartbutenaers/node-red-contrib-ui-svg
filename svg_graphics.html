@@ -80,11 +80,9 @@
 
 </style>
 
-
 <script src="ui_svg_graphics/lib/jschannel.js"></script>
 <script src="ui_svg_graphics/lib/beautify-html.js"></script>
-
-
+<script src="ui_svg_graphics/lib/beautify-css.js"></script>
 
 <script type="text/javascript">
     const messageBox = {
@@ -245,20 +243,23 @@
         });
     }
     
-    function updateEditorHeight(node, editor) {
-        console.log("updateEditorHeight");
-        //resize the tab content divs to available height
+    // resize the current tab content divs to their available height
+    function updateEditorHeight(node) {
+        // Calculate the height that is being occupied by the other html elements (i.e. outside of the tab content)
         var formRows = $("#dialog-form>div:not(#node-svg-tabs-content)");
         var height = $("#dialog-form").height() - 5;
         for (let i=0; i < formRows.length; i++) {
             height -= $(formRows[i]).outerHeight(true);
         }
-        $("#node-svg-tabs-content").css("height",height+"px");//set size of tabs area
-        //now resize the item with class form-row-auto-height
+        
+        // Set the size of the tab content, to fill the area that is left over
+        $("#node-svg-tabs-content").css("height",height+"px");
+        
+        // Now resize the items (inside the tab content), which have css class "form-row-auto-height"
         var tabs = $('.node-svg-tab-content');
         for (let index = 0; index < tabs.length; index++) {
             let tab = $(tabs[index]);
-            tab.css("height",height+"px");
+            tab.css("height", height+"px");
             let expandRow = $(tab.find('.form-row-auto-height'));
             if(expandRow && expandRow.length){
                 let tabHeight = height;
@@ -274,26 +275,42 @@
                 }
             } 
         }
-        if ( editor ) {
-            // Is the editor is in full-screen? ...
+        
+        // If there is an ACE editor (for CSS or SVG) visible on the current tab, then that should get a correct height either.
+        // Note that their height depends on whether they are currently being displayed in fullscreen mode or not.
+        if ( node.visibleEditor ) {
+            // Is the visible editor in full-screen?
             node.fullscreen = document.fullscreenElement ? true : false;
-            var rows = $("#node-svg-tab-source>div:not(.node-source-editor-row)");
-            var height = $("#node-svg-tab-source").height() - 25;
+
+            // Determine whether the svg or css editor is currently being displayed
+            var editorType;
+            switch(node.currentTabId) {
+                case "node-svg-tab-source":
+                    editorType = "source"; // SVG source
+                    break;
+                case "node-svg-tab-css":
+                    editorType = "css";
+                    break;
+            }
+
+            var rows = $("#node-svg-tab-"+editorType+">div:not(.node-"+editorType+"-editor-row)");
+            var height = $("#node-svg-tab-"+editorType).height() - 25;
             for (var i=0; i<rows.size(); i++) {
                 height = height - $(rows[i]).outerHeight(true);
             }
             if ($('#node-input-templateScope').val() === "global") { height += 232; }
            
             if (node.fullscreen) {
-                $('#node-expand-svg-source').html('<i class="fa fa-compress"></i>')//compress icon
+                $('#node-expand-svg-'+editorType).html('<i class="fa fa-compress"></i>')//compress icon
             } else {               
-                $('#node-expand-svg-source').html('<i class="fa fa-expand"></i>')//expand icon
+                $('#node-expand-svg-'+editorType).html('<i class="fa fa-expand"></i>')//expand icon
             }
             
             // Set the height of the edit box
-            $('#node-input-svg-source').css('height',height+'px');
-            // Get the content to match the edit box size
-            if(editor) editor.resize();
+            $('#node-input-svg-'+editorType).css('height',height+'px');
+            
+            // Make sure the visible ACE editor content will match its new edit box size
+            node.visibleEditor.resize();
         }
         $(".node-input-clickable-payload").typedInput('width');//layout workaround until NR V1 https://discourse.nodered.org/t/toggle-visibility-of-typedinput-field-layout-issue/12756/11
     } 
@@ -326,6 +343,16 @@
             attribute : row.find(".node-input-binding-attribute").val()
         };
     }
+    
+    const DEFAULT_CSS_SVG_NODE = 
+`div.ui-svg svg{
+    color: var(--nr-dashboard-widgetColor);
+    fill: currentColor !important;
+}
+div.ui-svg path {
+    fill: inherit !important;
+}`;
+    
     RED.nodes.registerType('ui_svg_graphics',{
         category: 'dashboard',
         color: 'rgb( 63, 173, 181)',
@@ -369,6 +396,7 @@
             doubleClickZoomEnabled: {value: false}, 
             mouseWheelZoomEnabled: {value: false}, 
             dblClickZoomPercentage: {value: 150, validate: function(v) { return !v || (!isNaN(v) && v >= 100)} },
+            cssString: {value: DEFAULT_CSS_SVG_NODE},
             name: {value: ''}
         },
         inputs:1,
@@ -427,7 +455,8 @@
             ]
             
             node.initialised = false;
-            window.node_ace_editor = null;
+            window.node_ace_svg_editor = null;
+            window.node_ace_css_editor = null;
             $("#node-input-size").elementSizer({
                 width: "#node-input-width",
                 height: "#node-input-height",
@@ -446,30 +475,51 @@
                     $('#template-row-group, #template-row-size, #template-pass-store').show();
                     node._def.defaults.group.required = true;
                 }
-                var rows = $("#dialog-form>div:not(.node-source-editor-row)");
-                var height = $("#dialog-form").height();
-                for (var i=0; i<rows.size(); i++) {
-                    height = height - $(rows[i]).outerHeight(true);
+                
+                if ( node.visibleEditor ) {
+                    // Get the id of the editor container DIV element
+                    var editorContainerId = node.visibleEditor.container.parentElement.id;
+                    
+                    // Determine whether the svg or css editor is currently being displayed
+                    var editorType;
+                    switch(editorContainerId) {
+                        case "node-input-svg-source":
+                            editorType = "svg";
+                            break;
+                        case "node-input-svg-css":
+                            editorType = "css";
+                            break;
+                    }
+                    
+                    var rows = $("#dialog-form>div:not(.node-"+editorType+"-editor-row)");
+                    var height = $("#dialog-form").height();
+                    for (var i=0; i<rows.size(); i++) {
+                        height = height - $(rows[i]).outerHeight(true);
+                    }
+                    
+                    if ($('#node-input-templateScope').val() === "global") { height += 240; }
+                    var editorRow = $("#dialog-form>div.node-"+editorType+"-editor-row");
+                    height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
+                    $(".node-"+editorType+"-editor").css("height",height+"px");
+                    node.visibleEditor.resize();
                 }
-                if ($('#node-input-templateScope').val() === "global") { height += 240; }
-                var editorRow = $("#dialog-form>div.node-source-editor-row");
-                height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
-                $(".node-source-editor").css("height",height+"px");
-                if (this.editor) { this.editor.resize(); }
             })
-            
+   
             // Show tabsheets
             node.tabs = RED.tabs.create({
                 id: "node-svg-tabs",
                 onchange: function(tab) {
+                    node.currentTabId = tab.id;
+                    
                     //console.log("tabs.onchange",tab);
                     // Show only the content (i.e. the children) of the selected tabsheet, and hide the others
                     $("#node-svg-tabs-content").children().hide();
                     $("#" + tab.id).show();
-                    updateEditorHeight(node,node.editor);
+                    
+                    node.visibleEditor = null;
                     
                     if(tab.id == "node-svg-tab-animations" || tab.id == "node-svg-tab-clickable" || tab.id == "node-svg-tab-binding" || tab.id == "node-svg-tab-javascript"){
-                        let svgStr = node.editor ? node.editor.getValue() : ""; 
+                        let svgStr = node.svgEditor ? node.svgEditor.getValue() : ""; 
                         try {
                             // When tabsheet changes, all autocomplete sources should be updated (since element ids, ... might have changed)
                             updateSvgIdHelpers(node, svgStr);    
@@ -477,6 +527,14 @@
                         catch (error) {
                             console.error(error)
                         }
+                    }
+                    else if (tab.id == "node-svg-tab-source") {
+                        node.visibleEditor = node.svgEditor;
+                        updateEditorHeight(node);
+                    }
+                    else if (tab.id == "node-svg-tab-css") {
+                        node.visibleEditor = node.cssEditor;
+                        updateEditorHeight(node);
                     }
                     else if (tab.id == "node-svg-tab-editor") {
                         updateSvgEditorButton();
@@ -510,7 +568,11 @@
             node.tabs.addTab({
                 id: "node-svg-tab-settings",
                 label: "Settings"
-            });  
+            });
+            node.tabs.addTab({
+                id: "node-svg-tab-css",
+                label: "CSS"
+            }); 
             function updateSvgEditorButton() {
                 var svgEditorButton = $("#node-display-svg-popup");
                 var editorUrlMissing = $("#node-display-svg-popup-no-url");
@@ -530,31 +592,41 @@
             $("#gotoSettingsButton").click(selectSettingsTab);
 
             this.fullscreen = false;
-            this.editor = RED.editor.createEditor({
+            
+            this.svgEditor = RED.editor.createEditor({
                 id: 'node-input-svg-source',
                 mode: 'ace/mode/html',
                 value: $("#node-input-svgString").val()
             });
-            node.editor.setFontSize(14); 
-            window.node_ace_editor = node.editor;
+            node.svgEditor.setFontSize(14); 
+            window.node_ace_svg_editor = node.svgEditor;
+
+            this.cssEditor = RED.editor.createEditor({
+                id: 'node-input-svg-css',
+                mode: 'ace/mode/css',
+                // Apply a default CSS string to older nodes (version 2.2.4 and below)
+                value: $("#node-input-cssString").val() || DEFAULT_CSS_SVG_NODE
+            });
+            node.cssEditor.setFontSize(14); 
+            window.node_ace_css_editor = node.cssEditor;
             
             RED.library.create({
                 url:"uitemplates", // where to get the data from
                 type:"ui_template", // the type of object the library is for
-                editor:this.editor, // the field name the main text body goes to
+                editor:this.svgEditor, // the field name the main text body goes to
                 mode:"ace/mode/svg",
                 fields:['name']
             });
-            this.editor.focus();
+            this.svgEditor.focus();
             
-            var fullScrElement = $('#node-svg-tab-source')[0];
-            var fsr = fullScrElement.requestFullscreen || fullScrElement.mozRequestFullScreen || fullScrElement.webkitRequestFullscreen || fullScrElement.msRequestFullScreen;
-            if(fsr){
+            var fullScrSvgElement = $('#node-svg-tab-source')[0];
+            var svgFsr = fullScrSvgElement.requestFullscreen || fullScrSvgElement.mozRequestFullScreen || fullScrSvgElement.webkitRequestFullscreen || fullScrSvgElement.msRequestFullScreen;
+            if(svgFsr){
                 $('#node-expand-svg-source').click(function(e) {
                     e.preventDefault()
                     if (node.fullscreen === false) {
-                        if (fsr) {
-                            fsr.call(fullScrElement);//triggers oneditresize()
+                        if (svgFsr) {
+                            svgFsr.call(fullScrSvgElement);//triggers oneditresize()
                         }
                     } else {
                         document.exitFullscreen();//triggers oneditresize()
@@ -562,6 +634,23 @@
                 })
             } else {
                 $('#node-expand-svg-source').hide();
+            }
+            
+            var fullScrCssElement = $('#node-svg-tab-css')[0];
+            var cssFsr = fullScrCssElement.requestFullscreen || fullScrCssElement.mozRequestFullScreen || fullScrCssElement.webkitRequestFullscreen || fullScrCssElement.msRequestFullScreen;
+            if(cssFsr){
+                $('#node-expand-svg-css').click(function(e) {
+                    e.preventDefault()
+                    if (node.fullscreen === false) {
+                        if (cssFsr) {
+                            cssFsr.call(fullScrCssElement);//triggers oneditresize()
+                        }
+                    } else {
+                        document.exitFullscreen();//triggers oneditresize()
+                    }
+                })
+            } else {
+                $('#node-expand-svg-css').hide();
             }
             
             function addPropertyRow(container, propertyName) {
@@ -992,7 +1081,7 @@
                     smilAnimationsList.editableList('addItem', smilAnimation);
                 });
             }
-debugger;
+
             // Create a table of clickable shapes
             const supportedPayloadTypes = ['flow', 'global', 'str', 'num', 'bool', 'json', 'date'];
             const defaultPayloadType = "str";
@@ -1124,8 +1213,8 @@ debugger;
                     var buttonField = $('<button title="Expand JS editor"><i class="fa fa-expand"></i></button>').css({"resize":"none","vertical-align":"top","width":"30px","height":"34px","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     // When the button is clicked, show an ACE editor (with the javascript code) in fullscreen
                     buttonField.click(function(e) {
-                        var fullScrElement = $('#node-input-javascript-editor');
-                        fullScrElement.show();
+                        var fullScrJsElement = $('#node-input-javascript-editor');
+                        fullScrJsElement.show();
                         node.javascriptEditor = RED.editor.createEditor({
                             id: 'node-input-javascript-editor',
                             mode: 'ace/mode/javascript',
@@ -1133,7 +1222,7 @@ debugger;
                         });
                         node.javascriptEditor.setFontSize(14); 
                         
-                        var fullScrRequest = fullScrElement[0].requestFullscreen || fullScrElement[0].mozRequestFullScreen || fullScrElement[0].webkitRequestFullscreen || fullScrElement[0].msRequestFullScreen;
+                        var fullScrRequest = fullScrJsElement[0].requestFullscreen || fullScrJsElement[0].mozRequestFullScreen || fullScrJsElement[0].webkitRequestFullscreen || fullScrJsElement[0].msRequestFullScreen;
                         if(fullScrRequest){
                             $('#node-input-javascript-editor').on('webkitfullscreenchange mozfullscreenchange msRequestFullscreen fullscreenchange', function(e) {
                                 // When returning from fullscreen mode
@@ -1142,13 +1231,13 @@ debugger;
                                     javascriptField.val(node.javascriptEditor.getValue());
                                     
                                     node.javascriptEditor.destroy();
-                                    fullScrElement[0].innerHTML = ''; // Remove all previous ACE editor DOM elements
-                                    fullScrElement.hide();
+                                    fullScrJsElement[0].innerHTML = ''; // Remove all previous ACE editor DOM elements
+                                    fullScrJsElement.hide();
                                 }
                             });
                             
                              // Expand the javascript editor parent DIV element to fullscreen
-                            fullScrRequest.call(fullScrElement[0]);
+                            fullScrRequest.call(fullScrJsElement[0]);
                         } 
                     });
                 },
@@ -1513,7 +1602,7 @@ debugger;
                 if(node.autoFormatAfterEdit){
                     svgStr = beautifySVG(svgStr);
                 }
-                window.node_ace_editor.setValue(svgStr);
+                window.node_ace_svg_editor.setValue(svgStr);
             }
 
             function sendSVGtoEditor(){
@@ -1521,7 +1610,7 @@ debugger;
                 // data URL (which is stored into the SVG string).  The original (relative) local image path is stored in a data-xlink-href attribute 
                 // (on the same image element), so it can be restored when returning back from DrawSvg.
                 // For example: The image element has an attribute xlink:href="/someLocalImage.jpg" (linux) or xlink:href="\someLocalImage.jpg" (windows)
-                var svgString = window.node_ace_editor ? window.node_ace_editor.getValue() : "";
+                var svgString = window.node_ace_svg_editor ? window.node_ace_svg_editor.getValue() : "";
                 svgString = svgString.replace(/(xlink:href="[\\\/]{1})([^"]*)(")/g, function(match, $1, $2, $3, offset, input_string) {
                     var newUrl = "";
                     // This is the local file URL, without the (back)slash in front
@@ -1597,9 +1686,9 @@ debugger;
             });
             $(".node-format-svg-source").on("click", function (e) {
                 try {
-                    var svgIn = node.editor.getValue();
+                    var svgIn = node.svgEditor.getValue();
                     var svgOut = beautifySVG(svgIn);
-                    window.node_ace_editor.setValue(svgOut);
+                    window.node_ace_svg_editor.setValue(svgOut);
                 } catch (error) {
                     console.error(error);
                 }       
@@ -1627,6 +1716,40 @@ debugger;
                 $.extend(opts, options);//merge options into opts (in case of duplicates, options takes precidence)
                 return html_beautify(svg,opts);
             }
+            
+            $(".node-format-svg-css").on("click", function (e) {
+                try {
+                    var cssIn = node.cssEditor.getValue();
+                    var cssOut = beautifyCSS(cssIn);
+                    window.node_ace_css_editor.setValue(cssOut);
+                } catch (error) {
+                    console.error(error);
+                }       
+            });
+            function beautifyCSS(css, options){
+                var opts = {
+                    'indent_size': 2,
+                    'indent_char': '\t',
+                    'selector_separator': ' ',
+                    'end_with_newline': false,
+                    'newline_between_rules': true,
+                    'space_around_selector_separator': true
+                };
+                $.extend(opts, options);//merge options into opts (in case of duplicates, options takes precidence)
+                return css_beautify(css,opts);
+            }
+            
+            $(".node-reset-svg-css").on("click", function (e) {
+                var currentCssString = node.cssEditor.getValue();
+                
+                if(currentCssString && currentCssString.trim() != "") {
+                    if(!confirm("Do you really want to reset the CSS styles?")) {
+                        return;
+                    }
+                }
+                
+                node.cssEditor.setValue(DEFAULT_CSS_SVG_NODE);
+            });
             
             $("#node-input-restoreUrl").on("click", function (e) {
                 $("#node-input-editorUrl").val("//drawsvg.org/drawsvg.html");
@@ -1710,7 +1833,7 @@ debugger;
         oneditsave: function() {
             var node = this;
 
-            var annot = this.editor.getSession().getAnnotations();
+            var annot = this.svgEditor.getSession().getAnnotations();
             this.noerr = 0;
             $("#node-input-noerr").val(0);
             for (var k=0; k < annot.length; k++) {
@@ -1720,11 +1843,11 @@ debugger;
                 }
             }
             
-            var svgString = this.editor.getValue();
+            var svgString = this.svgEditor.getValue();
             $("#node-input-svgString").val(svgString);
-            this.editor.destroy();
-            delete this.editor;
-            delete window.node_ace_editor;
+            this.svgEditor.destroy();
+            delete this.svgEditor;
+            delete window.node_ace_svg_editor;
             
             // Copy all the animations from the editableList to this node
             node.smilAnimations = [];
@@ -1770,15 +1893,32 @@ debugger;
                 var amin = getBindingFromFormRow(this);
                 node.bindings.push(amin);
             });
-            window.node_ace_editor = null;
+            window.node_ace_svg_editor = null;
+            
+            annot = this.cssEditor.getSession().getAnnotations();
+            $("#node-input-noerr").val(0);
+            for (var k=0; k < annot.length; k++) {
+                if (annot[k].type === "error") {
+                    $("#node-input-noerr").val(annot.length);
+                    this.noerr += annot.length;
+                }
+            }
+            
+            var cssString = this.cssEditor.getValue();
+            $("#node-input-cssString").val(cssString);
+            this.cssEditor.destroy();
+            delete this.cssEditor;
+            delete window.node_ace_css_editor;
         },
         oneditcancel: function() {
-            this.editor.destroy();
-            delete this.editor;
-            delete window.node_ace_editor;
+            this.svgEditor.destroy();
+            delete this.svgEditor;
+            delete window.node_ace_svg_editor;
+            delete window.node_ace_css_editor;
+            delete this.cssEditor;
         },
         oneditresize: function(size) {
-            updateEditorHeight(this,this.editor);
+            updateEditorHeight(this);
         }
     });
 </script>
@@ -1944,6 +2084,24 @@ debugger;
                 <span style="vertical-align:super;super;margin-left:5px"> %</span>
             </div>
         </div>
+        <div id="node-svg-tab-css" class="node-svg-tab-content">
+            <!-- Ace CSS source editor -->
+            <div class="form-row" style="margin-bottom:0px;">
+                <input type="hidden" id="node-input-cssString" style="width: 100%; height: 100%; ">
+            </div>
+            <div class="form-row node-css-editor-row form-row-auto-height">
+                <div id="node-input-svg-css" class="node-css-editor" style="width: 100%; height: 100%; min-height:150px;"></div>
+                <button id="node-expand-svg-css" class="node-expand-svg-css editor-button editor-button-small" style="margin-top: 4px;" title="Expand CSS">
+                    <i class="fa fa-expand"></i>
+                </button>
+                <button id="node-format-svg-css" class="node-format-svg-css editor-button editor-button-small" style="margin-top: 4px;" title="Format CSS">
+                    <i class="fa fa-code"></i>    
+                </button>
+                <button id="node-reset-svg-css" class="node-reset-svg-css editor-button editor-button-small" style="margin-top: 4px;" title="Reset CSS">
+                    <i class="fa fa-undo"></i>    
+                </button>
+            </div>
+        </div>
     </div>
 </script>
 <script type="text/html" data-help-name="ui_svg_graphics">
@@ -2042,6 +2200,10 @@ debugger;
         </div>
         <div style="padding-left: 15px">
             <i>Note that (in the "Selector" field) it is possible to specify the id of a single SVG shape, or multiple SVG shapes via a <a target="_blank" href="https://www.w3schools.com/cssref/css_selectors.asp">CSS selector</a>!</i>  In the latter case, all the SVG shapes - that match the CSS selector - will respond to the specified event.
+        </div>
+        <h4>CSS</h4>
+        <div style="padding-left: 15px">
+            CSS styles whose scope will be limited to this SVG source only!.
         </div>
     </dl>
     <h3>Output</h3>
