@@ -83,7 +83,12 @@ module.exports = function(RED) {
         hammerPath = null;
     }
 
-    function HTML(config) {       
+    function HTML(config) {
+        // The old node id's in Node-RED contained a dot.  However that dot causes problems when using it inside scopedCssString.
+        // Because the CSS will interpret the dot incorrectly, and will not apply the styles to the requested elements.
+        // Therefore we will replace the dot by an underscore.
+        config.nodeIdWithoutDot = config.id.replace(".", "_");
+        
         // The configuration is a Javascript object, which needs to be converted to a JSON string
         var configAsJson = JSON.stringify(config, function (key,value) {
             switch (key) {
@@ -212,16 +217,16 @@ div.ui-svg path {
         // As a workaround we apply a prefix to every css selector, to make sure it is only applied to this SVG. 
         // A new outer div has been added with a unique class, to make prefixing easier.
         const scopedCssString = postcss().use(prefixer({
-          prefix: ".svggraphics_" + config.id
+          prefix: ".svggraphics_" + config.nodeIdWithoutDot
         })).process(cssString).css;
       
         var html = String.raw
 `<style>` + scopedCssString + panzoomScripts + 
 `</style>
-<div id='tooltip_` + config.id + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'>
+<div id='tooltip_` + config.nodeIdWithoutDot + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'>
 </div>
-<div class='svggraphics_` + config.id + `' style="width:100%; height:100%;">
-   <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)' style="width:100%; height:100%;">` + svgString + `
+<div class='svggraphics_` + config.nodeIdWithoutDot + `' style="width:100%; height:100%;">
+   <div class='ui-svg' id='svggraphics_` + config.nodeIdWithoutDot + `' ng-init='init(` + configAsJson + `)' style="width:100%; height:100%;">` + svgString + `
    </div>
 </div>`;              
         return html;
@@ -954,7 +959,7 @@ div.ui-svg path {
 
                             // Remark: it is not possible to show the coordinates when there is no svg element
                             if (scope.config.showCoordinates && scope.svg) {
-                                scope.tooltip = document.getElementById("tooltip_" + scope.config.id);
+                                scope.tooltip = document.getElementById("tooltip_" + scope.config.nodeIdWithoutDot);
                                 scope.svg.addEventListener("mousemove", function(evt) {
                                     // Make sure the tooltip becomes visible, when inside the SVG drawing
                                     scope.tooltip.style.display = "block";
@@ -1014,7 +1019,7 @@ div.ui-svg path {
                         $scope.init = function (config) {
                             $scope.config = config;
                             $scope.faMapping = {};
-                            $scope.rootDiv = document.getElementById("svggraphics_" + config.id);
+                            $scope.rootDiv = document.getElementById("svggraphics_" + config.nodeIdWithoutDot);
                             $scope.svg = $scope.rootDiv.querySelector("svg");
                             $scope.isObject = function(obj) {
                                 return (obj != null && typeof obj === 'object' && (Array.isArray(obj) === false));    
