@@ -210,14 +210,20 @@ div.ui-svg path {
         // Create a scoped CSS string, i.e. CSS styles that are only applied to the SVG in this node.
         // However scoped css has been removed from the specs (see https://github.com/whatwg/html/issues/552).
         // As a workaround we apply a prefix to every css selector, to make sure it is only applied to this SVG. 
+        // A new outer div has been added with a unique class, to make prefixing easier.
         const scopedCssString = postcss().use(prefixer({
-          prefix: "#svggraphics_" + config.id
+          prefix: ".svggraphics_" + config.id
         })).process(cssString).css;
       
-        var html = String.raw`<style>` + scopedCssString + panzoomScripts + 
-`</style><div id='tooltip_` + config.id + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'></div>
-<div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)' style="width:100%; height:100%;">` + svgString + `</div>
-`;              
+        var html = String.raw
+`<style>` + scopedCssString + panzoomScripts + 
+`</style>
+<div id='tooltip_` + config.id + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'>
+</div>
+<div class='svggraphics_` + config.id + `' style="width:100%; height:100%;">
+   <div class='ui-svg' id='svggraphics_` + config.id + `' ng-init='init(` + configAsJson + `)' style="width:100%; height:100%;">` + svgString + `
+   </div>
+</div>`;              
         return html;
     };
 

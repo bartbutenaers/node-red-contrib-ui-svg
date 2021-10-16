@@ -281,17 +281,14 @@
         if ( node.visibleEditor ) {
             // Is the visible editor in full-screen?
             node.fullscreen = document.fullscreenElement ? true : false;
-            
-            // Get the id of the editor container DIV element
-            var editorContainerId = node.visibleEditor.container.parentElement.id;
-            
+
             // Determine whether the svg or css editor is currently being displayed
             var editorType;
-            switch(editorContainerId) {
-                case "node-input-svg-source":
+            switch(node.currentTabId) {
+                case "node-svg-tab-source":
                     editorType = "source"; // SVG source
                     break;
-                case "node-input-svg-css":
+                case "node-svg-tab-css":
                     editorType = "css";
                     break;
             }
@@ -512,6 +509,8 @@ div.ui-svg path {
             node.tabs = RED.tabs.create({
                 id: "node-svg-tabs",
                 onchange: function(tab) {
+                    node.currentTabId = tab.id;
+                    
                     //console.log("tabs.onchange",tab);
                     // Show only the content (i.e. the children) of the selected tabsheet, and hide the others
                     $("#node-svg-tabs-content").children().hide();
