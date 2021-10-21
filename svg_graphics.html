@@ -530,15 +530,15 @@ div.ui-svg path {
                     }
                     else if (tab.id == "node-svg-tab-source") {
                         node.visibleEditor = node.svgEditor;
-                        updateEditorHeight(node);
                     }
                     else if (tab.id == "node-svg-tab-css") {
                         node.visibleEditor = node.cssEditor;
-                        updateEditorHeight(node);
                     }
                     else if (tab.id == "node-svg-tab-editor") {
-                        updateSvgEditorButton();
                     }
+                    
+                    // Make sure the content of the tabsheet nicely fills the available area
+                    updateEditorHeight(node);
                 }
             });
             node.tabs.addTab({
@@ -1120,6 +1120,7 @@ div.ui-svg path {
                         $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
                     }
                     actionField.val(clickableShape.action || "click");
+                    
                     // Column 3 : Add a input field (type string) to the new row, that represents the msg.payload content 
                     var payloadField = $('<input/>',{class:"node-input-clickable-payload",type:"text",placeholder:"payload"}).css({"width":"30%","margin-left":"5px","margin-right":"5px"}).appendTo(row);
                     var payloadTypeField = $('<input/>',{class:"node-input-clickable-payloadType",type:"hidden"}).appendTo(row);
@@ -1203,6 +1204,18 @@ div.ui-svg path {
                     for(var val in actionOptions) {
                         $('<option />', {value: val, text: actionOptions[val]}).appendTo(actionField);
                     }
+                    // A js event handler can also be triggered when an input message arrives
+                    $('<option />', {value: "msg", text: "Input msg"}).appendTo(actionField);
+                    // When the "msg" option is selected, then the selector field has no meaning (so it should become disabled)
+                    actionField.on('change', function() {
+                        if( this.value == "msg") {
+                            selectorField.val("");
+                            selectorField.prop('disabled', true);
+                        }
+                        else {
+                            selectorField.prop('disabled', false);
+                        }
+                    });
                     actionField.val(javascriptHandler.action || "click");
 
                     // Column 3 : Add an input field (type option) to the new row, that represents the javascript event handler code

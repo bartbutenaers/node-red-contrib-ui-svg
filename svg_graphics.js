@@ -845,41 +845,44 @@ div.ui-svg path {
                             if ($scope.config.javascriptHandlers) {
                                 // The Javascript event handlers
                                 $scope.config.javascriptHandlers.forEach(function(javascriptHandler) {
-                                    var elements = rootElement.querySelectorAll(javascriptHandler.selector);
-                                    
-                                    if (elements.length === 0) {
-                                        logError("No elements found for selector '" + javascriptHandler.selector + "'");
-                                    }
-                                    
-                                    var action = javascriptHandler.action || "click" ;
-                                    elements.forEach(function(element){
-                                        // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
-                                        // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
-                                        // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
-                                        //if (!config.showMouseLines) {
-                                            //element.style.cursor = "pointer";
-                                        //}
+                                    // The "msg" event handler will be executed somewhere else (i.e. as a message watch)
+                                    if (javascriptHandler.action !== "msg") {
+                                        var elements = rootElement.querySelectorAll(javascriptHandler.selector);
                                         
-                                        //if the cursor is NOT set and the action is click, set cursor
-                                        if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
-                                            element.style.cursor = "pointer";
+                                        if (elements.length === 0) {
+                                            logError("No elements found for selector '" + javascriptHandler.selector + "'");
                                         }
                                         
-                                        // The javascript event handler source code is base64 encoded, so let's decode it.
-                                        var sourceCode = atob(javascriptHandler.sourceCode);
-                                        
-                                        // Store the javascript code in a "data-js_event_<event>" element attribute, to have it available in the handleJsEvent function
-                                        element.setAttribute("data-js_event_" + action,  JSON.stringify({
-                                            elementId  : element.id,
-                                            selector   : javascriptHandler.selector,
-                                            sourceCode : sourceCode
-                                        }));
-                                        
-                                        // Make sure we don't end up with multiple handlers for the same event
-                                        element.removeEventListener(action, handleJsEvent, false);
-                                        
-                                        element.addEventListener(action, handleJsEvent, false);
-                                    })
+                                        var action = javascriptHandler.action || "click" ;
+                                        elements.forEach(function(element){
+                                            // Set a hand-like mouse cursor, to indicate visually that the shape is clickable.
+                                            // Don't set the cursor when a cursor with lines is displayed, because then we need to keep
+                                            // the crosshair cursor (otherwise the pointer is on top of the tooltip, making it hard to read).
+                                            //if (!config.showMouseLines) {
+                                                //element.style.cursor = "pointer";
+                                            //}
+                                            
+                                            //if the cursor is NOT set and the action is click, set cursor
+                                            if(/*!config.showMouseLines && */ action == "click" /*&& !element.style.cursor*/) {
+                                                element.style.cursor = "pointer";
+                                            }
+                                            
+                                            // The javascript event handler source code is base64 encoded, so let's decode it.
+                                            var sourceCode = atob(javascriptHandler.sourceCode);
+                                            
+                                            // Store the javascript code in a "data-js_event_<event>" element attribute, to have it available in the handleJsEvent function
+                                            element.setAttribute("data-js_event_" + action,  JSON.stringify({
+                                                elementId  : element.id,
+                                                selector   : javascriptHandler.selector,
+                                                sourceCode : sourceCode
+                                            }));
+                                            
+                                            // Make sure we don't end up with multiple handlers for the same event
+                                            element.removeEventListener(action, handleJsEvent, false);
+                                            
+                                            element.addEventListener(action, handleJsEvent, false);
+                                        })
+                                    }
                                 })
                             }
                         }
@@ -1259,6 +1262,28 @@ div.ui-svg path {
                                         }
                                         return;
                                     }
+                                    
+                                    $scope.config.javascriptHandlers.forEach(function(javascriptHandler) {
+                                        // The "msg" event handler will be executed somewhere else (i.e. as a message watch)
+                                        if (javascriptHandler.action === "msg") {
+                                            try {
+                                                // Make sure the $scope variable is being used once here inside the handleJsEvent function, to make
+                                                // sure it becomes available to be used inside the eval expression.
+                                                $scope;
+                                                
+                                                // The javascript event handler source code is base64 encoded, so let's decode it.
+                                                var sourceCode = atob(javascriptHandler.sourceCode);
+                                                
+                                                if ($scope.config.enableJsDebugging) { debugger; }
+                                                
+                                                // Execute the specified javascript function.
+                                                eval(sourceCode || "");
+                                            }
+                                            catch(err) {
+                                                logError("Error in javascript input msg handler: " + err);
+                                            }
+                                        }
+                                    });
                                  
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
