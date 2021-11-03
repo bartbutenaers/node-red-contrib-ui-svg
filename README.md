@@ -227,4 +227,7 @@ Some tips and tricks to solve known problems:
 
    Remark: when N drawings are visible now (e.g. running in N dashboards simultaneously), then N duplicate messages will be displayed (where N can be 0 is no dashboards are open...).
 
-
+4. If you have doubts that this node is generating the requested SVG DOM structure, you might have a look at it.  Here is briefly explained how to do it using Chrome:
+   1. Open the developer tools of your browser, starting from your dashboard window.
+   2. Right click on your SVG drawing in the dashboard, and select "Inspect".
+   3. Now you should be able to see the generated SVG DOM tree.
