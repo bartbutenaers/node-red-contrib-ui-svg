@@ -1397,7 +1397,10 @@ div.ui-svg path {
                                                         style += value;
                                                         style += "; ";
                                                     }
-                                                    newElement.setAttribute("style", style);
+
+                                                    if (style.trim() !== "") {
+                                                       newElement.setAttribute("style", style);
+						    }
                                                 }
                                                 
                                                 if (payload.textContent) {
