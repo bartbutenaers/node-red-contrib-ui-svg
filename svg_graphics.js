@@ -1151,6 +1151,28 @@ div.ui-svg path {
                             function processCommand(payload, topic){
                                 var selector, elements, attrElements, textElements;
                                 try {
+                                    $scope.config.javascriptHandlers.forEach(function(javascriptHandler) {
+                                        // The "msg" event handler will be executed somewhere else (i.e. as a message watch)
+                                        if (javascriptHandler.action === "msg") {
+                                            try {
+                                                // Make sure the $scope variable is being used once here inside the handleJsEvent function, to make
+                                                // sure it becomes available to be used inside the eval expression.
+                                                $scope;
+                                                
+                                                // The javascript event handler source code is base64 encoded, so let's decode it.
+                                                var sourceCode = atob(javascriptHandler.sourceCode);
+                                                
+                                                if ($scope.config.enableJsDebugging) { debugger; }
+                                                
+                                                // Execute the specified javascript function.
+                                                eval(sourceCode || "");
+                                            }
+                                            catch(err) {
+                                                logError("Error in javascript input msg handler: " + err);
+                                            }
+                                        }
+                                    });
+                                    
                                     if(topic){       
                                         if(topic == "databind"){
                                             //Bind entries in "Input Bindings" TAB
@@ -1274,28 +1296,6 @@ div.ui-svg path {
                                         }
                                         return;
                                     }
-                                    
-                                    $scope.config.javascriptHandlers.forEach(function(javascriptHandler) {
-                                        // The "msg" event handler will be executed somewhere else (i.e. as a message watch)
-                                        if (javascriptHandler.action === "msg") {
-                                            try {
-                                                // Make sure the $scope variable is being used once here inside the handleJsEvent function, to make
-                                                // sure it becomes available to be used inside the eval expression.
-                                                $scope;
-                                                
-                                                // The javascript event handler source code is base64 encoded, so let's decode it.
-                                                var sourceCode = atob(javascriptHandler.sourceCode);
-                                                
-                                                if ($scope.config.enableJsDebugging) { debugger; }
-                                                
-                                                // Execute the specified javascript function.
-                                                eval(sourceCode || "");
-                                            }
-                                            catch(err) {
-                                                logError("Error in javascript input msg handler: " + err);
-                                            }
-                                        }
-                                    });
                                  
                                     //the payload.command or topic are both valid (backwards compatibility) 
                                     var op = payload.command || payload.topic
