@@ -593,11 +593,17 @@ div.ui-svg path {
                                         }
                                         
                                         $scope.clickCount++;
-                                                                        
+                                        var currentTarget = evt.currentTarget;
+                                                                                               
                                         if (!$scope.clickTimer) {
                                             $scope.clickTimerTarget = evt.target;
                                             $scope.clickTimer = setTimeout(function() {
                                                 if ($scope.clickCount < 2) {
+                                                     // The event.currentTarget will only be available during the event handling, and will become null afterwards
+                                                    // (see https://stackoverflow.com/a/66086044).  So let's restore it here...
+                                                    // Since currentTarget is a readonly property, it needs to be overwritten via following trick:
+                                                    Object.defineProperty(evt, 'currentTarget', {writable: false, value: currentTarget});
+                                                    
                                                     handleEvent(evt, true);
                                                 }
                                                 
@@ -751,11 +757,17 @@ div.ui-svg path {
                                         }
                                         
                                         $scope.clickJsCount++;
+                                        var currentTarget = evt.currentTarget;
                                                                         
                                         if (!$scope.clickJsTimer) {
                                             $scope.clickJsTimerTarget = evt.target;
                                             $scope.clickJsTimer = setTimeout(function() {
                                                 if ($scope.clickJsCount < 2) {
+                                                    // The event.currentTarget will only be available during the event handling, and will become null afterwards
+                                                    // (see https://stackoverflow.com/a/66086044).  So let's restore it here...
+                                                    // Since currentTarget is a readonly property, it needs to be overwritten via following trick:
+                                                    Object.defineProperty(evt, 'currentTarget', {writable: false, value: currentTarget});
+                                                    
                                                     handleJsEvent(evt, true);
                                                 }
                                                 
