@@ -364,6 +364,9 @@ div.ui-svg path {
                                     }
                                 }
                             }
+                            else if(msg.topic == "custom_msg") {
+                                // no checks
+                            }
                             else {
                                 if (msg.topic && (typeof payload == "string" || typeof payload == "number")) {
                                     var topicParts = msg.topic.split("|");
@@ -397,14 +400,16 @@ div.ui-svg path {
                                         }
                                     }
                                     else {
-                                        if(typeof msg.payload === "object" && !msg.payload.command) {
-                                            node.error("The msg.payload should contain an object which has a 'command' property.");
-                                            msg.payload = null;
-                                        }
-                                        // Make sure the commands are not case sensitive anymore
-                                        else if(!node.availableCommands.includes(msg.payload.command.toLowerCase())) {
-                                            node.error("The msg.payload contains an object that has an unsupported command property '" + msg.payload.command + "'");
-                                            msg.payload = null;
+                                        if(typeof msg.payload === "object") {
+                                            if(!msg.payload.command) {
+                                                node.error("The msg.payload should contain an object which has a 'command' property.");
+                                                msg.payload = null;
+                                            }
+                                            // Make sure the commands are not case sensitive anymore
+                                            else if(!node.availableCommands.includes(msg.payload.command.toLowerCase())) {
+                                                node.error("The msg.payload contains an object that has an unsupported command property '" + msg.payload.command + "'");
+                                                msg.payload = null;
+                                            }
                                         }
                                     }
                                 }
@@ -1173,8 +1178,12 @@ div.ui-svg path {
                                         }
                                     });
                                     
-                                    if(topic){       
-                                        if(topic == "databind"){
+                                    if(topic){
+                                        if(topic == "custom_msg") {
+                                            // do nothing
+                                            return;
+                                        }
+                                        else if(topic == "databind"){
                                             //Bind entries in "Input Bindings" TAB
                                             var bindings = $scope.config.bindings;
                                             bindings.forEach(function (binding) {
@@ -1893,7 +1902,10 @@ div.ui-svg path {
                                 return;
                             }
                             
-                            if(topic == "databind" || ((typeof payload == "string" || typeof payload == "number") && topic)){
+                            if(topic == "custom_msg") {
+                                processCommand(payload, topic);
+                            }
+                            else if(topic == "databind" || ((typeof payload == "string" || typeof payload == "number") && topic)){
                                 processCommand(payload, topic);
                             } else {
                                 if(!Array.isArray(payload)){
