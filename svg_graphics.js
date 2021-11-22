@@ -561,6 +561,9 @@ div.ui-svg path {
 
                             // No need to do this twice: for proceedWithoutTimer=true the click event has already passed here before (with proceedWithoutTimer=null)
                             if (!proceedWithoutTimer) {
+                                // PreventDefault to avoid the default browser context menu to popup, in case an event handler has been specfied in this node.
+                                // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/pull/93#issue-855852128
+                                evt.preventDefault();
                                 evt.stopPropagation();
                                 
                                 logEvent("Event " + evt.type + " has occured");
@@ -725,7 +728,10 @@ div.ui-svg path {
                         function handleJsEvent(evt, proceedWithoutTimer) {
                             // No need to do this twice: for proceedWithoutTimer=true the click event has already passed here before (with proceedWithoutTimer=null)
                             if (!proceedWithoutTimer) {
+                                // PreventDefault to avoid the default browser context menu to popup, in case an event handler has been specfied in this node.
+                                // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/pull/93#issue-855852128
                                 evt.preventDefault();
+                                evt.stopPropagation();
                                 
                                 logEvent("JS event " + evt.type + " has occured");
                             }
