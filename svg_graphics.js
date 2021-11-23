@@ -333,7 +333,7 @@ div.ui-svg path {
                         // We will workaround it by sending a 'null' payload to the dashboard.
 
                         if (!msg.payload) {
-                            node.error("A msg.payload is required");
+                            node.error("A msg.payload is required (msg._msgid = '" + msg._msgid + "')");
                             msg.payload = null;
                         }
                         else {
@@ -341,7 +341,7 @@ div.ui-svg path {
                                 // The bindings can be specified both on the config screen and in the SVG source via custom user attributes.
                                 // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/67
                                 if (node.bindings.length === 0 && node.attributeBasedBindings.length === 0) {
-                                    node.error("No bindings have been specified in the config screen or via data-bind-text or via data-bind-values.");
+                                    node.error("No bindings have been specified in the config screen or via data-bind-text or via data-bind-values (msg._msgid = '" + msg._msgid + "')");
                                     msg.payload = null;
                                 }
                                 else {
@@ -372,7 +372,7 @@ div.ui-svg path {
                                     var topicParts = msg.topic.split("|");
 
                                     if (topicParts[0] !== "update_text" || topicParts[0] !== "update_innerHTML") {
-                                        node.error("Only msg.topic 'update_text' or 'update_innerHTML' is supported");
+                                        node.error("Only msg.topic 'update_text' or 'update_innerHTML' is supported (msg._msgid = '" + msg._msgid + "')");
                                         msg.payload = null;
                                     }
                                 }
@@ -386,14 +386,15 @@ div.ui-svg path {
                                             var part = msg.payload[i];
 
                                             if(typeof part === "object" && !part.command) {
-                                                node.error("The msg.payload array should contain objects which all have a 'command' property.");
+                                                node.error("The msg.payload array should contain objects which all have a 'command' property (msg._msgid = '" + msg._msgid + "')");
+
                                                 msg.payload = null;
                                                 break;
                                             }
                                             
                                             // Make sure the commands are not case sensitive anymore
                                             if(!node.availableCommands.includes(part.command.toLowerCase())) {
-                                                node.error("The msg.payload array contains an object that has an unsupported command property '" + part.command + "'");
+                                                node.error("The msg.payload array contains an object that has an unsupported command property '" + part.command + "' (msg._msgid = '" + msg._msgid + "')");
                                                 msg.payload = null;
                                                 break;  
                                             }
@@ -402,12 +403,12 @@ div.ui-svg path {
                                     else {
                                         if(typeof msg.payload === "object") {
                                             if(!msg.payload.command) {
-                                                node.error("The msg.payload should contain an object which has a 'command' property.");
+                                                node.error("The msg.payload should contain an object which has a 'command' property (msg._msgid = '" + msg._msgid + "')");
                                                 msg.payload = null;
                                             }
                                             // Make sure the commands are not case sensitive anymore
                                             else if(!node.availableCommands.includes(msg.payload.command.toLowerCase())) {
-                                                node.error("The msg.payload contains an object that has an unsupported command property '" + msg.payload.command + "'");
+                                                node.error("The msg.payload contains an object that has an unsupported command property '" + msg.payload.command + "' (msg._msgid = '" + msg._msgid + "')");
                                                 msg.payload = null;
                                             }
                                         }
@@ -1159,7 +1160,7 @@ div.ui-svg path {
                                 }
                                 return obj;
                             }             
-                            function processCommand(payload, topic){
+                            function processCommand(_msgid, payload, topic){
                                 var selector, elements, attrElements, textElements;
                                 try {
                                     $scope.config.javascriptHandlers.forEach(function(javascriptHandler) {
@@ -1179,7 +1180,7 @@ div.ui-svg path {
                                                 eval(sourceCode || "");
                                             }
                                             catch(err) {
-                                                logError("Error in javascript input msg handler: " + err);
+                                                logError("Error in javascript input msg handler (msg._msgid = '" + _msgid + "'): " + err);
                                             }
                                         }
                                     });
@@ -1271,7 +1272,7 @@ div.ui-svg path {
                                                         var attrNames = attributesCSV.split(",");
                                                         var attrBindTos = attrBindToCSV.split(",");
                                                         if(attrNames.length != attrBindTos.length){
-                                                            logError("data-bind-attributes count is different to data-bind-values count")
+                                                            logError("data-bind-attributes count is different to data-bind-values count (msg._msgid = '" + _msgid + "')");
                                                             return;
                                                         }    
                                                         var index;
@@ -1300,7 +1301,7 @@ div.ui-svg path {
                                                     selector = topicParts[1];
                                                     elements = $scope.rootDiv.querySelectorAll(selector);
                                                     if (!elements || !elements.length) {
-                                                        logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                        logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
                                                         return;
                                                     }
                                                     elements.forEach(function (element) {
@@ -1320,7 +1321,7 @@ div.ui-svg path {
                                     switch (op.toLowerCase()) {
                                         case "replace_svg":
                                             if (!payload.svg || (typeof payload.svg !== "string")) {
-                                                logError("Invalid payload. The payload should be an SVG string");
+                                                logError("Invalid payload. The payload should be an SVG string (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             
@@ -1331,12 +1332,12 @@ div.ui-svg path {
                                                 var newSvg = newDocument.children[0];
                                             }
                                             catch (err) {
-                                                logError("Invalid payload.svg.  No valid SVG string: " + err);
+                                                logError("Invalid payload.svg.  No valid SVG string (msg._msgid = '" + _msgid + "'): " + err);
                                                 return;
                                             }
                                             
                                             if (newSvg.tagName !== "svg") {
-                                                logError("Invalid payload. The tag of the first element should be 'svg'");
+                                                logError("Invalid payload. The tag of the first element should be 'svg' (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             
@@ -1372,7 +1373,7 @@ div.ui-svg path {
                                             break;
                                         case "add_element": // Add elements, or replace them if they already exist
                                             if (!payload.elementType) {
-                                                logError("Invalid payload. A property named .elementType is not specified");
+                                                logError("Invalid payload. A property named .elementType is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             
@@ -1390,7 +1391,7 @@ div.ui-svg path {
                                             
                                             // It is not possible to add elements with the same id to multiple parent elements
                                             if (parentElements.length > 1 && payload.elementId) {
-                                                logError("When multiple parent SVG elements are specified, it is not allowed to specify an .elementId");
+                                                logError("When multiple parent SVG elements are specified, it is not allowed to specify an .elementId (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                         
@@ -1447,7 +1448,7 @@ div.ui-svg path {
                                             break;
                                         case "remove_element":
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
 
@@ -1465,14 +1466,14 @@ div.ui-svg path {
                                             break;
                                         case "get_text":
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
                                     
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + " (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             
@@ -1492,14 +1493,14 @@ div.ui-svg path {
                                         case "update_text":
                                         case "update_innerhtml"://added to make adding inner HTML more readable/logical
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
 
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             var innerContent = payload.text || payload.html || payload.textContent;
@@ -1510,14 +1511,14 @@ div.ui-svg path {
                                         case "update_style":
                                         case "set_style"://same as update_style
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
                                             
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $(selector);
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             if (payload.style && $scope.isObject(payload.style)) {
@@ -1525,25 +1526,25 @@ div.ui-svg path {
                                             } else if(payload.attributeName) {
                                                 elements.css(payload.attributeName, payload.attributeValue);
                                             } else {
-                                                logError("Cannot update style! style object not valid or attributeName/attributeValue strings not provided (selector '" + selector + "')");
+                                                logError("Cannot update style! style object not valid or attributeName/attributeValue strings not provided (selector '" + selector + "' and msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             break;
                                         case "update_value":  
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
                                             
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             elements.forEach(function(element){
                                                 if(element.value === undefined) {
-                                                    logError("An SVG element selected by '" + selector + "' has no 'value' property");
+                                                    logError("An SVG element selected by '" + selector + "' has no 'value' property (msg._msgid = '" + _msgid + "')");
                                                     return
                                                 }
                                                 element.value = payload.value;
@@ -1556,20 +1557,20 @@ div.ui-svg path {
                                         case "update_attribute":
                                         case "set_attribute": //fall through 
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
                                             
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             elements.forEach(function(element){
                                                 if (op == "update_attribute") {
                                                     if(!element.hasAttribute(payload.attributeName)) {
-                                                        logError("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"'");
+                                                        logError("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName + "' (msg._msgid = '" + _msgid + "')");
                                                         return
                                                     }
                                                 }
@@ -1583,14 +1584,14 @@ div.ui-svg path {
                                             break;
                                         case "remove_attribute":
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
                                             
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + " (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             elements.forEach(function(element){
@@ -1602,26 +1603,26 @@ div.ui-svg path {
                                         case "replace_attribute":
                                         case "replace_all_attribute":
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             if (!payload.regex) {
-                                                logError("Invalid payload. A regular expression should be specified");
+                                                logError("Invalid payload. A regular expression should be specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }   
                                             if (!payload.replaceValue) {
-                                                logError("Invalid payload. A replace value should be specified");
+                                                logError("Invalid payload. A replace value should be specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }   
                                             selector = payload.selector || "#" + payload.elementId;
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + " (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             elements.forEach(function(element){
                                                 if(!element.hasAttribute(payload.attributeName)) {
-                                                    logError("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"'");
+                                                    logError("An SVG element selected by '" + selector + "' has no attribute with name '" + payload.attributeName +"' (msg._msgid = '" + _msgid + "')");
                                                     return;
                                                 }
                                                 
@@ -1630,7 +1631,7 @@ div.ui-svg path {
                                                 var regex = (op == "replace_attribute") ? new RegExp(payload.regex) : new RegExp(payload.regex, 'g');
                                                 
                                                 if (!regex.test(attributeValue)) {
-                                                    logError("The value of attribute " + payload.attributeName + " does not match the regex");
+                                                    logError("The value of attribute " + payload.attributeName + " does not match the regex (msg._msgid = '" + _msgid + "')");
                                                     return;
                                                 }
                                                 
@@ -1640,18 +1641,18 @@ div.ui-svg path {
                                             break;
                                         case "trigger_animation":
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
                                             
                                             selector = payload.selector || ("#" + payload.elementId);
                                             elements = $scope.rootDiv.querySelectorAll(selector);
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             if (!payload.action) {
-                                                logError("When triggering an animation, there should be a .action field");
+                                                logError("When triggering an animation, there should be a .action field (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             let animations = ["set","animate","animatemotion","animatecolor","animatetransform"]
@@ -1670,7 +1671,7 @@ div.ui-svg path {
                                                             try {
                                                                 element[payload.action]();
                                                             } catch (error) {
-                                                                logError(`Error calling ${payload.elementId}.${payload.action}()`);
+                                                                logError("Error calling " + payload.elementId + "." + payload.action + "() (msg._msgid = '" + _msgid + "')");
                                                             }
                                                             break;
                                                     }
@@ -1681,7 +1682,7 @@ div.ui-svg path {
                                         case "add_event":// add the specified event(s) to the specified element(s)
                                         case "remove_event":// remove the specified event(s) from the specified element(s)
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
 
@@ -1689,17 +1690,17 @@ div.ui-svg path {
                                             elements = $scope.rootDiv.querySelectorAll(selector);
 
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + " (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
                                             if (!payload.event) {
-                                                logError("No msg.payload.event has been specified");
+                                                logError("No msg.payload.event has been specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
                                             if (!$scope.events.includes(payload.event)) {
-                                                logError("The msg.payload.event contains an unsupported event name");
+                                                logError("The msg.payload.event contains an unsupported event name (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
@@ -1709,7 +1710,7 @@ div.ui-svg path {
                                             
                                                 if (op === "add_event") {
                                                     if (userData) {
-                                                        logError("The event " + payload.event + " already has been registered");
+                                                        logError("The event " + payload.event + " already has been registered (msg._msgid = '" + _msgid + "')");
                                                     }
                                                     else {
                                                         // Seems the event has been registered yet for this element, so let's do that now ...
@@ -1729,7 +1730,7 @@ div.ui-svg path {
                                                 }
                                                 else { // "remove_event"
                                                     if (!userData) {
-                                                        logError("The event " + payload.event + " was not registered yet");
+                                                        logError("The event " + payload.event + " was not registered yet (msg._msgid = '" + _msgid + "')");
                                                     }
                                                     else {
                                                         element.removeEventListener(payload.event, handleEvent, false);
@@ -1745,7 +1746,7 @@ div.ui-svg path {
                                         case "add_js_event":// add the specified Javascript event(s) to the specified element(s)
                                         case "remove_js_event":// remove the specified Javascript event(s) from the specified element(s)
                                             if (!payload.elementId && !payload.selector) {
-                                                logError("Invalid payload. A property named .elementId or .selector is not specified");
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }  
 
@@ -1753,17 +1754,17 @@ div.ui-svg path {
                                             elements = $scope.rootDiv.querySelectorAll(selector);
 
                                             if (!elements || !elements.length) {
-                                                logError("Invalid selector. No SVG elements found for selector " + selector);
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
                                             if (!payload.event) {
-                                                logError("No msg.payload.event has been specified");
+                                                logError("No msg.payload.event has been specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
                                             if (!$scope.events.includes(payload.event)) {
-                                                logError("The msg.payload.event contains an unsupported javascript event name");
+                                                logError("The msg.payload.event contains an unsupported javascript event name (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
@@ -1773,7 +1774,7 @@ div.ui-svg path {
                                             
                                                 if (op === "add_js_event") {
                                                     if (userData) {
-                                                        logError("The javascript event " + payload.event + " already has been registered");
+                                                        logError("The javascript event " + payload.event + " already has been registered (msg._msgid = '" + _msgid + "')");
                                                     }
                                                     else {
                                                         // Seems the event has been registered yet for this element, so let's do that now ...
@@ -1791,7 +1792,7 @@ div.ui-svg path {
                                                 }
                                                 else { // "remove_js_event"
                                                     if (!userData) {
-                                                        logError("The javascript event " + payload.event + " was not registered yet");
+                                                        logError("The javascript event " + payload.event + " was not registered yet (msg._msgid = '" + _msgid + "')");
                                                     }
                                                     else {
                                                         element.removeEventListener(payload.event, handleJsEvent, false);
@@ -1806,7 +1807,7 @@ div.ui-svg path {
                                             break;
                                         case "zoom_in":
                                             if (!$scope.panZoomModule) {
-                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                         
@@ -1814,7 +1815,7 @@ div.ui-svg path {
                                             break;
                                         case "zoom_out":
                                             if (!$scope.panZoomModule) {
-                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
@@ -1822,12 +1823,12 @@ div.ui-svg path {
                                             break;
                                         case "zoom_by_percentage":
                                             if (!$scope.panZoomModule) {
-                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings");
+                                                logError("Cannot zoom via input message, when zooming is not enabled in the settings (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
                                             if (!payload.percentage) {
-                                                logError("No msg.payload.percentage has been specified");
+                                                logError("No msg.payload.percentage has been specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
                                             
@@ -1850,12 +1851,12 @@ div.ui-svg path {
                                             break;
                                         case "pan_to_point":    
                                             if (!$scope.panZoomModule) {
-                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
                                             if (!payload.x || !payload.y) {
-                                                logError("No point coordinates (msg.payload.x msg.payload.y) have been specified");
+                                                logError("No point coordinates (msg.payload.x msg.payload.y) have been specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
     
@@ -1864,12 +1865,12 @@ div.ui-svg path {
                                             break;
                                         case "pan_to_direction": 
                                             if (!$scope.panZoomModule) {
-                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
                                             if (!payload.x || !payload.y) {
-                                                logError("No direction coordinates (msg.payload.x msg.payload.y) have been specified");
+                                                logError("No direction coordinates (msg.payload.x msg.payload.y) have been specified (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
     
@@ -1878,7 +1879,7 @@ div.ui-svg path {
                                             break;
                                         case "reset_panzoom":
                                             if (!$scope.panZoomModule) {
-                                                logError("Cannot pan via input message, when panning is not enabled in the settings");
+                                                logError("Cannot pan via input message, when panning is not enabled in the settings (msg._msgid = '" + _msgid + "')");
                                                 return;
                                             }
 
@@ -1887,16 +1888,16 @@ div.ui-svg path {
 
                                         default:
                                             if (msg.topic) {
-                                                logError("Unsupported msg.topic '" + msg.topic + "'");
+                                                logError("Unsupported msg.topic '" + msg.topic + "' (msg._msgid = '" + _msgid + "')");
                                             }
                                             else {
-                                                logError("Unsupported command '" + payload.command + "'");
+                                                logError("Unsupported command '" + payload.command + "' (msg._msgid = '" + _msgid + "')");
                                             }
                                     }
                                     
                                 } 
                                 catch (error) {
-                                    logError("Unexpected error when processing input message: " + error); 
+                                    logError("Unexpected error when processing input message (msg._msgid = '" + _msgid + "'): " + error); 
                                 }
                             }
 
@@ -1904,25 +1905,25 @@ div.ui-svg path {
                             var topic = msg.topic;
            
                             if (!payload || payload === "") {
-                                logError("Missing msg.payload");
+                                logError("Missing msg.payload (msg._msgid = " + msg._msgid + ")");
                                 return;
                             }
                             
                             if(topic == "custom_msg") {
-                                processCommand(payload, topic);
+                                processCommand(msg._msgid, payload, topic);
                             }
                             else if(topic == "databind" || ((typeof payload == "string" || typeof payload == "number") && topic)){
-                                processCommand(payload, topic);
+                                processCommand(msg._msgid, payload, topic);
                             } else {
                                 if(!Array.isArray(payload)){
                                     payload = [payload];
                                 }
                                 payload.forEach(function(val,idx){
                                     if(typeof val != "object" || !val.command) {
-                                        logError("The msg.payload should contain an object (or an array of objects) which have a 'command' property.");
+                                        logError("The msg.payload should contain an object (or an array of objects) which have a 'command' property (msg._msgid = " + msg._msgid + ")");
                                     }
                                     else {   
-                                        processCommand(val);
+                                        processCommand(msg._msgid, val);
 				    }
                                 });
                             }   
