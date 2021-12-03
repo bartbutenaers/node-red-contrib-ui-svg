@@ -221,9 +221,8 @@ div.ui-svg path {
         })).process(cssString).css;
       
         var html = String.raw
-`<style>` + scopedCssString + panzoomScripts + 
-`</style>
-<div id='tooltip_` + config.nodeIdWithoutDot + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'>
+`<style>` + scopedCssString + `</style>` + panzoomScripts + 
+`<div id='tooltip_` + config.nodeIdWithoutDot + `' display='none' style='z-index: 9999; position: absolute; display: none; background: cornsilk; border: 1px solid black; border-radius: 5px; padding: 2px;'>
 </div>
 <div class='svggraphics_` + config.nodeIdWithoutDot + `' style="width:100%; height:100%;">
    <div class='ui-svg' id='svggraphics_` + config.nodeIdWithoutDot + `' ng-init='init(` + configAsJson + `)' style="width:100%; height:100%;">` + svgString + `
@@ -914,7 +913,7 @@ div.ui-svg path {
                         function initializeSvg(scope) {
                             $scope.clickCount = 0;
                             $scope.clickJsCount = 0;
-                            
+
                             // Make the element clickable in the SVG (i.e. in the DIV subtree), by adding an onclick handler to ALL
                             // the SVG elements that match the specified CSS selectors.
                             applyEventHandlers(scope.rootDiv);                           
