@@ -206,7 +206,7 @@ module.exports = function(RED) {
     fill: currentColor !important;
 }
 div.ui-svg path {
-    fill: inherit !important;
+    fill: inherit;
 }`;
 
         // Apply a default CSS string to older nodes (version 2.2.4 and below)
