@@ -231,3 +231,7 @@ Some tips and tricks to solve known problems:
    1. Open the developer tools of your browser, starting from your dashboard window.
    2. Right click on your SVG drawing in the dashboard, and select "Inspect".
    3. Now you should be able to see the generated SVG DOM tree.
+
+5. When the *"show browser errors on the server"* has been activated, the error messages will appear in the left Debug sidebar.  However if lots of messages are being injected, it is difficult to determine which error belongs to which message.  To assist with that, the error message will contain the message id (which caused that error).  So simply put a debug node (to display the input messages), and compare the ***message id*** to find the related message:
+
+   ![message id](https://user-images.githubusercontent.com/14224149/145280978-89c98cc8-816b-472f-8651-7c2df456ccb1.png)
