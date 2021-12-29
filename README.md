@@ -5,14 +5,8 @@ Special thanks to [Stephen McLaughlin](https://github.com/Steve-Mcl), my partner
 
 And also, lots of credits to Joseph Liard, the author of [DrawSvg](#DrawSvg-drawing-editor) for his assistance!
 
-| :warning: The major 2.0.0 release (unfortunately) contains some breaking changes:  |
+| :warning: Please have a look at the "Getting started" [tutorial](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Getting-started-with-the-UI-SVG-node) on the wiki  |
 |:---------------------------|
-+ `msg.event` has become `msg.event.type`
-+ `msg.coordinates.x` has become `msg.event.svgX`
-+ `msg.coordinates.y` has become `msg.event.svgY`
-+ `msg.position.x` has become `msg.event.pageX`
-+ `msg.position.y` has become `msg.event.pageY`
-+ The (selector) content has moved from `msg.elementId` to `msg.selector`, and `msg.elementId` now contains the real element id where the event has occurred.  See [here](https://github.com/bartbutenaers/node-red-contrib-ui-svg/wiki/Breaking-change-version-2.0.0) for detailed information.
 
 ## Install
 Run the following npm command in your Node-RED user directory (typically ~/.node-red):
