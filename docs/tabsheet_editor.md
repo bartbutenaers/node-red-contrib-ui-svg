@@ -4,6 +4,11 @@
 
 ***!!! DrawSvg is free software.  Note that DrawSvg and the online service is used as is without warranty of bugs !!!***
 
+## Update: DrawSvg 9.5 is only partly free
+Some users reported that starting from DrawSvg version 9.5, there are now two separate profiles.  See the [readme](https://github.com/bartbutenaers/node-red-contrib-drawsvg#update-drawsvg-95-is-only-partly-free) page of the node-red-contrib-drawsvg node for more information about this.
+
+## Getting started
+
 ![launch_editor](https://user-images.githubusercontent.com/44235289/66716981-f40ac000-edcb-11e9-96b5-69e11220b71d.gif)
 
 Steps to use DrawSvg:
