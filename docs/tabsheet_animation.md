@@ -44,4 +44,4 @@ Adding animations to your SVG graphics can be done in different ways:
 
    ![demo_config_screen](https://user-images.githubusercontent.com/14224149/73695310-23766d00-46da-11ea-9960-065dc1bf7004.gif)
    
-+ *Via an input message* as explained in the [Control via messages](#master/docs/msg_control.md#startstop-animations-via-msg) section below.  
++ *Via an input message* as explained in the [Control via messages](#https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/msg_control.md#startstop-animations-via-msg) section below.  
