@@ -301,7 +301,7 @@ div.ui-svg path {
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage",
                                       "zoom_to_level", "pan_to_point", "pan_to_direction", "reset_panzoom", "add_element", "remove_element", "remove_attribute",
-                                      "get_svg", "replace_svg", "update_value", "replace_attribute", "replace_all_attribute"];
+                                      "get_svg", "replace_svg", "update_value", "replace_attribute", "replace_all_attribute", "analyze_transform", "update_transform"];
 
             if (checkConfig(node, config)) { 
                 var html = HTML(config);
@@ -1158,7 +1158,35 @@ div.ui-svg path {
                                     }
                                 }
                                 return obj;
-                            }             
+                            }
+                            
+                            function deltaTransformPoint(matrix, point)  {
+                                var dx = point.x * matrix.a + point.y * matrix.c + 0;
+                                var dy = point.x * matrix.b + point.y * matrix.d + 0;
+                                return { x: dx, y: dy };
+                            }
+
+                            // See https://stackoverflow.com/a/16372587
+                            function decomposeMatrix(matrix) {
+                                // calculate delta transform point
+                                var px = deltaTransformPoint(matrix, { x: 0, y: 1 });
+                                var py = deltaTransformPoint(matrix, { x: 1, y: 0 });
+
+                                // calculate skew
+                                var skewX = ((180 / Math.PI) * Math.atan2(px.y, px.x) - 90);
+                                var skewY = ((180 / Math.PI) * Math.atan2(py.y, py.x));
+
+                                return {
+                                    translateX: matrix.e,
+                                    translateY: matrix.f,
+                                    scaleX: Math.sqrt(matrix.a * matrix.a + matrix.b * matrix.b),
+                                    scaleY: Math.sqrt(matrix.c * matrix.c + matrix.d * matrix.d),
+                                    skewX: skewX,
+                                    skewY: skewY,
+                                    rotation: skewX // rotation is the same as skew x
+                                };        
+                            }
+    
                             function processCommand(_msgid, payload, topic){
                                 var selector, elements, attrElements, textElements;
                                 try {
@@ -1637,6 +1665,104 @@ div.ui-svg path {
                                                 var replacedAttribute = attributeValue.replace(regex, payload.replaceValue)
                                                 element.setAttribute(payload.attributeName, replacedAttribute);
                                             });
+                                            break;
+                                        case "analyze_transform":
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
+                                                return;
+                                            }  
+                                            
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
+                                                return;
+                                            }
+                                            
+                                            var transformations = [];
+
+                                            elements.forEach(function(element){
+                                                var matrix = element.getCTM();
+                                                
+                                                var decomposedMatrix = decomposeMatrix(matrix);
+
+                                                var transformationInfo = {
+                                                    elementId: element.id,
+                                                    transform: element.getAttribute("transform"),
+                                                    matrix: {
+                                                        a: matrix.a,
+                                                        b: matrix.b,
+                                                        c: matrix.c,
+                                                        d: matrix.d,
+                                                        e: matrix.e,
+                                                        f: matrix.f
+                                                    },
+                                                    decomposedMatrix: decomposedMatrix
+                                                }
+
+                                                transformations.push(transformationInfo);
+                                            });
+                                            
+                                            $scope.send({
+                                                payload: transformations,
+                                                topic:"analyze_transform"
+                                            }); 
+                                            break;
+                                        case "update_transform":
+                                            if (!payload.elementId && !payload.selector) {
+                                                logError("Invalid payload. A property named .elementId or .selector is not specified (msg._msgid = '" + _msgid + "')");
+                                                return;
+                                            }  
+                                            
+                                            selector = payload.selector || "#" + payload.elementId;
+                                            elements = $scope.rootDiv.querySelectorAll(selector);
+                                            if (!elements || !elements.length) {
+                                                logError("Invalid selector. No SVG elements found for selector " + selector + "(msg._msgid = '" + _msgid + "')");
+                                                return;
+                                            }
+
+                                            elements.forEach(function(element){
+                                                // Get the current transformation matrix of the selected element
+                                                var matrix = element.getCTM();
+                                                
+                                                // Manipulate the current transformation matrix based on the properties in the input message
+                                                if (!matrix) {
+                                                    matrix = $scope.svg.createSVGMatrix();
+                                                }
+             
+                                                if (payload.translateX) {
+                                                    matrix = matrix.translate(payload.translateX, 0);
+                                                }
+
+                                                if (payload.translateY) {
+                                                    matrix = matrix.translate(0, payload.translateY);
+                                                }                                                  
+
+                                                if (payload.scaleX) {
+                                                    matrix = matrix.scaleNonUniform(payload.scaleX, 1);
+                                                }  
+
+                                                if (payload.scaleY) {
+                                                    matrix = matrix.scaleNonUniform(1, payload.scaleY);
+                                                } 
+
+                                                if (payload.skewX) {
+                                                    matrix = matrix.skew(payload.skewX, 0);
+                                                } 
+
+                                                if (payload.skewY) {
+                                                    matrix = matrix.skew(0, payload.skewY);
+                                                }
+
+                                                if (payload.rotation) {
+                                                    matrix = matrix.rotate(payload.rotation);
+                                                }
+                                                
+                                                // Apply the manipulated transform the the selected element
+                                                var updatedTransform = $scope.svg.createSVGTransform();
+                                                updatedTransform.setMatrix(matrix);
+                                                element.transform.baseVal.initialize(updatedTransform);
+                                            });                                     
                                             break;
                                         case "trigger_animation":
                                             if (!payload.elementId && !payload.selector) {
