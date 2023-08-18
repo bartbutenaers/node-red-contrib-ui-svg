@@ -330,8 +330,13 @@ div.ui-svg path {
                         // Would like to ignore invalid input messages, but that seems not to possible in UI nodes:
                         // See https://discourse.nodered.org/t/custom-ui-node-not-visible-in-dashboard-sidebar/9666
                         // We will workaround it by sending a 'null' payload to the dashboard.
-
-                        if (!msg.payload) {
+                        if (msg.enabled === false || msg.enabled === true) {
+                            // The Node-RED dashboard framework automatically disables/enables all user input when msg.enabled is supplied.
+                            // We only need to make sure here the Debug panel is not filled with error messages about missing payloads.
+                            // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/124
+                            msg.payload = null;
+                        }
+                        else if (!msg.payload) {
                             node.error("A msg.payload is required (msg._msgid = '" + msg._msgid + "')");
                             msg.payload = null;
                         }
@@ -1902,7 +1907,15 @@ div.ui-svg path {
 
                             var payload = msg.payload;
                             var topic = msg.topic;
-           
+                            var enabled = msg.enabled;
+
+                            // The Node-RED dashboard framework automatically disables/enables all user input when msg.enabled is supplied.
+                            // We only need to make sure here the Debug panel is not filled with error messages about missing payloads.
+                            // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/124
+                            if (enabled === false || enabled === true) {
+                                return;
+                            }
+
                             if (!payload || payload === "") {
                                 logError("Missing msg.payload (msg._msgid = " + msg._msgid + ")");
                                 return;
