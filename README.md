@@ -155,7 +155,7 @@ Most of the SVG information can be manipulated by sending input messages to this
 + [Reset pan/zoom](https://github.com/bartbutenaers/node-red-contrib-ui-svg/tree/master/docs/msg_control.md#reset-panzoom-via-msg) via msg
 
 ### Enable/disable the SVG
-The Node-RED dashboard allows to enable/disable ui widgets by injecting a message with `msg.enabled` set to a boolean true or false.  This can also be used to enable or disable all user input in an SVG drawing.  Note that all other msg properties (like topic, payload, ...) will be ignored in this case, so no command is being used (since this is a standard Node-RED dashboard feature).
+The Node-RED dashboard allows to enable/disable ui widgets by injecting a message with `msg.enabled` set to a boolean true or false.  This can also be used to enable or disable all user input in an SVG drawing.  Note that all next injected messages will keep being processed while the node is disabled, like with all other UI nodes (i.e. standard behaviour).
 
 ![svg_enable](https://github.com/bartbutenaers/node-red-contrib-ui-svg/assets/14224149/f4485aa4-1877-4451-babb-570e95ce03cd)
 ```
