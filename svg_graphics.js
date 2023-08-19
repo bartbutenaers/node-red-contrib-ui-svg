@@ -330,7 +330,7 @@ div.ui-svg path {
                         // Would like to ignore invalid input messages, but that seems not to possible in UI nodes:
                         // See https://discourse.nodered.org/t/custom-ui-node-not-visible-in-dashboard-sidebar/9666
                         // We will workaround it by sending a 'null' payload to the dashboard.
-                        if (msg.enabled === false || msg.enabled === true) {
+                        if ((msg.enabled === false || msg.enabled === true) && !msg.payload) {
                             // The Node-RED dashboard framework automatically disables/enables all user input when msg.enabled is supplied.
                             // We only need to make sure here the Debug panel is not filled with error messages about missing payloads.
                             // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/124
@@ -1913,7 +1913,9 @@ div.ui-svg path {
                             // We only need to make sure here the Debug panel is not filled with error messages about missing payloads.
                             // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/124
                             if (enabled === false || enabled === true) {
-                                return;
+                                if (!msg.payload && !msg.topic) {
+                                    return;
+                                }
                             }
 
                             if (!payload || payload === "") {
