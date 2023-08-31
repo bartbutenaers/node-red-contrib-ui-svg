@@ -14,14 +14,15 @@
  * limitations under the License.
  **/
 module.exports = function(RED) {
-    var settings   = RED.settings;
-    const svgUtils = require('./svg_utils');
-    const fs       = require('fs');
-    const path     = require('path');
-    const mime     = require('mime');
-    const postcss  = require('postcss');
-    const prefixer = require('postcss-prefix-selector');
-    
+    var settings    = RED.settings;
+    const svgUtils  = require('./svg_utils');
+    const fs        = require('fs');
+    const path      = require('path');
+    const mime      = require('mime');
+    const postcss   = require('postcss');
+    const prefixer  = require('postcss-prefix-selector');
+    const svgParser = require('svgson')
+
     // Shared object between N instances of this node (caching for performance)
     var faMapping;
     
@@ -265,7 +266,32 @@ div.ui-svg path {
     }
 
     var ui = undefined;
-    
+
+    function getAttributeBasedBindings(svgString) {
+        var attributeBasedBindings = [];
+
+        // Get all values of the custom attributes data-bind-text and data-bind-values.
+        // Don't use matchAll, since that is only available starting from NodeJs version 12.0.0
+        var regularExpression = /data-bind-[text|values]* *= *"(.*?)"/g;
+        var match;
+        while((match = regularExpression.exec(svgString)) !== null) {
+            // The matched values will contain a "," separated list of msg field names, which need to be stored in an array of msg field names.
+            attributeBasedBindings = attributeBasedBindings.concat(match[1].split(","));
+        }
+        
+        // Trim the whitespaces from all the field names in the array
+        for (var i = 0; i < attributeBasedBindings.length; i++) {
+            attributeBasedBindings[i] = attributeBasedBindings[i].trim()
+        }
+        
+        // Remove all duplicate msg field names from the array
+        attributeBasedBindings = attributeBasedBindings.filter(function(item,index) {
+            return attributeBasedBindings.indexOf(item) === index;
+        });
+
+        return attributeBasedBindings;
+    }
+
     function SvgGraphicsNode(config) {
          try {
             var node = this;
@@ -275,28 +301,10 @@ div.ui-svg path {
             RED.nodes.createNode(this, config);
             node.outputField = config.outputField;
             node.bindings = config.bindings;
-            node.attributeBasedBindings = [];
+            // Get all the attribute based bindings in the svg string (that has been entered in the config screen)
+            node.attributeBasedBindings = getAttributeBasedBindings(config.svgString);
             // Store the directory property, so it is available in the endpoint below
             node.directory = config.directory;
-         
-            // Get all values of the custom attributes data-bind-text and data-bind-values.
-            // Don't use matchAll, since that is only available starting from NodeJs version 12.0.0
-            var regularExpression = /data-bind-[text|values]* *= *"(.*?)"/g;
-            var match;
-            while((match = regularExpression.exec(config.svgString)) !== null) {
-                // The matched values will contain a "," separated list of msg field names, which need to be stored in an array of msg field names.
-                node.attributeBasedBindings = node.attributeBasedBindings.concat(match[1].split(","));
-            }
-            
-            // Trim the whitespaces from all the field names in the array
-            for (var i = 0; i < node.attributeBasedBindings.length; i++) {
-                node.attributeBasedBindings[i] = node.attributeBasedBindings[i].trim()
-            }
-            
-            // Remove all duplicate msg field names from the array
-            node.attributeBasedBindings = node.attributeBasedBindings.filter(function(item,index) {
-                return node.attributeBasedBindings.indexOf(item) === index;
-            });
 
             node.availableCommands = ["get_text", "update_text", "update_innerhtml", "update_style", "set_style", "update_attribute", "set_attribute",
                                       "trigger_animation", "add_event", "remove_event", "add_js_event", "remove_js_event", "zoom_in", "zoom_out", "zoom_by_percentage",
@@ -341,6 +349,32 @@ div.ui-svg path {
                             msg.payload = null;
                         }
                         else {
+                            var payload = msg.payload;
+                            if(!Array.isArray(payload)){
+                                payload = [payload];
+                            }
+
+                            // Check whether a new svg string is being injected.  Only take into account valid svg strings, because otherwise 
+                            // the svg string will be ignored on the client side.  Which means we should also ignore it here on the server-side, 
+                            // to avoid calculating attribute based bindings for an svg string that is not being used (causing inconsistencies...).
+                            var svgReplacements = [];
+                            for (var i = 0; i < payload.length; i++) {
+                                if (payload[i].command === 'replace_svg' && payload[i].svg) {
+                                    try {
+                                        var svgNode = svgParser.parseSync(payload[i].svg);
+                                        svgReplacements.push(payload[i].svg);
+                                    } catch (error) {
+                                        // Do nothing (i.e. the svg will not be appended to svgReplacements)
+                                    }
+                                }
+                            }
+
+                            if (svgReplacements.length > 0) {
+                                // When a new svg string is injected (to replace the current svg), then all attribute based bindings
+                                // should be determined again.  See issue https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/125
+                                node.attributeBasedBindings = getAttributeBasedBindings(svgReplacements[0]);
+                            }
+                            
                             if(msg.topic == "databind") {
                                 // The bindings can be specified both on the config screen and in the SVG source via custom user attributes.
                                 // See https://github.com/bartbutenaers/node-red-contrib-ui-svg/issues/67
