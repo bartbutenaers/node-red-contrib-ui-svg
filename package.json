@@ -1,6 +1,6 @@
 {
     "name": "node-red-contrib-ui-svg",
-    "version": "2.3.2",
+    "version": "2.3.3",
     "description": "A Node-RED widget node to show interactive SVG (vector graphics) in the dashboard",
     "dependencies": {
        "mime": "^2.4.4",
@@ -8,7 +8,8 @@
        "hammerjs": "^2.0.8",
         "js-beautify": "^1.11.0",
         "postcss": "^8.3.9",
-        "postcss-prefix-selector": "^1.13.0"
+        "postcss-prefix-selector": "^1.13.0",
+        "svgson": "^5.3.1"
     },
     "author": {
         "name": "Bart Butenaers"
