@@ -1,3 +1,7 @@
+| :warning: This svg node for the old AngularJs dashboard won't be maintained anymore!  Due to lack of free time I can only work on the [new svg node](https://github.com/bartbutenaers/node-red-dashboard-2-ui-svg) for the new [VueJs dashboard](https://github.com/FlowFuse/node-red-dashboard/blob/main/README.md). Note that the new svg node is still in experimental phase! |
+|:---------------------------|
+
+
 # node-red-contrib-ui-svg
 A Node-RED widget node to show interactive SVG (vector graphics) in the dashboard
 
